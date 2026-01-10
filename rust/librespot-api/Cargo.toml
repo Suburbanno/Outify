@@ -1,0 +1,17 @@
+[package]
+name = "librespot-api"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+librespot-core = { path = "../deps/librespot/core", default-features = false }
+librespot-protocol = { path = "../deps/librespot/protocol" }
+librespot-metadata = { path = "../deps/librespot/metadata" }
+librespot-oauth = { path = "../deps/librespot/oauth" }
+#librespot-connect = { path = "../deps/librespot/connect" }
+
+tokio = { version = "1", features = ["rt-multi-thread"] }
+log = "0.4"

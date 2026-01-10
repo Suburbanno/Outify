@@ -1,0 +1,27 @@
+[workspace]
+members = [
+	"librespot-api",
+	"librespot-ffi",
+	"deps/librespot/core",
+	"deps/librespot/protocol",
+	"deps/librespot/metadata",
+	"deps/librespot/oauth",
+#	"deps/librespot/connect",
+]
+
+[workspace.package]
+name = "Outify"
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+repository = "https://github.com/iTomKo/Outify"
+
+[workspace.lints]
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "allow"
+
