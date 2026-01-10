@@ -21,5 +21,6 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
+				Runtime.getRuntime().exec("librespot");
     }
 }
