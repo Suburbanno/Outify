@@ -68,7 +68,7 @@ for ABI in "${!ABI_TRIPLE_MAP[@]}"; do
 
 	mkdir -p "$OUTPUT_DIR/$ABI"
 
-	cp "$LIBRESPOT_DIR/target/$TRIPLE/release/librespot" "$OUTPUT_DIR/$ABI/"
+	cp "$LIBRESPOT_DIR/target/$TRIPLE/release/liblibrespot_ffi.so" "$OUTPUT_DIR/$ABI/"
 
-	chmod +x "$OUTPUT_DIR/$ABI/librespot"
+	#chmod +x "$OUTPUT_DIR/$ABI/liblibrespot"
 done

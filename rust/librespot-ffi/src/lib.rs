@@ -1,7 +1,7 @@
 use librespot_api as api;
 use api::Error;
 
-use jni::{JNIEnv, objects::JClass, sys::{jboolean, jstring}};
+use jni::{objects::{JClass, JObject}, sys::{jboolean, jstring}, JNIEnv};
 
 // LibrespotFfi isConnected
 // Used for checking, whether the Rust <> JNI connection works
@@ -13,7 +13,7 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_isConnected(_env: JNIEn
 // oAuth Get Access Token
 // Used to get the access token
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_auth_OAuth_oauthGetAccessToken(env: JNIEnv, _class: JClass) -> jstring {
+pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_oauthGetAccessToken(env: JNIEnv, _this: JObject) -> jstring {
     let rt = tokio::runtime::Runtime::new().unwrap();
     let token = rt.block_on(api::oauth_get_access_token()).unwrap();
 

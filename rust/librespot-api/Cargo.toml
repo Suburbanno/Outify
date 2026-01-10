@@ -7,10 +7,10 @@ edition = "2024"
 crate-type = ["rlib"]
 
 [dependencies]
-librespot-core = { path = "../deps/librespot/core", default-features = false }
-librespot-protocol = { path = "../deps/librespot/protocol" }
-librespot-metadata = { path = "../deps/librespot/metadata" }
-librespot-oauth = { path = "../deps/librespot/oauth" }
+librespot-core = { path = "../deps/librespot/core", default-features = false, features = ["rustls-tls-native-roots"] }
+librespot-protocol = { path = "../deps/librespot/protocol", default-features = false }
+librespot-metadata = { path = "../deps/librespot/metadata", default-features = false }
+librespot-oauth = { path = "../deps/librespot/oauth", default-features = false, features = ["rustls-tls-native-roots"] }
 #librespot-connect = { path = "../deps/librespot/connect" }
 
 tokio = { version = "1", features = ["rt-multi-thread"] }
