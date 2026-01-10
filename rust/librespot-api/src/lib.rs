@@ -1,11 +1,17 @@
 #![crate_name = "librespot_api"]
 
+mod errors;
+mod oauth;
+
+pub use errors::Error;
+pub use oauth::OAuthToken;
+
 use std::env;
 
 use librespot_core::{
-    Error, authentication::Credentials, config::SessionConfig, session::Session, token::Token,
+    authentication::Credentials, config::SessionConfig, session::Session, token::Token,
 };
-use librespot_oauth::{OAuthClientBuilder, OAuthToken};
+use librespot_oauth::{OAuthClientBuilder};
 
 const SPOTIFY_CLIENT_ID: &str = "65b708073fc0480ea92a077233ca87bd";
 const SPOTIFY_REDIRECT_URI: &str = "http://127.0.0.1:8898/login";
@@ -17,7 +23,7 @@ const SCOPES: &[&str] = &[
     "user-read-currently-playing",
 ];
 
-pub async fn oauth_access_token() -> Result<OAuthToken, Error>{
+pub async fn oauth_get_access_token() -> Result<OAuthToken, Error>{
     let client = OAuthClientBuilder::new(SPOTIFY_CLIENT_ID, SPOTIFY_REDIRECT_URI, SCOPES.to_vec())
         .open_in_browser()
         .build()

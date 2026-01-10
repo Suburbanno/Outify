@@ -1,7 +1,23 @@
-use librespot_api::Engine;
+use librespot_api as api;
+use api::Error;
 
-#[uniffi::export]
-pub fn login(user: String, pass: String) -> Result<(), SpotifyError> {
-    Engine::global().login(user,pass)?;
-    Ok(())
+use jni::{JNIEnv, objects::JClass, sys::{jboolean, jstring}};
+
+// LibrespotFfi isConnected
+// Used for checking, whether the Rust <> JNI connection works
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_isConnected(_env: JNIEnv, _class: JClass) -> jboolean {
+    1
 }
+
+// oAuth Get Access Token
+// Used to get the access token
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_auth_OAuth_oauthGetAccessToken(env: JNIEnv, _class: JClass) -> jstring {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let token = rt.block_on(api::oauth_get_access_token()).unwrap();
+
+    let output = env.new_string(token.access_token).unwrap();
+    output.into_raw()
+}
+

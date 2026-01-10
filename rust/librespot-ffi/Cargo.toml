@@ -1,3 +1,6 @@
+[workspace]
+resolver = "3"
+
 [package]
 name = "librespot-ffi"
 version = "0.1.0"
@@ -7,5 +10,7 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [dependencies]
+jni = "0.21.1"
 librespot-api = { path = "../librespot-api" }
-uniffi = { version = "0.27", features = ["tokio"] }
+tokio = "1.49.0"
+

@@ -10,8 +10,8 @@ declare -A ABI_TRIPLE_MAP=(
 )
 
 PROJECT_ROOT=$(pwd)
-LIBRESPOT_DIR="$PROJECT_ROOT/deps/librespot"
-OUTPUT_DIR="$PROJECT_ROOT/app/src/main/libexec"
+LIBRESPOT_DIR="$PROJECT_ROOT/rust/librespot-ffi"
+OUTPUT_DIR="$PROJECT_ROOT/app/src/main/jniLibs"
 PLATFORM_VERSION=21
 
 if [ -z "$ANDROID_SDK_ROOT" ]; then
@@ -57,9 +57,7 @@ for ABI in "${!ABI_TRIPLE_MAP[@]}"; do
 	cargo ndk \
 		-t "$ABI" \
 		--platform "$PLATFORM_VERSION" \
-		build --release \
-		--no-default-features \
-		--features "rustls-tls-native-roots"
+		build --release
 
 	if [ "$?" -ne 0 ]; then
 		echo "Failed to build librespot for $ABI!"
