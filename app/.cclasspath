@@ -51,6 +51,6 @@
   <classpathentry kind="lib" path="/home/tomko/.gradle/caches/modules-2/files-2.1/org.jspecify/jspecify/1.0.0/7425a601c1c7ec76645a78d22b8c6a627edee507/jspecify-1.0.0.jar"/>
   <classpathentry kind="lib" path="/home/tomko/.gradle/caches/modules-2/files-2.1/androidx.resourceinspection/resourceinspection-annotation/1.0.1/8c21f8ff5d96d5d52c948707f7e4d6ca6773feef/resourceinspection-annotation-1.0.1.jar"/>
   <classpathentry kind="lib" path="/home/tomko/.gradle/caches/modules-2/files-2.1/androidx.graphics/graphics-shapes-android/1.0.1/ded3e866d7abfae45cf454b31522b374b838ef11/graphics-shapes-release.aar"/>
-	<classpathentry kind="lib" path="app/lib/android.jar"/>
+	<classpathentry kind="lib" path="lib/android.jar"/>
   <classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>
 </classpath>

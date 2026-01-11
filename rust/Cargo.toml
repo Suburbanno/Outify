@@ -8,6 +8,7 @@ members = [
 	"deps/librespot/oauth",
 #	"deps/librespot/connect",
 ]
+resolver = "3"
 
 [workspace.package]
 name = "Outify"

@@ -4,14 +4,14 @@ mod errors;
 mod oauth;
 
 pub use errors::Error;
-pub use oauth::OAuthToken;
 
 use std::env;
 
 use librespot_core::{
     authentication::Credentials, config::SessionConfig, session::Session, token::Token,
 };
-use librespot_oauth::{OAuthClientBuilder};
+use librespot_oauth::{OAuthClientBuilder, OAuthToken};
+use oauth2::{url::Url};
 
 const SPOTIFY_CLIENT_ID: &str = "65b708073fc0480ea92a077233ca87bd";
 const SPOTIFY_REDIRECT_URI: &str = "http://127.0.0.1:8898/login";
@@ -23,9 +23,19 @@ const SCOPES: &[&str] = &[
     "user-read-currently-playing",
 ];
 
+pub async fn oauth_get_auth_url() -> Result<Url, Error> {
+    let client = OAuthClientBuilder::new(SPOTIFY_CLIENT_ID, SPOTIFY_REDIRECT_URI, SCOPES.to_vec())
+        .build()
+        .map_err(|e| Error::internal(format!("Unable to build OAuth client: {e}")))?;
+
+    let (auth_url, _) = client.set_auth_url();
+    println!("Authorize at: {}", auth_url);
+
+    Ok(auth_url)
+}
+
 pub async fn oauth_get_access_token() -> Result<OAuthToken, Error>{
     let client = OAuthClientBuilder::new(SPOTIFY_CLIENT_ID, SPOTIFY_REDIRECT_URI, SCOPES.to_vec())
-        .open_in_browser()
         .build()
         .map_err(|e| Error::internal(format!("Unable to build OAuth client: {e}")))?;
 

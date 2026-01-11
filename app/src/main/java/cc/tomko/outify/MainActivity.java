@@ -12,6 +12,10 @@ import cc.tomko.outify.core.SpAuthManager;
 
 public class MainActivity extends AppCompatActivity {
 
+    static {
+        System.loadLibrary("librespot_ffi");
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -22,11 +26,11 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        
-        LibrespotFfi ffi = new LibrespotFfi();
+
+        Log.d("MainActivity", "onCreate: " + LibrespotFfi.isConnected());
 
         SpAuthManager auth = new SpAuthManager();
-        auth.oauthGetAccessToken();
-        Log.d("MainActivity", "onCreate: " + ffi.isConnected());
+        String url = auth.getAuthURL();
+        Log.d("MainActivity", "onCreate: " + url);
     }
 }
