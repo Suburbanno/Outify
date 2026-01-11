@@ -11,6 +11,7 @@ import androidx.core.view.WindowInsetsCompat;
 import cc.tomko.outify.core.SpAuthManager;
 
 public class MainActivity extends AppCompatActivity {
+    public static SpAuthManager auth;
 
     static {
         System.loadLibrary("librespot_ffi");
@@ -29,8 +30,9 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d("MainActivity", "onCreate: " + LibrespotFfi.isConnected());
 
-        SpAuthManager auth = new SpAuthManager();
-        String url = auth.getAuthURL();
+        auth = new SpAuthManager();
+        auth.initialize("", "", "");
+        String url = auth.getAuthorizationURL();
         Log.d("MainActivity", "onCreate: " + url);
     }
 }

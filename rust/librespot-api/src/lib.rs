@@ -1,7 +1,7 @@
 #![crate_name = "librespot_api"]
 
 mod errors;
-mod oauth;
+pub mod oauth;
 
 pub use errors::Error;
 
@@ -13,10 +13,10 @@ use librespot_core::{
 use librespot_oauth::{OAuthClientBuilder, OAuthToken};
 use oauth2::{url::Url};
 
-const SPOTIFY_CLIENT_ID: &str = "65b708073fc0480ea92a077233ca87bd";
-const SPOTIFY_REDIRECT_URI: &str = "http://127.0.0.1:8898/login";
+pub const SPOTIFY_CLIENT_ID: &str = "65b708073fc0480ea92a077233ca87bd";
+pub const SPOTIFY_REDIRECT_URI: &str = "http://127.0.0.1:8898/login";
 
-const SCOPES: &[&str] = &[
+pub const SCOPES: &[&str] = &[
     "streaming",
     "user-read-playback-state",
     "user-modify-playback-state",
@@ -29,7 +29,6 @@ pub async fn oauth_get_auth_url() -> Result<Url, Error> {
         .map_err(|e| Error::internal(format!("Unable to build OAuth client: {e}")))?;
 
     let (auth_url, _) = client.set_auth_url();
-    println!("Authorize at: {}", auth_url);
 
     Ok(auth_url)
 }
