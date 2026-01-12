@@ -11,6 +11,7 @@
 /captures
 .externalNativeBuild
 .cxx
+*.so
 
 # Local config
 local.properties
