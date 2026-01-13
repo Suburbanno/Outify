@@ -1,8 +1,11 @@
 package cc.tomko.outify;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 
 import android.util.Log;
+import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -11,8 +14,6 @@ import androidx.core.view.WindowInsetsCompat;
 import cc.tomko.outify.core.SpAuthManager;
 
 public class MainActivity extends AppCompatActivity {
-    public static SpAuthManager auth;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -24,11 +25,15 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        Log.d("MainActivity", "onCreate: " + LibrespotFfi.isConnected());
-
-        auth = new SpAuthManager();
-        auth.initialize("", "", "");
-        String url = auth.getAuthorizationURL();
-        Log.d("MainActivity", "onCreate: " + url);
+        final SpAuthManager auth = OutifyApplication.spAuthManager;
+        if(auth.isAuthenticated()){
+            Toast.makeText(this, "Already authenticated!", Toast.LENGTH_SHORT).show();
+        } else {
+            final String url = auth.getAuthorizationURL();
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(url));
+            startActivity(intent);
+            Log.d("MainActivity", "onCreate: " + url);
+        }
     }
 }

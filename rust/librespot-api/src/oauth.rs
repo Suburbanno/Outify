@@ -35,10 +35,6 @@ impl OAuthSession {
             .take()
             .ok_or(Error::internal(format!("Missing Pkce Verifier")))?;
 
-        log::info!("testing connection to google");
-        let resp = oauth2::reqwest::get("https://1.1.1.1").await;
-        log::info!("HTTP test: {:?}", resp);
-
         log::info!(
             "get_access_token: pkce_verifier: {}",
             pkce_verifier.secret()
