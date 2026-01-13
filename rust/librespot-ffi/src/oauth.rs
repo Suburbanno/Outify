@@ -1,6 +1,6 @@
 use librespot_api as api;
 
-use crate::{logd, logi, logv, loge}; // Exporting logger macros
+use crate::{logd, loge, logi, logv}; // Exporting logger macros
 
 use api::oauth::OAuthSession;
 use jni::{
@@ -34,7 +34,6 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_initialize(
     scopes: jstring,
 ) -> jboolean {
     let redirect = format!("{}/verify", SPOTIFY_REDIRECT_URI);
-    logd!(env, "oauth.rs", "Just a test message!");
 
     let session = OAuthSession::new(SPOTIFY_CLIENT_ID, &redirect, SCOPES).unwrap();
     OAUTH_SESSION.set(Mutex::new(session)).ok();
@@ -74,12 +73,15 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAccessToken(
         .get_string(&code)
         .expect("Couldn't get the JNI code!'")
         .into();
+
+    log::info!("getAccessToken: code: {}", code);
     let rt = TOKIO_RT.get_or_init(|| tokio::runtime::Runtime::new().unwrap());
     let token = match rt.block_on(async {
         let session_mutex = OAUTH_SESSION
             .get()
             .expect("OAuth session is not initialized!");
         let mut session = session_mutex.lock().unwrap();
+        log::info!("getAccessToken: pkce_verifier: {}", session.pkce_verifier.as_ref().expect("No PKCE Verifier in session").secret());
 
         session.get_access_token(code).await
     }) {

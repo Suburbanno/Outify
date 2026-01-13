@@ -8,5 +8,6 @@ public class OutifyApplication extends Application {
         super.onCreate();
 
         System.loadLibrary("librespot_ffi");
+        LibrespotFfi.libInit();
     }
 }

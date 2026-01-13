@@ -1,5 +1,53 @@
 use jni::objects::JObject;
-use jni::JNIEnv;
+use jni::{JNIEnv, JavaVM};
+
+use log::{Level, LevelFilter, Metadata, Record};
+
+pub struct AndroidLogger {
+    jvm: JavaVM,
+}
+
+impl AndroidLogger {
+    pub fn init(jvm: JavaVM, level: LevelFilter) -> Result<(), log::SetLoggerError> {
+        let logger = AndroidLogger { jvm };
+        log::set_boxed_logger(Box::new(logger))?;
+        log::set_max_level(level);
+        Ok(())
+    }
+
+    fn log_to_android(env: &mut JNIEnv, level: log::Level, target: &str, msg: &str) {
+        let tag = target;
+        match level {
+            log::Level::Error => crate::logger::log_error(env, tag, msg),
+            log::Level::Warn => crate::logger::log_warn(env, tag, msg),
+            log::Level::Info => crate::logger::log_info(env, tag, msg),
+            log::Level::Debug => crate::logger::log_debug(env, tag, msg),
+            log::Level::Trace => crate::logger::log_verbose(env, tag, msg),
+        }
+    }
+}
+
+impl log::Log for AndroidLogger {
+    fn enabled(&self, _metadata: &Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &Record) {
+        if !self.enabled(record.metadata()) {
+            return;
+        }
+
+        if let Ok(mut env) = self.jvm.attach_current_thread_as_daemon() {
+            Self::log_to_android(
+                &mut env,
+                record.level(),
+                record.target(),
+                &format!("{}", record.args()),
+            );
+        }
+    }
+    fn flush(&self) {}
+}
 
 /// Internal helper to call Log::<method>
 fn log_internal(env: &mut JNIEnv, method: &str, tag: &str, msg: &str) {

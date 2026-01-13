@@ -17,6 +17,12 @@ use jni::{JNIEnv, JNIVersion, JavaVM, sys};
 
 use tokio::runtime::Runtime;
 
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(env: JNIEnv, _class: JClass) {
+    let jvm = env.get_java_vm().unwrap();
+    AndroidLogger::init(jvm, log::LevelFilter::Debug).unwrap();
+}
+
 // LibrespotFfi isConnected
 // Used for checking, whether the Rust <> JNI connection works
 #[unsafe(no_mangle)]
