@@ -1,6 +1,6 @@
 use librespot_api as api;
 
-use log;
+use crate::{logd, logi, logv, loge}; // Exporting logger macros
 
 use api::oauth::OAuthSession;
 use jni::{
@@ -27,14 +27,14 @@ pub const SCOPES: &[&str] = &[
 /// Initializes the OAuth Session.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_initialize(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _this: JObject,
     client_id: jstring,
     redirect_uri: jstring,
     scopes: jstring,
 ) -> jboolean {
-    log::info!("Testing out the logger");
     let redirect = format!("{}/verify", SPOTIFY_REDIRECT_URI);
+    logd!(env, "oauth.rs", "Just a test message!");
 
     let session = OAuthSession::new(SPOTIFY_CLIENT_ID, &redirect, SCOPES).unwrap();
     OAUTH_SESSION.set(Mutex::new(session)).ok();
