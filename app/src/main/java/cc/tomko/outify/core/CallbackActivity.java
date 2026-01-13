@@ -20,6 +20,8 @@ import cc.tomko.outify.R;
  */
 public class CallbackActivity extends AppCompatActivity {
 
+    public static final String TAG = "CallbackActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,14 +36,17 @@ public class CallbackActivity extends AppCompatActivity {
         if(uri == null || !"outify".equals(uri.getScheme())) return;
 
         if("oauth".equals(uri.getHost()) && "/verify".equals(uri.getPath())){
-            String code = uri.getQueryParameter("code");
-            String state = uri.getQueryParameter("state");
-
-            Log.d("CallbackActivity", "handleIntent: " + code);
-
-            final String at = MainActivity.auth.getAccessToken(code);
-            Log.d("CallbackActivity", "handleIntent: " + at);
-            Toast.makeText(this, "Code: " + code, Toast.LENGTH_SHORT).show();
+            handleOAuthVerify(uri);
         }
+    }
+		
+    void handleOAuthVerify(Uri uri){
+        Log.d(TAG, "Handling OAuth Verify Callback: " + uri.toString());
+        String code = uri.getQueryParameter("code");
+        String state = uri.getQueryParameter("state");
+
+        final String at = MainActivity.auth.getAccessToken(code, state);
+        Log.d(TAG, "handleOAuthVerify: " + at);
+        finish();
     }
 }

@@ -10,7 +10,7 @@ public class SpAuthManager {
 	/**
 	 *  Returns the access token in plain text
 	 */
-	public native String getAccessToken(String code);
+	public native String getAccessToken(String code, String state);
 
 	/**
 	 * Returns URL of Spotify authorization page

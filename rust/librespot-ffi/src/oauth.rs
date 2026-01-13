@@ -1,5 +1,7 @@
 use librespot_api as api;
 
+use log;
+
 use api::oauth::OAuthSession;
 use jni::{
     JNIEnv,
@@ -9,6 +11,7 @@ use jni::{
 use once_cell::sync::OnceCell;
 use std::sync::Mutex;
 
+static TOKIO_RT: OnceCell<tokio::runtime::Runtime> = OnceCell::new();
 static OAUTH_SESSION: OnceCell<Mutex<OAuthSession>> = OnceCell::new();
 
 // Termporary constants
@@ -30,6 +33,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_initialize(
     redirect_uri: jstring,
     scopes: jstring,
 ) -> jboolean {
+    log::info!("Testing out the logger");
     let redirect = format!("{}/verify", SPOTIFY_REDIRECT_URI);
 
     let session = OAuthSession::new(SPOTIFY_CLIENT_ID, &redirect, SCOPES).unwrap();
@@ -44,7 +48,8 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAuthorizationU
     env: JNIEnv,
     _this: JObject,
 ) -> jstring {
-    let rt = tokio::runtime::Runtime::new().unwrap();
+    let rt = TOKIO_RT.get_or_init(|| tokio::runtime::Runtime::new().unwrap());
+
     let auth_url = rt.block_on(async {
         let session_mutex = OAUTH_SESSION
             .get()
@@ -63,12 +68,13 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAccessToken(
     mut env: JNIEnv,
     _this: JObject,
     code: JString,
+    state: JString,
 ) -> jstring {
     let code: String = env
         .get_string(&code)
         .expect("Couldn't get the JNI code!'")
         .into();
-    let rt = tokio::runtime::Runtime::new().unwrap();
+    let rt = TOKIO_RT.get_or_init(|| tokio::runtime::Runtime::new().unwrap());
     let token = match rt.block_on(async {
         let session_mutex = OAUTH_SESSION
             .get()

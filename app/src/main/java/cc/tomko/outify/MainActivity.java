@@ -13,10 +13,6 @@ import cc.tomko.outify.core.SpAuthManager;
 public class MainActivity extends AppCompatActivity {
     public static SpAuthManager auth;
 
-    static {
-        System.loadLibrary("librespot_ffi");
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
