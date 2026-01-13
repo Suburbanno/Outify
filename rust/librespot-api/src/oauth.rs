@@ -34,6 +34,11 @@ impl OAuthSession {
             .take()
             .ok_or(Error::internal(format!("Missing Pkce Verifier")))?;
 
+        log::info!(
+            "get_access_token: pkce_verifier: {}",
+            pkce_verifier.secret()
+        );
+
         let auth_code = AuthorizationCode::new(code);
 
         let token_response = self

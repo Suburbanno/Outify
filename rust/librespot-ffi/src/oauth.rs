@@ -4,7 +4,7 @@ use api::oauth::OAuthSession;
 use jni::{
     JNIEnv,
     objects::{JClass, JObject, JString},
-    sys::{jboolean, jstring},
+    sys::{jboolean, jobjectArray, jstring},
 };
 use once_cell::sync::OnceCell;
 use std::sync::Mutex;
@@ -56,14 +56,15 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAuthorizationU
     env.new_string(auth_url.to_string()).unwrap().into_raw()
 }
 
-// oAuth Get Access Token
-// Used to get the access token
+// oAuth Get Token Pair
+// Used to get the access token and refresh token
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAccessToken(
+pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenPair(
     mut env: JNIEnv,
     _this: JObject,
     code: JString,
-) -> jstring {
+    state: JString,
+) -> jobjectArray {
     let code: String = env
         .get_string(&code)
         .expect("Couldn't get the JNI code!'")
@@ -74,6 +75,14 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAccessToken(
             .get()
             .expect("OAuth session is not initialized!");
         let mut session = session_mutex.lock().unwrap();
+        log::info!(
+            "getAccessToken: pkce_verifier: {}",
+            session
+                .pkce_verifier
+                .as_ref()
+                .expect("No PKCE Verifier in session")
+                .secret()
+        );
 
         session.get_access_token(code).await
     }) {
@@ -84,5 +93,16 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAccessToken(
         }
     };
 
-    env.new_string(token.access_token).unwrap().into_raw()
+    let string_class = env.find_class("java/lang/String").unwrap();
+    let array = env
+        .new_object_array(2, string_class, JObject::null())
+        .unwrap();
+
+    let jaccess = env.new_string(token.access_token).unwrap();
+    let jrefresh = env.new_string(token.refresh_token).unwrap();
+
+    env.set_object_array_element(&array, 0, jaccess).unwrap();
+    env.set_object_array_element(&array, 1, jrefresh).unwrap();
+
+    array.into_raw()
 }

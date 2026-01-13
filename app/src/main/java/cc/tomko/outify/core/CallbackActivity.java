@@ -6,14 +6,11 @@ import android.os.Bundle;
 
 import android.util.Log;
 import android.widget.Toast;
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import cc.tomko.outify.MainActivity;
+import cc.tomko.outify.OutifyApplication;
 import cc.tomko.outify.R;
+import cc.tomko.outify.TokenStore;
 
 /**
  *  Handles "outify://xyz" callbacks
@@ -34,14 +31,29 @@ public class CallbackActivity extends AppCompatActivity {
         if(uri == null || !"outify".equals(uri.getScheme())) return;
 
         if("oauth".equals(uri.getHost()) && "/verify".equals(uri.getPath())){
-            String code = uri.getQueryParameter("code");
-            String state = uri.getQueryParameter("state");
+            handleOAuthVerify(uri);
+            finish();
+        }
+    }
+		
+    void handleOAuthVerify(Uri uri){
+        Log.d(TAG, "Handling OAuth Verify Callback: " + uri.toString());
+        String code = uri.getQueryParameter("code");
+        String state = uri.getQueryParameter("state");
 
-            Log.d("CallbackActivity", "handleIntent: " + code);
+        final String[] tokens = OutifyApplication.spAuthManager.getTokenPair(code, state);
+        if(tokens.length != 2){
+            Toast.makeText(this, "An error occurred", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-            final String at = MainActivity.auth.getAccessToken(code);
-            Log.d("CallbackActivity", "handleIntent: " + at);
-            Toast.makeText(this, "Code: " + code, Toast.LENGTH_SHORT).show();
+        final TokenStore store = OutifyApplication.tokenStore;
+        try {
+            store.saveTokens(tokens[0], tokens[1]);
+            Toast.makeText(this, "Credentials saved!", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "An error occurred", Toast.LENGTH_SHORT).show();
+            throw new RuntimeException(e);
         }
     }
 }
