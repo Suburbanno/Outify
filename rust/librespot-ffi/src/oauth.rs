@@ -1,5 +1,6 @@
 use librespot_api as api;
 
+use crate::TOKIO_RUNTIME;
 use crate::{logd, loge, logi, logv}; // Exporting logger macros
 
 use api::oauth::OAuthSession;
@@ -11,7 +12,6 @@ use jni::{
 use once_cell::sync::OnceCell;
 use std::sync::Mutex;
 
-static TOKIO_RT: OnceCell<tokio::runtime::Runtime> = OnceCell::new();
 static OAUTH_SESSION: OnceCell<Mutex<OAuthSession>> = OnceCell::new();
 
 // Termporary constants
@@ -47,7 +47,9 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAuthorizationU
     env: JNIEnv,
     _this: JObject,
 ) -> jstring {
-    let rt = TOKIO_RT.get_or_init(|| tokio::runtime::Runtime::new().unwrap());
+    let rt = TOKIO_RUNTIME
+        .get()
+        .expect("Tokio runtime is not initialized!");
 
     let auth_url = rt.block_on(async {
         let session_mutex = OAUTH_SESSION
@@ -74,8 +76,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenPair(
         .expect("Couldn't get the JNI code!'")
         .into();
 
+    let rt = TOKIO_RUNTIME
+        .get()
+        .expect("Tokio runtime is not initialized!");
+
     log::info!("getAccessToken: code: {}", code);
-    let rt = TOKIO_RT.get_or_init(|| tokio::runtime::Runtime::new().unwrap());
     let token = match rt.block_on(async {
         let session_mutex = OAUTH_SESSION
             .get()
@@ -111,4 +116,30 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenPair(
     env.set_object_array_element(&array, 1, jrefresh).unwrap();
 
     array.into_raw()
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_refreshToken(
+    mut env: JNIEnv,
+    _this: JClass,
+    refresh_token: JString,
+) -> jstring {
+    let refresh = env
+        .get_string(&refresh_token)
+        .expect("Couldn't get the JNI refresh token!'")
+        .into();
+
+    let rt = TOKIO_RUNTIME
+        .get()
+        .expect("Tokio runtime is not initialized!");
+
+    let result = rt.block_on(async { api::oauth::refresh_token(refresh).await });
+
+    match result {
+        Ok(token) => env.new_string(token).unwrap().into_raw(),
+        Err(e) => {
+            log::error!("Token refresh failed: {e}");
+            env.new_string("").unwrap().into_raw()
+        }
+    }
 }

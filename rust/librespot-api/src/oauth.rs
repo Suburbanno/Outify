@@ -64,4 +64,17 @@ impl OAuthSession {
 
         Ok(token_response)
     }
+
+    /// Refreshes the auth token and retrieves a new one
+    pub async fn refresh_token(&mut self, refresh_token: String) -> Result<String, Error> {
+        let refreshed = self.
+            client
+            .refresh_token_async(&refresh_token)
+            .await
+            .map_err(|e| Error::unauthenticated(format!("Unable to refresh OAuth token: {e}")))?;
+
+        log::debug!("Refreshed OAuth token!");
+
+        OK(refreshed.refresh_token)
+    }
 }
