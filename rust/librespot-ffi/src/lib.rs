@@ -3,20 +3,16 @@ pub use crate::logger::*; // Exporting logger macros
 pub mod oauth;
 mod playback;
 
-use librespot_api as api;
-
-use api::{AndroidSink, AudioFormat, Error, PcmCallback, oauth::OAuthSession};
-
-use std::cell::RefCell;
-use std::ffi::c_void;
-use std::mem;
-use std::sync::Mutex;
+// Exposing required librespot structs
+pub use librespot_core::authentication::Credentials;
+pub use librespot_playback::audio_backend::android::{AndroidSink, PcmCallback};
+pub use librespot_playback::config::AudioFormat;
 
 use once_cell::sync::OnceCell;
 
-use jni::objects::{AutoLocal, JClass, JObject, JString, JThrowable, JValue};
-use jni::sys::{jboolean, jlong, jstring};
-use jni::{JNIEnv, JNIVersion, JavaVM, sys};
+use jni::JNIEnv;
+use jni::objects::JClass;
+use jni::sys::jboolean;
 
 use tokio::runtime::Runtime;
 

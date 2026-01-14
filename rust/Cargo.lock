@@ -1615,20 +1615,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "librespot-api"
-version = "0.1.0"
-dependencies = [
- "librespot-core",
- "librespot-metadata",
- "librespot-oauth",
- "librespot-playback",
- "librespot-protocol",
- "log",
- "oauth2",
- "tokio",
-]
-
-[[package]]
 name = "librespot-audio"
 version = "0.8.0"
 dependencies = [
@@ -1707,9 +1693,14 @@ name = "librespot-ffi"
 version = "0.1.0"
 dependencies = [
  "jni",
- "librespot-api",
+ "librespot-core",
+ "librespot-metadata",
+ "librespot-oauth",
+ "librespot-playback",
+ "librespot-protocol",
  "log",
  "num_cpus",
+ "oauth2",
  "once_cell",
  "tokio",
 ]

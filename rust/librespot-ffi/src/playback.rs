@@ -1,10 +1,10 @@
-use crate::{AudioFormat, AndroidSink};
+use crate::{AndroidSink, AudioFormat};
 use jni::objects::{GlobalRef, JObject, JValue};
 use jni::sys::jint;
 use jni::{JNIEnv, JavaVM};
+use log::{error, warn};
 use once_cell::sync::OnceCell;
 use std::sync::Mutex;
-use log::{warn, error};
 
 static JAVA_VM: OnceCell<JavaVM> = OnceCell::new();
 static PCM_CALLBACK: OnceCell<Mutex<Option<GlobalRef>>> = OnceCell::new();
@@ -48,7 +48,7 @@ extern "C" fn rust_pcm_trampoline(
 
     // Get the stored JavaVM
     let jvm = match JAVA_VM.get() {
-        Some(j) => j.clone(),
+        Some(j) => j,
         None => {
             warn!("JAVA_VM not set");
             return;
@@ -146,4 +146,3 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_registerPcmCal
     AndroidSink::set_callback(rust_pcm_trampoline);
     log::info!("Registered PCM callback!");
 }
-

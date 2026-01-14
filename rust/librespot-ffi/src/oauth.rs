@@ -1,9 +1,7 @@
-use librespot_api as api;
-
 use crate::TOKIO_RUNTIME;
+#[allow(unused_imports)]
 use crate::{logd, loge, logi, logv}; // Exporting logger macros
 
-use api::oauth::OAuthSession;
 use jni::{
     JNIEnv,
     objects::{JClass, JObject, JString},
@@ -24,14 +22,96 @@ pub const SCOPES: &[&str] = &[
     "user-read-currently-playing",
 ];
 
-/// Initializes the OAuth Session.
+use librespot_oauth::{OAuthClient, OAuthClientBuilder, OAuthToken};
+use oauth2::{AuthorizationCode, PkceCodeVerifier, url::Url};
+
+use librespot_core::Error;
+
+pub struct OAuthSession {
+    client: OAuthClient,
+    pub pkce_verifier: Option<PkceCodeVerifier>,
+    pub auth_url: Url,
+}
+
+impl OAuthSession {
+    pub fn new(client_id: &str, redirect_uri: &str, scopes: &[&str]) -> Result<Self, Error> {
+        let client = OAuthClientBuilder::new(client_id, redirect_uri, scopes.to_vec())
+            .build()
+            .map_err(|e| Error::internal(format!("Unable to build OAuth client: {e}")))?;
+        let (auth_url, pkce_verifier) = client.set_auth_url();
+
+        Ok(Self {
+            client,
+            pkce_verifier: Some(pkce_verifier),
+            auth_url,
+        })
+    }
+
+    pub fn auth_url(&self) -> &Url {
+        &self.auth_url
+    }
+
+    /// Retrieves the Access Token.
+    /// Automatically refreshes it.
+    pub async fn get_access_token(&mut self, code: String) -> Result<OAuthToken, Error> {
+        let pkce_verifier = self
+            .pkce_verifier
+            .take()
+            .ok_or(Error::internal(format!("Missing Pkce Verifier")))?;
+
+        log::info!(
+            "get_access_token: pkce_verifier: {}",
+            pkce_verifier.secret()
+        );
+
+        let auth_code = AuthorizationCode::new(code);
+        log::info!("get_access_token: auth_code: {}", auth_code.secret());
+
+        let token_response = self
+            .client
+            .get_access_token_with_verifier_async(pkce_verifier, auth_code)
+            .await
+            .map_err(|e| Error::unavailable(format!("Unable to get OAuth token: {e}")))?;
+
+        log::info!("get_access_token: token_response: {:#?}", token_response);
+        println!("OAuth Token: {:#?}", token_response);
+
+        // Refreshing token
+        let refresh_token = token_response.refresh_token.clone();
+        let refreshed = self
+            .client
+            .refresh_token_async(&refresh_token)
+            .await
+            .map_err(|e| Error::unknown(format!("Unable to refresh OAuth token: {e}")))?;
+
+        println!("Refreshed OAuth Token: {:#?}", refreshed);
+
+        Ok(token_response)
+    }
+
+    /// Refreshes the auth token and retrieves a new one
+    pub async fn refresh_token(&mut self, refresh_token: String) -> Result<String, Error> {
+        let refreshed = self.
+            client
+            .refresh_token_async(&refresh_token)
+            .await
+            .map_err(|e| Error::unauthenticated(format!("Unable to refresh OAuth token: {e}")))?;
+
+        log::debug!("Refreshed OAuth token!");
+
+        Ok(refreshed.refresh_token)
+    }
+}
+
+// Initializes the OAuth Session.
+// TODO: Make the parameters do the actual work
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_initialize(
-    mut env: JNIEnv,
+    _env: JNIEnv,
     _this: JObject,
-    client_id: jstring,
-    redirect_uri: jstring,
-    scopes: jstring,
+    _client_id: jstring,
+    _redirect_uri: jstring,
+    _scopes: jstring,
 ) -> jboolean {
     let redirect = format!("{}/verify", SPOTIFY_REDIRECT_URI);
 
@@ -64,12 +144,13 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAuthorizationU
 
 // oAuth Get Token Pair
 // Used to get the access token and refresh token
+// TODO: Implement state for CSRF
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenPair(
     mut env: JNIEnv,
     _this: JObject,
     code: JString,
-    state: JString,
+    _state: JString,
 ) -> jobjectArray {
     let code: String = env
         .get_string(&code)
