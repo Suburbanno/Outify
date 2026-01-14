@@ -1,5 +1,5 @@
 use librespot_oauth::{OAuthClient, OAuthClientBuilder, OAuthToken};
-use oauth2::{PkceCodeVerifier, url::Url, AuthorizationCode};
+use oauth2::{AuthorizationCode, PkceCodeVerifier, url::Url};
 
 use super::errors::Error;
 
@@ -30,7 +30,8 @@ impl OAuthSession {
     /// Retrieves the Access Token.
     /// Automatically refreshes it.
     pub async fn get_access_token(&mut self, code: String) -> Result<OAuthToken, Error> {
-        let pkce_verifier = self.pkce_verifier
+        let pkce_verifier = self
+            .pkce_verifier
             .take()
             .ok_or(Error::internal(format!("Missing Pkce Verifier")))?;
 
@@ -40,6 +41,7 @@ impl OAuthSession {
         );
 
         let auth_code = AuthorizationCode::new(code);
+        log::info!("get_access_token: auth_code: {}", auth_code.secret());
 
         let token_response = self
             .client
@@ -47,6 +49,7 @@ impl OAuthSession {
             .await
             .map_err(|e| Error::unavailable(format!("Unable to get OAuth token: {e}")))?;
 
+        log::info!("get_access_token: token_response: {:#?}", token_response);
         println!("OAuth Token: {:#?}", token_response);
 
         // Refreshing token

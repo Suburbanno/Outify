@@ -1,5 +1,7 @@
 use librespot_api as api;
 
+use crate::{logd, loge, logi, logv}; // Exporting logger macros
+
 use api::oauth::OAuthSession;
 use jni::{
     JNIEnv,
@@ -9,6 +11,7 @@ use jni::{
 use once_cell::sync::OnceCell;
 use std::sync::Mutex;
 
+static TOKIO_RT: OnceCell<tokio::runtime::Runtime> = OnceCell::new();
 static OAUTH_SESSION: OnceCell<Mutex<OAuthSession>> = OnceCell::new();
 
 // Termporary constants
@@ -24,7 +27,7 @@ pub const SCOPES: &[&str] = &[
 /// Initializes the OAuth Session.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_initialize(
-    env: JNIEnv,
+    mut env: JNIEnv,
     _this: JObject,
     client_id: jstring,
     redirect_uri: jstring,
@@ -44,7 +47,8 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAuthorizationU
     env: JNIEnv,
     _this: JObject,
 ) -> jstring {
-    let rt = tokio::runtime::Runtime::new().unwrap();
+    let rt = TOKIO_RT.get_or_init(|| tokio::runtime::Runtime::new().unwrap());
+
     let auth_url = rt.block_on(async {
         let session_mutex = OAUTH_SESSION
             .get()
@@ -69,7 +73,9 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenPair(
         .get_string(&code)
         .expect("Couldn't get the JNI code!'")
         .into();
-    let rt = tokio::runtime::Runtime::new().unwrap();
+
+    log::info!("getAccessToken: code: {}", code);
+    let rt = TOKIO_RT.get_or_init(|| tokio::runtime::Runtime::new().unwrap());
     let token = match rt.block_on(async {
         let session_mutex = OAUTH_SESSION
             .get()

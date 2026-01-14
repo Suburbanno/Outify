@@ -17,6 +17,8 @@ import cc.tomko.outify.TokenStore;
  */
 public class CallbackActivity extends AppCompatActivity {
 
+    public static final String TAG = "CallbackActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
