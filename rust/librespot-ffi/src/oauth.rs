@@ -133,7 +133,13 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_refreshToken(
         .get()
         .expect("Tokio runtime is not initialized!");
 
-    let result = rt.block_on(async { api::oauth::refresh_token(refresh).await });
+    let result = rt.block_on(async {
+        let session_mutex = OAUTH_SESSION
+            .get()
+            .expect("OAuth session is not initialized!");
+        let mut session = session_mutex.lock().unwrap();
+        session.refresh_token(refresh).await
+    });
 
     match result {
         Ok(token) => env.new_string(token).unwrap().into_raw(),

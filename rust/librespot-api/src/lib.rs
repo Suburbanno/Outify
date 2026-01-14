@@ -2,7 +2,6 @@
 
 mod errors;
 pub mod oauth;
-pub mod playback;
 
 pub use errors::Error;
 
@@ -18,3 +17,5 @@ use oauth2::{url::Url};
 pub use librespot_core::{
     authentication::Credentials
 };
+pub use librespot_playback::audio_backend::android::{AndroidSink,PcmCallback};
+pub use librespot_playback::config::AudioFormat;

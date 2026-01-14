@@ -1,7 +1,6 @@
-use jni::objects::JObject;
 use jni::{JNIEnv, JavaVM};
 
-use log::{Level, LevelFilter, Metadata, Record};
+use log::{LevelFilter, Metadata, Record};
 
 pub struct AndroidLogger {
     jvm: JavaVM,

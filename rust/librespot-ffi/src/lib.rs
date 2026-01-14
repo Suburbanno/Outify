@@ -1,18 +1,21 @@
 pub mod logger;
 pub use crate::logger::*; // Exporting logger macros
 pub mod oauth;
+mod playback;
 
 use librespot_api as api;
 
-use api::{Error, oauth::OAuthSession};
+use api::{AndroidSink, AudioFormat, Error, PcmCallback, oauth::OAuthSession};
 
 use std::cell::RefCell;
+use std::ffi::c_void;
+use std::mem;
 use std::sync::Mutex;
 
 use once_cell::sync::OnceCell;
 
 use jni::objects::{AutoLocal, JClass, JObject, JString, JThrowable, JValue};
-use jni::sys::{jboolean, jstring};
+use jni::sys::{jboolean, jlong, jstring};
 use jni::{JNIEnv, JNIVersion, JavaVM, sys};
 
 use tokio::runtime::Runtime;
@@ -26,7 +29,7 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(env: JNIEnv, _c
         tokio::runtime::Builder::new_multi_thread()
             .enable_all()
             .build()
-            .expect("Failed to create Tokio runtime!");
+            .expect("Failed to create Tokio runtime!")
     });
 
     AndroidLogger::init(jvm, log::LevelFilter::Debug).unwrap();

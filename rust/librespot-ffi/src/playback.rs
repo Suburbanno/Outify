@@ -1,0 +1,149 @@
+use crate::{AudioFormat, AndroidSink};
+use jni::objects::{GlobalRef, JObject, JValue};
+use jni::sys::jint;
+use jni::{JNIEnv, JavaVM};
+use once_cell::sync::OnceCell;
+use std::sync::Mutex;
+use log::{warn, error};
+
+static JAVA_VM: OnceCell<JavaVM> = OnceCell::new();
+static PCM_CALLBACK: OnceCell<Mutex<Option<GlobalRef>>> = OnceCell::new();
+
+/// The Rust-side trampoline called by AndroidSink (or other native code).
+extern "C" fn rust_pcm_trampoline(
+    data: *const u8,
+    len: usize,
+    sample_rate: u32,
+    channels: u8,
+    format: AudioFormat,
+) {
+    if data.is_null() || len == 0 {
+        return;
+    }
+
+    // Get the GlobalRef to the Java callback
+    let cb_mutex = match PCM_CALLBACK.get() {
+        Some(m) => m,
+        None => {
+            warn!("PCM callback not registered (PCM_CALLBACK OnceCell empty)");
+            return;
+        }
+    };
+
+    let guard = match cb_mutex.lock() {
+        Ok(g) => g,
+        Err(e) => {
+            warn!("PCM callback mutex poisoned: {e}");
+            return;
+        }
+    };
+
+    let cb_ref = match &*guard {
+        Some(r) => r,
+        None => {
+            warn!("PCM callback is None");
+            return;
+        }
+    };
+
+    // Get the stored JavaVM
+    let jvm = match JAVA_VM.get() {
+        Some(j) => j.clone(),
+        None => {
+            warn!("JAVA_VM not set");
+            return;
+        }
+    };
+
+    // Attach current thread (daemon attach is fine for worker threads)
+    let mut env = match jvm.attach_current_thread_as_daemon() {
+        Ok(e) => e,
+        Err(e) => {
+            warn!("Failed to attach current thread to JVM: {e}");
+            return;
+        }
+    };
+
+    // Build byte slice from raw pointer
+    let slice = unsafe { std::slice::from_raw_parts(data, len) };
+
+    // Create Java byte[] (wrapper) from slice
+    let jbyte_arr = match env.byte_array_from_slice(slice) {
+        Ok(arr) => arr, // type: JByteArray / JPrimitiveArray<'_, i8>
+        Err(e) => {
+            warn!("Failed to create Java byte[]: {e}");
+            return;
+        }
+    };
+
+    // Convert to JObject so we can pass it as JValue::Object(&JObject)
+    let jbuf_obj: JObject = JObject::from(jbyte_arr);
+
+    // Call Java callback method:
+    // void onNativePcm(byte[] data, int sampleRate, int channels, int format)
+    let call_result = env.call_method(
+        cb_ref.as_obj(),
+        "onNativePcm",
+        "([BIII)V",
+        &[
+            JValue::Object(&jbuf_obj),
+            JValue::Int(sample_rate as jint),
+            JValue::Int(channels as jint),
+            JValue::Int(format as i32),
+        ],
+    );
+
+    if let Err(e) = call_result {
+        warn!("Calling Java onNativePcm failed: {e}");
+    }
+
+    // jbuf_obj is a local reference and will be cleaned up automatically
+}
+
+/// JNI registration function — called from Java.
+/// Java side should call: AudioManager.registerPcmCallback(this);
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_registerPcmCallback(
+    env: JNIEnv,
+    _class: JObject,
+    callback: JObject,
+) {
+    // store JavaVM (only first time)
+    match env.get_java_vm() {
+        Ok(jvm) => {
+            let _ = JAVA_VM.set(jvm);
+        }
+        Err(e) => {
+            error!("Failed to get JavaVM in registerPcmCallback: {e}");
+            return;
+        }
+    }
+
+    // Create a GlobalRef for the Java callback object
+    let global_ref = match env.new_global_ref(callback) {
+        Ok(g) => g,
+        Err(e) => {
+            error!("Failed to create GlobalRef for callback: {e}");
+            return;
+        }
+    };
+
+    // Ensure PCM_CALLBACK is initialized, then store the GlobalRef inside the mutex
+    PCM_CALLBACK.get_or_init(|| Mutex::new(None));
+    if let Some(mutex) = PCM_CALLBACK.get() {
+        match mutex.lock() {
+            Ok(mut guard) => {
+                *guard = Some(global_ref);
+            }
+            Err(e) => {
+                error!("Failed to lock PCM_CALLBACK mutex: {e}");
+                return;
+            }
+        }
+    }
+
+    // Register the native trampoline with the playback layer
+    AndroidSink::set_callback(rust_pcm_trampoline);
+    log::info!("Registered PCM callback!");
+}
+
