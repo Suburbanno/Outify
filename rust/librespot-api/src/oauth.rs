@@ -75,6 +75,6 @@ impl OAuthSession {
 
         log::debug!("Refreshed OAuth token!");
 
-        OK(refreshed.refresh_token)
+        Ok(refreshed.refresh_token)
     }
 }
