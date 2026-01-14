@@ -17,6 +17,8 @@ import cc.tomko.outify.TokenStore;
  */
 public class CallbackActivity extends AppCompatActivity {
 
+    public static final String TAG = "CallbackActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,7 +39,6 @@ public class CallbackActivity extends AppCompatActivity {
     }
 		
     void handleOAuthVerify(Uri uri){
-        Log.d(TAG, "Handling OAuth Verify Callback: " + uri.toString());
         String code = uri.getQueryParameter("code");
         String state = uri.getQueryParameter("state");
 

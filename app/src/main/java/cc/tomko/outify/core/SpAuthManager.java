@@ -28,6 +28,13 @@ public class SpAuthManager {
      */
     public native boolean initialize(String client_id, String redirect_uri, String scopes);
 
+    /**
+     * Refreshes the OAuth token with given refresh_token;
+     * @param refresh_token to refresh the token with.
+     * @return new refresh_token
+     */
+    public native String refreshToken(String refresh_token);
+
 	/**
 	 *  Returns the access & refresh token in plain text after completing the OAuth cycle.
 	 */

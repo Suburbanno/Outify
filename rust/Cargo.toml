@@ -1,17 +1,16 @@
 [workspace]
 members = [
-	"librespot-api",
 	"librespot-ffi",
 	"deps/librespot/core",
 	"deps/librespot/protocol",
 	"deps/librespot/metadata",
 	"deps/librespot/oauth",
+	"deps/librespot/playback",
 #	"deps/librespot/connect",
 ]
 resolver = "3"
 
 [workspace.package]
-name = "Outify"
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
