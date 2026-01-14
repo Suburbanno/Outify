@@ -4,11 +4,17 @@ import java.io.StringWriter
 plugins {
     alias(libs.plugins.android.application)
 		id("eclipse")
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
     namespace = "cc.tomko.outify"
     compileSdk = 36
+
+    buildFeatures {
+        compose = true
+    }
 
     defaultConfig {
         applicationId = "cc.tomko.outify"
@@ -27,8 +33,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     packaging {
         resources {
@@ -43,18 +49,33 @@ android {
     }
 }
 
+kotlin {
+    jvmToolchain(17);
+}
+
 dependencies {
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    implementation("com.google.crypto.tink:tink-android:1.7.0")
+    implementation(libs.material)
+    implementation("com.google.crypto.tink:tink-android:1.20.0")
+    implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.activity.compose)
+    implementation(platform(libs.compose.bom))
+    implementation(libs.ui)
+    implementation(libs.ui.graphics)
+    implementation(libs.ui.tooling.preview)
+    implementation(libs.material3)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.ui.test.junit4)
+    debugImplementation(libs.ui.tooling)
+    debugImplementation(libs.ui.test.manifest)
 }
 
-// put this in app/build.gradle.kts (module build file)
 tasks.register("generateEclipseClasspath") {
     group = "ide"
     description = "Generate .classpath with resolved dependency jars for Eclipse/JDTLS (Kotlin DSL)"

@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Outify</string>
+    <string name="title_activity_auth">AuthActivity</string>
+    <string name="title_activity_main">MainActivity</string>
 </resources>
