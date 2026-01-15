@@ -1,6 +1,3 @@
-import groovy.xml.MarkupBuilder
-import java.io.StringWriter
-
 plugins {
     alias(libs.plugins.android.application)
 		id("eclipse")
@@ -50,7 +47,7 @@ android {
 }
 
 kotlin {
-    jvmToolchain(17);
+    jvmToolchain(17)
 }
 
 dependencies {
@@ -59,7 +56,7 @@ dependencies {
     implementation(libs.activity)
     implementation(libs.constraintlayout)
     implementation(libs.material)
-    implementation("com.google.crypto.tink:tink-android:1.20.0")
+    implementation(libs.tink.android)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.activity.compose)
     implementation(platform(libs.compose.bom))
@@ -67,6 +64,7 @@ dependencies {
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
     implementation(libs.material3)
+    implementation(libs.animation.core)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
