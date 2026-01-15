@@ -120,11 +120,16 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
     mut env: JNIEnv,
     _this: JClass,
     access_token: JString,
+    callback: JObject,
 ) {
-    let access_token: String = env
-        .get_string(&access_token)
-        .expect("Failed to get JNI access_token!")
-        .into();
+    let token: String = match env.get_string(&access_token) {
+        Ok(s) => s.into(),
+        Err(e) => {
+            log::error!("Failed to read access token from JNI: {e}");
+            return;
+        }
+    };
+    let callback_ref = env.new_global_ref(callback).unwrap();
 
     if SESSION.get().is_some() {
         log::warn!("Playback Session is already initialized!");
@@ -137,25 +142,68 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
 
     log::info!("Initializing playback session..");
 
-    let credentials = Credentials::with_access_token(access_token);
-    log::info!("Initializing playback session.. 2");
-
     let session_config = SessionConfig::default();
-    log::info!("Initializing playback session.. 3");
     let session = Session::with_handle(session_config, None, rt.handle().clone());
 
     log::info!("Playback session created!");
 
-    let _ = SESSION.set(session);
+    if SESSION.set(session).is_err() {
+        log::warn!("SESSION was concurrently set!");
+        return;
+    }
 
-    log::info!("Playback session connecting..");
+    let jvm = match env.get_java_vm() {
+        Ok(j) => j,
+        Err(e) => {
+            log::error!("Failed to get JavaVM: {e}");
+            return;
+        }
+    };
+
+    let token_move = token.clone();
+    log::info!("Auth token: {}", token_move);
 
     rt.spawn(async move {
         log::info!("Playback session connecting...");
-        let session = SESSION.get().expect("SESSION should be initialized");
-        match session.connect(credentials, false).await {
-            Ok(_) => log::info!("Playback session connected!"),
-            Err(e) => log::error!("Playback session failed to connect: {e}"),
+        let credentials = Credentials::with_access_token(token_move);
+
+        let session_ref = match SESSION.get() {
+            Some(s) => s,
+            None => {
+                log::error!("SESSION disappeared before connect");
+                return;
+            }
+        };
+
+        let result = session_ref.connect(credentials, false).await;
+
+        let mut env = match jvm.attach_current_thread() {
+            Ok(e) => e,
+            Err(e) => {
+                log::error!("Failed to attach JavaVM: {e}");
+                return;
+            }
+        };
+
+        match result {
+            Ok(_) => {
+                log::info!("Playback session connected!");
+                env.call_method(callback_ref.as_obj(), "onConnected", "()V", &[])
+                    .expect("Failed to call 'onConnected'");
+            }
+            Err(e) => {
+                log::error!("Session failed: {:?}", e);
+                let msg = env
+                    .new_string(e.to_string())
+                    .expect("Failed to create error string");
+                env.call_method(
+                    callback_ref.as_obj(),
+                    "onError",
+                    "(Ljava/lang/String;)V",
+                    &[JValue::Object(&msg)],
+                )
+                .expect("Failed to call 'onError'");
+            }
         }
     });
 }

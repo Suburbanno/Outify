@@ -2,6 +2,7 @@ package cc.tomko.outify.ui.screens
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.playback.AudioManager
+import cc.tomko.outify.playback.SessionInitializationCallback
 import cc.tomko.outify.ui.screens.auth.AuthActivity
 import cc.tomko.outify.ui.theme.OutifyTheme
 
@@ -40,9 +42,19 @@ class MainActivity : ComponentActivity() {
         if(authMan.isAuthenticated()){
             // Temp
             val accessToken = OutifyApplication.tokenStore.loadTokens()[0];
-            OutifyApplication.audioManager.initializeSession(accessToken);
-            OutifyApplication.audioManager.initializePlayer();
-            OutifyApplication.audioManager.playTrack("2WUy2Uywcj5cP0IXQagO3z");
+            val callback: SessionInitializationCallback = object : SessionInitializationCallback {
+                override fun onConnected() {
+                    Log.i("MainActivity", "onConnected: Session initialized");
+                    OutifyApplication.audioManager.initializePlayer();
+                    OutifyApplication.audioManager.playTrack("2WUy2Uywcj5cP0IXQagO3z");
+                }
+
+                override fun onError(message: String?) {
+                    Log.e("MainActivity", "onError: Callback failed with: " + message, )
+                }
+            }
+
+            OutifyApplication.audioManager.initializeSession(accessToken, callback);
             return;
         }
         startActivity(Intent(this, AuthActivity::class.java));

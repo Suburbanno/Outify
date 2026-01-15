@@ -12,7 +12,7 @@ public class AudioManager {
      * Initializes and connects the session
      * @param access_token to authorize into users account
      */
-    public native void initializeSession(String access_token);
+    public native void initializeSession(String access_token, SessionInitializationCallback callback);
 
     /**
      * Initializes the player and the AndroidSink
