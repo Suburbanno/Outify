@@ -29,6 +29,10 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(env: JNIEnv, _c
     });
 
     AndroidLogger::init(jvm, log::LevelFilter::Debug).unwrap();
+    unsafe { std::env::set_var("RUST_BACKTRACE", "1"); }
+    std::panic::set_hook(Box::new(|info| {
+        log::error!("panic: {}", info);
+    }));
 }
 
 // LibrespotFfi isConnected

@@ -263,7 +263,14 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_playTrack(
         .get()
         .expect("Tokio runtime is not initialized!");
 
-    rt.block_on(async { player.await_end_of_track().await })
+    let jvm = env.get_java_vm().expect("Failed to get JavaVM");
+
+    rt.spawn(async move {
+        player.await_end_of_track().await;
+        if let Ok(mut env) = jvm.attach_current_thread() {
+            log::info!("Track ended!");
+        }
+    });
 }
 
 /// JNI registration function — called from Java.
