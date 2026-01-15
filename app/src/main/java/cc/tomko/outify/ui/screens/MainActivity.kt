@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.playback.AudioManager
 import cc.tomko.outify.ui.screens.auth.AuthActivity
 import cc.tomko.outify.ui.theme.OutifyTheme
 
@@ -37,6 +38,11 @@ class MainActivity : ComponentActivity() {
     fun handleAuth(){
         val authMan = OutifyApplication.spAuthManager;
         if(authMan.isAuthenticated()){
+            // Temp
+            val accessToken = OutifyApplication.tokenStore.loadTokens()[0];
+            OutifyApplication.audioManager.initializeSession(accessToken);
+            OutifyApplication.audioManager.initializePlayer();
+            OutifyApplication.audioManager.playTrack("2WUy2Uywcj5cP0IXQagO3z");
             return;
         }
         startActivity(Intent(this, AuthActivity::class.java));

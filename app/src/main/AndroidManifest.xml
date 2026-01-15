@@ -32,8 +32,10 @@
             android:label="@string/title_activity_auth"
             android:theme="@style/Theme.Material3Expressive" />
         <activity
-            android:name=".core.CallbackActivity"
-            android:exported="true">
+            android:name=".ui.screens.CallbackActivity"
+            android:exported="true"
+            android:label="@string/title_activity_callback"
+            android:theme="@style/Theme.Material3Expressive" >
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
 
