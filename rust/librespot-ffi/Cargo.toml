@@ -16,7 +16,7 @@ oauth2 = "5.0.0"
 
 librespot-core = { path = "../deps/librespot/core", default-features = false, features = ["rustls-tls-webpki-roots"] }
 librespot-protocol = { path = "../deps/librespot/protocol", default-features = false }
-librespot-metadata = { path = "../deps/librespot/metadata", default-features = false }
+librespot-metadata = { path = "../deps/librespot/metadata", default-features = false , features = ["rustls-tls-webpki-roots"]}
 librespot-oauth = { path = "../deps/librespot/oauth", default-features = false, features = ["rustls-tls-webpki-roots"] }
 librespot-playback = { path = "../deps/librespot/playback", default-features = false, features = ["android-backend"] }
 #librespot-connect = { path = "../deps/librespot/connect" }

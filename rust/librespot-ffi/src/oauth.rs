@@ -1,6 +1,4 @@
 use crate::TOKIO_RUNTIME;
-#[allow(unused_imports)]
-use crate::{logd, loge, logi, logv}; // Exporting logger macros
 
 use jni::{
     JNIEnv,
@@ -14,7 +12,7 @@ static OAUTH_SESSION: OnceCell<Mutex<OAuthSession>> = OnceCell::new();
 
 // Termporary constants
 pub const SPOTIFY_CLIENT_ID: &str = "819a62c83de24821b2654387bc84f136";
-pub const SPOTIFY_REDIRECT_URI: &str = "outify://oauth";
+pub const SPOTIFY_CALLBACK_URI: &str = "outify://oauth";
 pub const SCOPES: &[&str] = &[
     "streaming",
     "user-read-playback-state",
@@ -59,13 +57,13 @@ impl OAuthSession {
             .take()
             .ok_or(Error::internal(format!("Missing Pkce Verifier")))?;
 
-        log::info!(
+        info!(
             "get_access_token: pkce_verifier: {}",
             pkce_verifier.secret()
         );
 
         let auth_code = AuthorizationCode::new(code);
-        log::info!("get_access_token: auth_code: {}", auth_code.secret());
+        info!("get_access_token: auth_code: {}", auth_code.secret());
 
         let token_response = self
             .client
@@ -73,7 +71,7 @@ impl OAuthSession {
             .await
             .map_err(|e| Error::unavailable(format!("Unable to get OAuth token: {e}")))?;
 
-        log::info!("get_access_token: token_response: {:#?}", token_response);
+        info!("get_access_token: token_response: {:#?}", token_response);
         println!("OAuth Token: {:#?}", token_response);
 
         // Refreshing token
@@ -97,7 +95,7 @@ impl OAuthSession {
             .await
             .map_err(|e| Error::unauthenticated(format!("Unable to refresh OAuth token: {e}")))?;
 
-        log::debug!("Refreshed OAuth token!");
+        debug!("Refreshed OAuth token!");
 
         Ok(refreshed.refresh_token)
     }
@@ -113,7 +111,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_initialize(
     _redirect_uri: jstring,
     _scopes: jstring,
 ) -> jboolean {
-    let redirect = format!("{}/verify", SPOTIFY_REDIRECT_URI);
+    let redirect = format!("{}/verify", SPOTIFY_CALLBACK_URI);
 
     let session = OAuthSession::new(SPOTIFY_CLIENT_ID, &redirect, SCOPES).unwrap();
     OAUTH_SESSION.set(Mutex::new(session)).ok();
@@ -161,20 +159,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenPair(
         .get()
         .expect("Tokio runtime is not initialized!");
 
-    log::info!("getAccessToken: code: {}", code);
     let token = match rt.block_on(async {
         let session_mutex = OAUTH_SESSION
             .get()
             .expect("OAuth session is not initialized!");
         let mut session = session_mutex.lock().unwrap();
-        log::info!(
-            "getAccessToken: pkce_verifier: {}",
-            session
-                .pkce_verifier
-                .as_ref()
-                .expect("No PKCE Verifier in session")
-                .secret()
-        );
 
         session.get_access_token(code).await
     }) {
@@ -225,7 +214,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_refreshToken(
     match result {
         Ok(token) => env.new_string(token).unwrap().into_raw(),
         Err(e) => {
-            log::error!("Token refresh failed: {e}");
+            error!("Token refresh failed: {e}");
             env.new_string("").unwrap().into_raw()
         }
     }

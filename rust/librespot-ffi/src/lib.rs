@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate log;
+
 pub mod logger;
 pub use crate::logger::*; // Exporting logger macros
 pub mod oauth;

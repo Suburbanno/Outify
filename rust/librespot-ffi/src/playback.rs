@@ -3,6 +3,7 @@ use crate::TOKIO_RUNTIME;
 use jni::objects::{GlobalRef, JClass, JObject, JString, JValue};
 use jni::sys::jint;
 use jni::{JNIEnv, JavaVM};
+use librespot_core::config::KEYMASTER_CLIENT_ID;
 use librespot_core::authentication::Credentials;
 use librespot_core::{Session, SessionConfig, SpotifyId, SpotifyUri};
 use librespot_playback::{
@@ -142,7 +143,10 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
 
     log::info!("Initializing playback session..");
 
-    let session_config = SessionConfig::default();
+    let session_config = SessionConfig {
+        client_id: KEYMASTER_CLIENT_ID.to_owned(),
+        ..Default::default()
+    };
     let session = Session::with_handle(session_config, None, rt.handle().clone());
 
     log::info!("Playback session created!");
@@ -265,9 +269,11 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_playTrack(
 
     let jvm = env.get_java_vm().expect("Failed to get JavaVM");
 
+    // Cannot use block_on, as this function is currently called back directly from the same blocked
+    // thread due to the callback.
     rt.spawn(async move {
         player.await_end_of_track().await;
-        if let Ok(mut env) = jvm.attach_current_thread() {
+        if let Ok(env) = jvm.attach_current_thread() {
             log::info!("Track ended!");
         }
     });
