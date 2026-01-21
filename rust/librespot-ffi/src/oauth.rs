@@ -11,7 +11,7 @@ use std::sync::Mutex;
 static OAUTH_SESSION: OnceCell<Mutex<OAuthSession>> = OnceCell::new();
 
 // Termporary constants
-pub const SPOTIFY_CLIENT_ID: &str = "819a62c83de24821b2654387bc84f136";
+pub const SPOTIFY_CLIENT_ID: &str = "9a8d2f0ce77a4e248bb71fefcb557637";
 pub const SPOTIFY_CALLBACK_URI: &str = "outify://oauth";
 pub const SCOPES: &[&str] = &[
     "streaming",

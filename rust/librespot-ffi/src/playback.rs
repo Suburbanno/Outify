@@ -1,11 +1,11 @@
 use crate::TOKIO_RUNTIME;
+use crate::oauth::SPOTIFY_CLIENT_ID;
 
 use jni::objects::{GlobalRef, JClass, JObject, JString, JValue};
 use jni::sys::jint;
 use jni::{JNIEnv, JavaVM};
-use librespot_core::config::KEYMASTER_CLIENT_ID;
 use librespot_core::authentication::Credentials;
-use librespot_core::{Session, SessionConfig, SpotifyId, SpotifyUri};
+use librespot_core::{Session, SessionConfig, SpotifyId, SpotifyUri, cache::Cache};
 use librespot_playback::{
     audio_backend::{AndroidSink, Sink},
     config::{AudioFormat, PlayerConfig},
@@ -144,7 +144,7 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
     log::info!("Initializing playback session..");
 
     let session_config = SessionConfig {
-        client_id: KEYMASTER_CLIENT_ID.to_owned(),
+        client_id: SPOTIFY_CLIENT_ID.to_owned(),
         ..Default::default()
     };
     let session = Session::with_handle(session_config, None, rt.handle().clone());
@@ -179,7 +179,7 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
             }
         };
 
-        let result = session_ref.connect(credentials, false).await;
+        let result = session_ref.connect(credentials, true).await;
 
         let mut env = match jvm.attach_current_thread() {
             Ok(e) => e,
@@ -222,7 +222,10 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializePlay
     let audio_format = AudioFormat::S16;
 
     SESSION.get_or_init(|| {
-        let session_config = SessionConfig::default();
+        let session_config = SessionConfig {
+            client_id: SPOTIFY_CLIENT_ID.to_string(),
+            ..Default::default()
+        };
         Session::new(session_config, None) // TODO: Implement cache
     });
 
