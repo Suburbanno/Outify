@@ -5,6 +5,7 @@ pub mod logger;
 pub use crate::logger::*; // Exporting logger macros
 pub mod oauth;
 pub mod session;
+mod profile;
 mod playback;
 
 // Exposing required librespot structs

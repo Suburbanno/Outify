@@ -47,7 +47,7 @@ public class SpAuthManager {
             throw new RuntimeException(e);
         }
 
-        if(true || expiration == null || System.currentTimeMillis() > expiration) {
+        if(expiration == null || System.currentTimeMillis() > expiration) {
             Log.i("SpAuthManager", "Refreshing access token..");
             final TokenResponseDto result = refreshToken(accessToken,oldRefresh);
 

@@ -1,4 +1,4 @@
-use crate::{OUTIFY_CLIENT_ID, TOKIO_RUNTIME};
+use crate::{OUTIFY_CLIENT_ID, ANDROID_CLIENT_ID, TOKIO_RUNTIME};
 use jni::{objects::JClass, sys::JNIEnv};
 use librespot_core::{Session, SessionConfig};
 use once_cell::sync::OnceCell;
@@ -22,7 +22,7 @@ pub fn initialize_session() {
 
     let handle = rt.handle().clone();
     let session_config = SessionConfig {
-        client_id: OUTIFY_CLIENT_ID.to_owned(),
+        client_id: ANDROID_CLIENT_ID.to_owned(),
         ..Default::default()
     };
     let session = Session::with_handle(session_config, None, handle);

@@ -17,6 +17,7 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.SecureStorage
 import cc.tomko.outify.playback.AudioManager
 import cc.tomko.outify.playback.SessionInitializationCallback
+import cc.tomko.outify.profile.UserProfile
 import cc.tomko.outify.ui.screens.auth.AuthActivity
 import cc.tomko.outify.ui.theme.OutifyTheme
 
