@@ -38,17 +38,18 @@ public class SpAuthManager {
 
         // Checking expiration
         Long expiration;
-        String oldRefresh;
+        String oldRefresh, accessToken;
         try {
             expiration = storage.getObject(SecureStorage.Keys.ACCESS_TOKEN_EXPIRATION, Long.class);
             oldRefresh = storage.getString(SecureStorage.Keys.REFRESH_TOKEN);
+            accessToken = storage.getString(SecureStorage.Keys.ACCESS_TOKEN);
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
 
         if(true || expiration == null || System.currentTimeMillis() > expiration) {
             Log.i("SpAuthManager", "Refreshing access token..");
-            final TokenResponseDto result = refreshToken(oldRefresh);
+            final TokenResponseDto result = refreshToken(accessToken,oldRefresh);
 
             // Refresh failed
             if(!result.isSuccess()){
@@ -82,7 +83,7 @@ public class SpAuthManager {
      * @param refresh_token to refresh the token with.
      * @return {@link TokenResponseDto}
      */
-    public native TokenResponseDto refreshToken(String refresh_token);
+    public native TokenResponseDto refreshToken(String access_token, String refresh_token);
 
     /**
     * Retrieves access, refresh token and token expiration.

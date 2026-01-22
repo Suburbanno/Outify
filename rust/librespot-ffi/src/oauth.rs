@@ -1,5 +1,4 @@
 use crate::TOKIO_RUNTIME;
-pub use librespot_core::config::ANDROID_CLIENT_ID;
 
 use jni::{
     JNIEnv,
@@ -11,20 +10,12 @@ use std::sync::Mutex;
 
 static OAUTH_SESSION: OnceCell<Mutex<OAuthSession>> = OnceCell::new();
 
-// Termporary constants
-pub const OUTIFY_CLIENT_ID: &str = "819a62c83de24821b2654387bc84f136"; // Outifys client_id, used for OAuth
-pub const SPOTIFY_CALLBACK_URI: &str = "outify://oauth";
-pub const SCOPES: &[&str] = &[
-    "streaming",
-    "user-read-playback-state",
-    "user-modify-playback-state",
-    "user-read-currently-playing",
-];
-
 use librespot_oauth::{OAuthClient, OAuthClientBuilder, OAuthToken};
 use oauth2::{AuthorizationCode, PkceCodeVerifier, url::Url};
 
 use librespot_core::Error;
+
+use crate::{SPOTIFY_CALLBACK_URI, OUTIFY_CLIENT_ID, SCOPES};
 
 pub struct OAuthSession {
     client: OAuthClient,
