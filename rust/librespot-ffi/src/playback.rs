@@ -1,13 +1,14 @@
 use crate::TOKIO_RUNTIME;
-use crate::oauth::SPOTIFY_CLIENT_ID;
+#[allow(unused_imports)]
+use crate::oauth::{OUTIFY_CLIENT_ID, ANDROID_CLIENT_ID};
 
 use jni::objects::{GlobalRef, JClass, JObject, JString, JValue};
 use jni::sys::jint;
 use jni::{JNIEnv, JavaVM};
 use librespot_core::authentication::Credentials;
-use librespot_core::{Session, SessionConfig, SpotifyId, SpotifyUri, cache::Cache};
+use librespot_core::{Session, SessionConfig, SpotifyId, SpotifyUri};
 use librespot_playback::{
-    audio_backend::{AndroidSink, Sink},
+    audio_backend::{AndroidSink},
     config::{AudioFormat, PlayerConfig},
     mixer::NoOpVolume,
     player::Player,
@@ -144,7 +145,7 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
     log::info!("Initializing playback session..");
 
     let session_config = SessionConfig {
-        client_id: SPOTIFY_CLIENT_ID.to_owned(),
+        client_id: OUTIFY_CLIENT_ID.to_owned(),
         ..Default::default()
     };
     let session = Session::with_handle(session_config, None, rt.handle().clone());
@@ -179,7 +180,7 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
             }
         };
 
-        let result = session_ref.connect(credentials, true).await;
+        let result = session_ref.connect(credentials, false).await;
 
         let mut env = match jvm.attach_current_thread() {
             Ok(e) => e,
@@ -216,24 +217,18 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
 // Make sure to initialize session first!
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializePlayer(
-    env: JNIEnv,
+    _env: JNIEnv,
     _this: JClass,
 ) {
     let audio_format = AudioFormat::S16;
-
-    SESSION.get_or_init(|| {
-        let session_config = SessionConfig {
-            client_id: SPOTIFY_CLIENT_ID.to_string(),
-            ..Default::default()
-        };
-        Session::new(session_config, None) // TODO: Implement cache
-    });
 
     let sink_name = Some("android".to_string());
     let sink = librespot_playback::audio_backend::find(sink_name).unwrap();
 
     PLAYER.get_or_init(|| {
-        let config = PlayerConfig::default();
+        let config = PlayerConfig {
+            ..Default::default()
+        };
         let session = SESSION.get().expect("Failed to retrieve playback Session!");
         Player::new(config, session.clone(), Box::new(NoOpVolume), move || {
             sink(None, audio_format)
@@ -266,20 +261,20 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_playTrack(
 
     log::info!("Playing a track {}", track_id);
 
-    let rt = TOKIO_RUNTIME
+    let _rt = TOKIO_RUNTIME
         .get()
         .expect("Tokio runtime is not initialized!");
 
-    let jvm = env.get_java_vm().expect("Failed to get JavaVM");
+    let _jvm = env.get_java_vm().expect("Failed to get JavaVM");
 
     // Cannot use block_on, as this function is currently called back directly from the same blocked
     // thread due to the callback.
-    rt.spawn(async move {
-        player.await_end_of_track().await;
-        if let Ok(env) = jvm.attach_current_thread() {
-            log::info!("Track ended!");
-        }
-    });
+    //rt.spawn(async move {
+    //    player.await_end_of_track().await;
+    //    if let Ok(env) = jvm.attach_current_thread() {
+    //        log::info!("Track ended!");
+    //    }
+    //});
 }
 
 /// JNI registration function — called from Java.

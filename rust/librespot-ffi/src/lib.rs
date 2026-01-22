@@ -7,6 +7,7 @@ pub mod oauth;
 mod playback;
 
 // Exposing required librespot structs
+use librespot_core::Session;
 pub use librespot_core::authentication::Credentials;
 pub use librespot_playback::audio_backend::android::{AndroidSink, PcmCallback};
 pub use librespot_playback::config::AudioFormat;
@@ -20,6 +21,7 @@ use jni::sys::jboolean;
 use tokio::runtime::Runtime;
 
 static TOKIO_RUNTIME: OnceCell<Runtime> = OnceCell::new();
+static SESSION: OnceCell<Session> = OnceCell::new();
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(env: JNIEnv, _class: JClass) {
@@ -32,7 +34,9 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(env: JNIEnv, _c
     });
 
     AndroidLogger::init(jvm, log::LevelFilter::Debug).unwrap();
-    unsafe { std::env::set_var("RUST_BACKTRACE", "1"); }
+    unsafe {
+        std::env::set_var("RUST_BACKTRACE", "1");
+    }
     std::panic::set_hook(Box::new(|info| {
         log::error!("panic: {}", info);
     }));

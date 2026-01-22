@@ -5,12 +5,11 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.SecureStorage
 import cc.tomko.outify.ui.theme.OutifyTheme
 
 class CallbackActivity : ComponentActivity() {
@@ -45,11 +44,15 @@ class CallbackActivity : ComponentActivity() {
         val state = uri.getQueryParameter("state")
         if (code == null || state == null) return StringArrayResult.Error("Invalid OAuth callback")
 
-        val tokens = OutifyApplication.spAuthManager.getTokenPair(code, state)
-        if (tokens.size != 2) return StringArrayResult.Error("An error occurred")
+        val dto = OutifyApplication.spAuthManager.getTokenData(code, state);
 
+        // Saving auth credentials
         return try {
-            OutifyApplication.tokenStore.saveTokens(tokens[0], tokens[1])
+            val storage = OutifyApplication.secureStorage;
+
+            storage.putString(SecureStorage.Keys.ACCESS_TOKEN, dto.accessToken);
+            storage.putString(SecureStorage.Keys.REFRESH_TOKEN, dto.refreshToken);
+            storage.putObject<Long>(SecureStorage.Keys.ACCESS_TOKEN_EXPIRATION, dto.expiresAt);
             StringArrayResult.Success("Credentials saved!")
         } catch (e: Exception) {
             StringArrayResult.Error("An error occurred")

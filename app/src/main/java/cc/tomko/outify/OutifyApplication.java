@@ -6,10 +6,7 @@ import cc.tomko.outify.playback.AudioManager;
 import com.google.crypto.tink.aead.AeadConfig;
 
 public class OutifyApplication extends Application {
-    /**
-     * Contains the Auth tokens
-     */
-    public static TokenStore tokenStore;
+    public static SecureStorage secureStorage;
 
     public static SpAuthManager spAuthManager;
     public static AudioManager audioManager;
@@ -23,7 +20,7 @@ public class OutifyApplication extends Application {
 
         try {
             AeadConfig.register();
-            tokenStore = new TokenStore(getApplicationContext());
+            secureStorage = new SecureStorage(getApplicationContext());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

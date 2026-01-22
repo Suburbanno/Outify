@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.SecureStorage
 import cc.tomko.outify.playback.AudioManager
 import cc.tomko.outify.playback.SessionInitializationCallback
 import cc.tomko.outify.ui.screens.auth.AuthActivity
@@ -39,25 +40,29 @@ class MainActivity : ComponentActivity() {
 
     fun handleAuth(){
         val authMan = OutifyApplication.spAuthManager;
-        if(authMan.isAuthenticated()){
-            // Temp
-            val accessToken = OutifyApplication.tokenStore.loadTokens()[0];
-            val callback: SessionInitializationCallback = object : SessionInitializationCallback {
-                override fun onConnected() {
-                    Log.i("MainActivity", "onConnected: Session initialized");
-                    OutifyApplication.audioManager.initializePlayer();
-                    OutifyApplication.audioManager.playTrack("2WUy2Uywcj5cP0IXQagO3z");
-                }
 
-                override fun onError(message: String?) {
-                    Log.e("MainActivity", "onError: Callback failed with: " + message, )
-                }
+        if(!authMan.isAuthenticated()){
+            startActivity(Intent(this, AuthActivity::class.java));
+            finish();
+        }
+
+        // Temp
+        val accessToken = OutifyApplication.secureStorage.getString(SecureStorage.Keys.ACCESS_TOKEN);
+        val callback: SessionInitializationCallback = object : SessionInitializationCallback {
+            override fun onConnected() {
+                Log.i("MainActivity", "onConnected: Session initialized");
+                OutifyApplication.audioManager.initializePlayer();
+                OutifyApplication.audioManager.playTrack("2WUy2Uywcj5cP0IXQagO3z");
             }
 
-            OutifyApplication.audioManager.initializeSession(accessToken, callback);
-            return;
+            override fun onError(message: String?) {
+                Log.e("MainActivity", "onError: Callback failed with: " + message, )
+            }
         }
-        startActivity(Intent(this, AuthActivity::class.java));
+
+        OutifyApplication.audioManager.initializeSession(accessToken, callback);
+        Log.i("MainActivity", "handleAuth: " + authMan.accessToken);
+        return;
     }
 }
 

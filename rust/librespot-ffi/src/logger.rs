@@ -1,4 +1,4 @@
-use jni::{JNIEnv, JavaVM};
+use jni::{JavaVM};
 use log::{Level, LevelFilter, Metadata, Record};
 use std::ffi::CString;
 
