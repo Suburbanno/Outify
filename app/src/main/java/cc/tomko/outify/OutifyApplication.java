@@ -31,6 +31,9 @@ public class OutifyApplication extends Application {
         session = new Session();
         session.initializeSession();
 
+        Debug debug = new Debug();
+        debug.debug1();
+
         audioManager = new AudioManager();
 
         // Initializing SpAuthManager

@@ -2,6 +2,7 @@ package cc.tomko.outify.ui.screens
 
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.SecureStorage
+import cc.tomko.outify.playback.SessionInitializationCallback
 import cc.tomko.outify.ui.theme.OutifyTheme
 
 class CallbackActivity : ComponentActivity() {

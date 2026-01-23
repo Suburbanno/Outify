@@ -150,18 +150,9 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
     info!("Auth token: {}", token_move);
 
     rt.spawn(async move {
-        log::debug!("Playback session connecting...");
         let credentials = Credentials::with_access_token(token_move);
 
-        let session_ref = match SESSION.get() {
-            Some(s) => s,
-            None => {
-                error!("Session is not initialized");
-                return;
-            }
-        };
-
-        let result = session_ref.connect(credentials, false).await;
+        let result = crate::session::connect(credentials).await;
 
         let mut env = match jvm.attach_current_thread() {
             Ok(e) => e,
@@ -173,12 +164,10 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
 
         match result {
             Ok(_) => {
-                info!("Playback session connected!");
                 env.call_method(callback_ref.as_obj(), "onConnected", "()V", &[])
                     .expect("Failed to call 'onConnected'");
             }
             Err(e) => {
-                error!("Session failed: {:?}", e);
                 let msg = env
                     .new_string(e.to_string())
                     .expect("Failed to create error string");

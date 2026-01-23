@@ -7,6 +7,7 @@ pub mod oauth;
 pub mod session;
 mod profile;
 mod playback;
+mod debug;
 
 // Exposing required librespot structs
 use librespot_core::Session;
