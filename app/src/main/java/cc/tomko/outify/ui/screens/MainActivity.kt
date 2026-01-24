@@ -42,10 +42,10 @@ class MainActivity : ComponentActivity() {
     fun handleAuth(){
         val authMan = OutifyApplication.spAuthManager;
 
-        if(!authMan.isAuthenticated()){
-            startActivity(Intent(this, AuthActivity::class.java));
-            finish();
-        }
+//        if(!authMan.isAuthenticated()){
+//            startActivity(Intent(this, AuthActivity::class.java));
+//            finish();
+//        }
 
         // Temp
         val accessToken = OutifyApplication.secureStorage.getString(SecureStorage.Keys.ACCESS_TOKEN);
@@ -61,8 +61,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        OutifyApplication.audioManager.initializeSession(accessToken, callback);
-        Log.i("MainActivity", "handleAuth: " + authMan.accessToken);
+        //OutifyApplication.audioManager.initializeSession(accessToken, callback);
+        //Log.i("MainActivity", "handleAuth: " + authMan.accessToken);
         return;
     }
 }

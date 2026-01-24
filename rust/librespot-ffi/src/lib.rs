@@ -1,13 +1,13 @@
 #[macro_use]
 extern crate log;
 
-pub mod logger;
-pub use crate::logger::*; // Exporting logger macros
+pub mod jni_utils;
 pub mod oauth;
 pub mod session;
-mod profile;
-mod playback;
+
 mod debug;
+mod playback;
+mod profile;
 
 // Exposing required librespot structs
 use librespot_core::Session;
@@ -18,12 +18,14 @@ pub use librespot_playback::config::AudioFormat;
 use once_cell::sync::OnceCell;
 
 use jni::JNIEnv;
+use jni::JavaVM;
 use jni::objects::JClass;
-use jni::sys::jboolean;
+use jni::sys::{jboolean, jint};
 
 use tokio::runtime::Runtime;
 
 static TOKIO_RUNTIME: OnceCell<Runtime> = OnceCell::new();
+static JVM: OnceCell<JavaVM> = OnceCell::new();
 
 // Constants
 pub use librespot_core::config::ANDROID_CLIENT_ID;
@@ -36,6 +38,11 @@ pub const SCOPES: &[&str] = &[
     "user-read-currently-playing",
 ];
 
+#[unsafe(no_mangle)]
+pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *mut std::os::raw::c_void) -> jint {
+    let _ = JVM.set(vm);
+    jni::sys::JNI_VERSION_1_6
+}
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(env: JNIEnv, _class: JClass) {
@@ -50,7 +57,7 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(env: JNIEnv, _c
     });
 
     // Initialize logger
-    AndroidLogger::init(jvm, log::LevelFilter::Debug).unwrap();
+    crate::jni_utils::logger::AndroidLogger::init(jvm, log::LevelFilter::Debug).unwrap();
     unsafe {
         std::env::set_var("RUST_BACKTRACE", "1");
     }
