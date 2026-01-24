@@ -9,6 +9,9 @@ mod debug;
 mod playback;
 mod profile;
 
+use std::path::PathBuf;
+use std::sync::atomic::AtomicBool;
+
 // Exposing required librespot structs
 use librespot_core::Session;
 pub use librespot_core::authentication::Credentials;
@@ -19,24 +22,21 @@ use once_cell::sync::OnceCell;
 
 use jni::JNIEnv;
 use jni::JavaVM;
-use jni::objects::JClass;
+use jni::objects::{JClass, JObject};
 use jni::sys::{jboolean, jint};
 
 use tokio::runtime::Runtime;
 
 static TOKIO_RUNTIME: OnceCell<Runtime> = OnceCell::new();
 static JVM: OnceCell<JavaVM> = OnceCell::new();
+static FILES_DIR: OnceCell<PathBuf> = OnceCell::new();
+static CACHE_DIR: OnceCell<PathBuf> = OnceCell::new();
+
+static CONNECTING: AtomicBool = AtomicBool::new(false);
 
 // Constants
 pub use librespot_core::config::ANDROID_CLIENT_ID;
 pub const OUTIFY_CLIENT_ID: &str = "819a62c83de24821b2654387bc84f136"; // Outifys client_id, used for OAuth
-pub const SPOTIFY_CALLBACK_URI: &str = "outify://oauth";
-pub const SCOPES: &[&str] = &[
-    "streaming",
-    "user-read-playback-state",
-    "user-modify-playback-state",
-    "user-read-currently-playing",
-];
 
 #[unsafe(no_mangle)]
 pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *mut std::os::raw::c_void) -> jint {
@@ -45,7 +45,11 @@ pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *mut std::os::raw::c_vo
 }
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(env: JNIEnv, _class: JClass) {
+pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(
+    mut env: JNIEnv,
+    _class: JClass,
+    context: JObject,
+) {
     let jvm = env.get_java_vm().unwrap();
 
     // Setup TOKIO
@@ -64,14 +68,15 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(env: JNIEnv, _c
     std::panic::set_hook(Box::new(|info| {
         log::error!("panic: {}", info);
     }));
-}
 
-// LibrespotFfi isConnected
-// Used for checking, whether the Rust <> JNI connection works
-#[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_isConnected(
-    _env: JNIEnv,
-    _class: JClass,
-) -> jboolean {
-    1
+    // Setting up directory
+    let files_dir = crate::jni_utils::folders::get_android_dir(&mut env, &context, "getFilesDir");
+    let cache_dir = crate::jni_utils::folders::get_android_dir(&mut env, &context, "getCacheDir");
+
+    if FILES_DIR.set(files_dir).is_err() {
+        error!("Failed to set files dir concurrently!");
+    }
+    if CACHE_DIR.set(cache_dir).is_err() {
+        error!("Failed to set cache dir concurrently!");
+    }
 }

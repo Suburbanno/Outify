@@ -1,24 +1,30 @@
-use crate::TOKIO_RUNTIME;
+use crate::{CACHE_DIR, FILES_DIR, TOKIO_RUNTIME};
+use std::path::PathBuf;
 
-use jni::{
-    JNIEnv,
-    objects::{JClass, JObject, JString, JValue},
-    sys::{jboolean, jobject, jstring},
-};
-use once_cell::sync::OnceCell;
-use std::sync::Mutex;
-
-static OAUTH_SESSION: OnceCell<Mutex<OAuthSession>> = OnceCell::new();
-
+use jni::objects::{JObject, JString, JValue};
+use jni::sys::jstring;
+use jni::{JNIEnv, sys::jobject};
+use librespot_core::{Error, Session, authentication::Credentials, cache::Cache};
 use librespot_oauth::{OAuthClient, OAuthClientBuilder, OAuthToken};
 use oauth2::{AuthorizationCode, PkceCodeVerifier, url::Url};
+use once_cell::sync::OnceCell;
+use tokio::sync::Mutex;
 
-use librespot_core::Error;
+pub const SPOTIFY_CALLBACK_URI: &str = "http://127.0.0.1:5588/login";
+pub const SCOPES: &[&str] = &[
+    "streaming",
+    "user-read-playback-state",
+    "user-modify-playback-state",
+    "user-read-currently-playing",
+];
 
-use crate::{SPOTIFY_CALLBACK_URI, OUTIFY_CLIENT_ID, SCOPES};
+static CREDENTIALS: once_cell::sync::Lazy<Mutex<Option<Credentials>>> =
+    once_cell::sync::Lazy::new(|| Mutex::new(None));
+static OAUTH_SESSION: OnceCell<Mutex<OAuthSession>> = OnceCell::new();
 
-pub struct OAuthSession {
+struct OAuthSession {
     client: OAuthClient,
+    session: Session,
     pub pkce_verifier: Option<PkceCodeVerifier>,
     pub auth_url: Url,
 }
@@ -33,14 +39,16 @@ pub struct TokenResponseDto {
 }
 
 impl OAuthSession {
-    pub fn new(client_id: &str, redirect_uri: &str, scopes: &[&str]) -> Result<Self, Error> {
-        let client = OAuthClientBuilder::new(client_id, redirect_uri, scopes.to_vec())
+    pub fn new(session: &Session, redirect_uri: &str, scopes: &[&str]) -> Result<Self, Error> {
+        let client_id = session.client_id();
+        let client = OAuthClientBuilder::new(client_id.as_str(), redirect_uri, scopes.to_vec())
             .build()
             .map_err(|e| Error::internal(format!("Unable to build OAuth client: {e}")))?;
         let (auth_url, pkce_verifier) = client.set_auth_url();
 
         Ok(Self {
             client,
+            session: session.clone(),
             pkce_verifier: Some(pkce_verifier),
             auth_url,
         })
@@ -66,8 +74,6 @@ impl OAuthSession {
             .await
             .map_err(|e| Error::unavailable(format!("Unable to get OAuth token: {e}")))?;
 
-        info!("get_access_token: token_response: {:#?}", token_response);
-
         // Refreshing token
         let refresh_token = token_response.refresh_token.clone();
         let refreshed = self
@@ -75,8 +81,6 @@ impl OAuthSession {
             .refresh_token_async(&refresh_token)
             .await
             .map_err(|e| Error::unknown(format!("Unable to refresh OAuth token: {e}")))?;
-
-        println!("Refreshed OAuth Token: {:#?}", refreshed);
 
         Ok(token_response)
     }
@@ -113,43 +117,54 @@ impl OAuthSession {
     }
 }
 
-// Initializes the OAuth Session.
-// TODO: Make the parameters do the actual work
-#[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_initialize(
-    _env: JNIEnv,
-    _this: JObject,
-    _client_id: jstring,
-    _redirect_uri: jstring,
-    _scopes: jstring,
-) -> jboolean {
-    let redirect = format!("{}/verify", SPOTIFY_CALLBACK_URI);
-
-    let session = OAuthSession::new(OUTIFY_CLIENT_ID, &redirect, SCOPES).unwrap();
-    OAUTH_SESSION.set(Mutex::new(session)).ok();
-    1
-}
-
-/// oAuth Get Auth URL
-/// Retrieves the authorization URL, where the user has to authorize
+// Returns the auth URL for OAuth flow
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAuthorizationURL(
     env: JNIEnv,
     _this: JObject,
 ) -> jstring {
-    let rt = TOKIO_RUNTIME
-        .get()
-        .expect("Tokio runtime is not initialized!");
+    let rt = match TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            warn!("Cannot get auth url as tokio isn't initialized'");
+            return std::ptr::null_mut();
+        }
+    };
 
-    let auth_url = rt.block_on(async {
-        let session_mutex = OAUTH_SESSION
-            .get()
-            .expect("OAuth session is not initialized!");
-        let session = session_mutex.lock().unwrap();
-        session.auth_url().clone()
+    let session = match crate::session::SESSION.get() {
+        Some(s) => s,
+        None => {
+            warn!("Cannot get auth url as Session isn't initialized");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let auth_url_opt: Option<Url> = rt.block_on(async {
+        match setup_oauth_session(session) {
+            Some(mutex) => {
+                // Obtain async lock and clone auth_url
+                let guard = mutex.lock().await;
+                Some(guard.auth_url().clone())
+            }
+            None => None,
+        }
     });
 
-    env.new_string(auth_url.to_string()).unwrap().into_raw()
+    let auth_url = match auth_url_opt {
+        Some(u) => u,
+        None => {
+            warn!("OAuth Session failed to setup!");
+            return std::ptr::null_mut();
+        }
+    };
+
+    match env.new_string(auth_url.to_string()) {
+        Ok(java_str) => java_str.into_raw(),
+        Err(e) => {
+            warn!("Failed to create Java string: {:?}", e);
+            std::ptr::null_mut()
+        }
+    }
 }
 
 // Retrieves access, refresh token and token expiration.
@@ -185,8 +200,10 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenData(
     };
 
     let token = match rt.block_on(async {
-        let mut session = session_mutex.lock().unwrap();
-        session.get_access_token(code).await
+        // lock the async mutex
+        let mut guard = session_mutex.lock().await;
+        // call the async method that needs &mut self
+        guard.get_access_token(code).await
     }) {
         Ok(tok) => tok,
         Err(e) => {
@@ -210,57 +227,77 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenData(
     token_response_dto_as_jobject(env, dto)
 }
 
-// Refreshes the authentication token using refresh token.
-//
-// Returns an object - TokenResponseDto
-#[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_refreshToken(
-    mut env: JNIEnv,
-    _this: JClass,
-    access_token: JString,
-    refresh_token: JString,
-) -> jobject {
-    // helper function for returning java errors
-    let return_error =
-        |env: &mut JNIEnv, msg: String| -> jobject { make_error_token_response_dto(env, msg) };
+// If we already have cached credentials, we will use them, otherwise we will follow OAuth
+pub async fn login() {
+    // Try cached credentials
+    if let Some(cred) = get_cached_credentials() {
+        let mut guard = CREDENTIALS.lock().await;
+        *guard = Some(cred);
+        debug!("Reusing cached credentials");
+        crate::CONNECTING.store(true, std::sync::atomic::Ordering::SeqCst);
+        return;
+    }
 
-    let refresh = match env.get_string(&refresh_token) {
-        Ok(r) => r.into(),
-        Err(e) => {
-            return return_error(
-                &mut env,
-                format!("JNI: get_string failed for refresh_token: {}", e),
-            );
-        }
-    };
+    debug!("Getting credentials from OAuth");
 
-    let rt = match TOKIO_RUNTIME.get() {
-        Some(r) => r,
+    if crate::session::SESSION.get().is_none() {
+        error!("Cannot login using OAuth, because session isn't initialized!");
+        return;
+    }
+
+    let session = crate::session::SESSION.get().unwrap();
+
+    let osession = match setup_oauth_session(&session) {
+        Some(s) => s,
         None => {
-            return return_error(&mut env, format!("Tokio runtime is not initialized!"));
+            warn!("Failed to setup oauth session");
+            return;
         }
     };
 
-    let result = match rt.block_on(async {
-        let session_mutex = OAUTH_SESSION
-            .get()
-            .expect("OAuth session is not initialized!");
-        let mut session = session_mutex.lock().unwrap();
-        session.refresh_token(refresh).await
-    }) {
-        Ok(dto) => token_response_dto_as_jobject(
-            env,
-            TokenResponseDto {
-                access_token: dto.access_token,
-                refresh_token: dto.refresh_token,
-                expires_at: dto.expires_at,
-                error: None,
-            },
-        ),
-        Err(e) => return return_error(&mut env, format!("Refresh token failed with: {}", e)),
+    crate::CONNECTING.store(false, std::sync::atomic::Ordering::SeqCst);
+}
+
+fn setup_oauth_session(session: &Session) -> Option<&'static Mutex<OAuthSession>> {
+    debug!("Setting up OAuthSession");
+    if let Some(existing) = OAUTH_SESSION.get() {
+        debug!("OAuthSession already initialized!");
+        return Some(existing);
+    }
+
+    let osession = match OAuthSession::new(&session, &SPOTIFY_CALLBACK_URI, SCOPES) {
+        Ok(s) => s,
+        Err(e) => {
+            error!("OAuth session setup failed with: {}", e);
+            return None;
+        }
     };
 
-    result
+    if OAUTH_SESSION.set(Mutex::new(osession)).is_err() {
+        warn!("Failed to set OAuth Session concurrently!");
+    }
+
+    OAUTH_SESSION.get()
+}
+
+// Retrieves cached credentials if possible
+fn get_cached_credentials() -> Option<Credentials> {
+    let os_cache_dir: PathBuf = CACHE_DIR
+        .get()
+        .expect("Failed to get Cache Dir!")
+        .to_path_buf();
+    let os_files_dir: PathBuf = FILES_DIR
+        .get()
+        .expect("Failed to get Files Dir!")
+        .to_path_buf();
+    let cache: Cache = Cache::new(
+        Some(&os_files_dir),
+        Some(&os_cache_dir),
+        Some(&os_cache_dir),
+        None,
+    )
+    .unwrap();
+    cache.credentials()
 }
 
 // Converts the TokenResponseDto struct into Java Object

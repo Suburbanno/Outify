@@ -1,10 +1,7 @@
 // Used for testing work in progress features
 use crate::{
-    TOKIO_RUNTIME, complete_future_exception, complete_future_exception_with_global,
-    make_global_exception,
-};
-use crate::{
-    complete_future_exception_with_fn, complete_future_success_with_fn, make_completable_future,
+    TOKIO_RUNTIME, complete_future_exception, complete_future_success_with_fn,
+    make_completable_future,
 };
 use jni::objects::JObject;
 use jni::sys::jobject;

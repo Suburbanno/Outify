@@ -39,16 +39,16 @@ class MainActivity : ComponentActivity() {
         handleAuth();
     }
 
-    fun handleAuth(){
+    fun handleAuth() {
         val authMan = OutifyApplication.spAuthManager;
 
-//        if(!authMan.isAuthenticated()){
-//            startActivity(Intent(this, AuthActivity::class.java));
-//            finish();
-//        }
+        if (!authMan.isAuthenticated()) {
+            startActivity(Intent(this, AuthActivity::class.java));
+            finish();
+        }
 
-        // Temp
-        val accessToken = OutifyApplication.secureStorage.getString(SecureStorage.Keys.ACCESS_TOKEN);
+        val accessToken =
+            OutifyApplication.secureStorage.getString(SecureStorage.Keys.ACCESS_TOKEN);
         val callback: SessionInitializationCallback = object : SessionInitializationCallback {
             override fun onConnected() {
                 Log.i("MainActivity", "onConnected: Session initialized");
@@ -57,13 +57,11 @@ class MainActivity : ComponentActivity() {
             }
 
             override fun onError(message: String?) {
-                Log.e("MainActivity", "onError: Callback failed with: " + message, )
+                Log.e("MainActivity", "onError: Callback failed with: " + message,)
             }
         }
 
-        //OutifyApplication.audioManager.initializeSession(accessToken, callback);
-        //Log.i("MainActivity", "handleAuth: " + authMan.accessToken);
-        return;
+        OutifyApplication.audioManager.initializeSession(accessToken, callback);
     }
 }
 

@@ -1,6 +1,8 @@
-use crate::{ANDROID_CLIENT_ID, OUTIFY_CLIENT_ID, TOKIO_RUNTIME};
+use std::path::PathBuf;
+
+use crate::{ANDROID_CLIENT_ID, CACHE_DIR, FILES_DIR, OUTIFY_CLIENT_ID, TOKIO_RUNTIME};
 use jni::{objects::JClass, sys::JNIEnv};
-use librespot_core::{Session, SessionConfig, authentication::Credentials};
+use librespot_core::{authentication::Credentials, cache::Cache, config::KEYMASTER_CLIENT_ID, Session, SessionConfig};
 use once_cell::sync::OnceCell;
 
 pub static SESSION: OnceCell<Session> = OnceCell::new();
@@ -20,14 +22,23 @@ pub async fn initialize_session() {
         }
     };
 
+    // Geting session cache dir
+    let os_cache_dir: PathBuf = CACHE_DIR.get().expect("Failed to get Cache Dir!").to_path_buf();
+    let os_files_dir: PathBuf = FILES_DIR.get().expect("Failed to get Files Dir!").to_path_buf();
+    let cache: Cache = Cache::new(Some(&os_files_dir), Some(&os_cache_dir), Some(&os_cache_dir), None).unwrap();
+    trace!("Initialized new cache!");
+
+    info!("Os Cache Dir: {}", os_cache_dir.to_str().unwrap());
+    info!("Os Files Dir: {}", os_files_dir.to_str().unwrap());
+
     let handle = rt.handle().clone();
     let session_config = SessionConfig {
-        client_id: ANDROID_CLIENT_ID.to_owned(),
+        client_id: KEYMASTER_CLIENT_ID.to_owned(),
         ..Default::default()
     };
-    let session = Session::with_handle(session_config, None, handle);
+    let session = Session::with_handle(session_config, Some(cache), handle);
     if SESSION.set(session).is_err() {
-        log::warn!("Session was concurrently set!");
+        warn!("Session was concurrently set!");
         return;
     }
 
@@ -36,11 +47,12 @@ pub async fn initialize_session() {
 
 // Connects the already initialized session
 pub async fn connect(credentials: Credentials) -> Result<Session, librespot_core::Error> {
-    let session = SESSION.get()
-        .ok_or_else(|| {
-            warn!("Attempted to connect session, but session isn't initialized!'");
-            librespot_core::Error::internal(format!("Attempted to connect session, but session isn't initialized!'"))
-        })?;
+    let session = SESSION.get().ok_or_else(|| {
+        warn!("Attempted to connect session, but session isn't initialized!'");
+        librespot_core::Error::internal(format!(
+            "Attempted to connect session, but session isn't initialized!'"
+        ))
+    })?;
 
     session.connect(credentials, false).await.map_err(|e| {
         error!("Session failed to connect: {e}");
