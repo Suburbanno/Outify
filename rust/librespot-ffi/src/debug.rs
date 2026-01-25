@@ -23,15 +23,51 @@ use librespot_playback::{
     player::Player,
 };
 
-async fn create_basic_spirc(access_token: String) -> Result<(), Error> {
-    let credentials = Credentials::with_access_token(access_token);
-    let session = Session::new(SessionConfig::default(), None);
+async fn create_spirc() -> Result<(), Error> {
+    let player_config = PlayerConfig::default();
+    let audio_format = AudioFormat::default();
+    let connect_config = ConnectConfig::default();
+    let mixer_config = MixerConfig::default();
+    let request_options = librespot_connect::LoadRequestOptions::default();
 
-    let backend = audio_backend::find(None).expect("will default to rodio");
+    let sink_builder = audio_backend::find(None).unwrap();
+    let mixer_builder = mixer::find(None).unwrap();
+
+    let session = crate::session::SESSION.get().unwrap();
+    let credentials = session.cache().unwrap().credentials().unwrap();
+    let mixer = mixer_builder(mixer_config)?;
+
+    let player = Player::new(
+        player_config,
+        session.clone(),
+        mixer.get_soft_volume(),
+        move || sink_builder(None, audio_format),
+    );
+
+    let (spirc, spirc_task) =
+        Spirc::new(connect_config, session.clone(), credentials.clone(), player, mixer).await?;
+
+    // these calls can be seen as "queued"
+    spirc.activate()?;
+    spirc.load(librespot_connect::LoadRequest::from_context_uri(
+        "spotify:track:3qhlB30KknSejmIvZZLjOD".to_string(),
+        request_options,
+    ))?;
+    spirc.play()?;
+
+    // starting the connect device and processing the previously "queued" calls
+    spirc_task.await;
+
+    Ok(())
+}
+
+async fn create_basic_spirc() -> Result<(), Error> {
+    let session = crate::session::connect().await.unwrap();
+    let backend = audio_backend::find(None).expect("will default to android");
 
     let player = Player::new(
         PlayerConfig::default(),
-        session.clone(),
+        session.clone(), // clone for the player
         Box::new(NoOpVolume),
         move || {
             let format = AudioFormat::default();
@@ -44,10 +80,14 @@ async fn create_basic_spirc(access_token: String) -> Result<(), Error> {
 
     info!("New spirc!");
 
+    // IMPORTANT: pull credentials out *before* moving `session` into Spirc::new
+    let credentials = session.cache().unwrap().credentials().unwrap();
+
+    // Pass a clone of session into Spirc::new so `session` itself remains available
     let (spirc, spirc_task): (Spirc, _) = Spirc::new(
         ConnectConfig::default(),
-        session,
-        credentials,
+        session.clone(), // consume a clone
+        credentials,     // already extracted above
         player,
         mixer(MixerConfig::default())?,
     )
@@ -57,11 +97,7 @@ async fn create_basic_spirc(access_token: String) -> Result<(), Error> {
 }
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_Debug_debug1(
-    mut env: JNIEnv,
-    _this: JClass,
-    jaccess: JString,
-) {
+pub extern "system" fn Java_cc_tomko_outify_Debug_debug1(mut env: JNIEnv, _this: JClass) {
     let rt = match TOKIO_RUNTIME.get() {
         Some(r) => r,
         None => {
@@ -70,17 +106,11 @@ pub extern "system" fn Java_cc_tomko_outify_Debug_debug1(
         }
     };
 
-    let token: String = match env.get_string(&jaccess) {
-        Ok(s) => s.into(),
-        Err(e) => {
-            error!("Failed to read access token from JNI: {e}");
-            return;
+    rt.spawn(async {
+        if let Err(e) = create_spirc().await {
+            log::error!("create_basic_spirc failed: {:?}", e);
         }
-    };
-
-    let token_move = token.clone();
-
-    rt.block_on(async { create_basic_spirc(token_move).await });
+    });
 }
 
 #[unsafe(no_mangle)]

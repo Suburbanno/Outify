@@ -6,6 +6,8 @@ import android.util.Log;
 import cc.tomko.outify.core.Session;
 import cc.tomko.outify.core.SpAuthManager;
 import cc.tomko.outify.playback.AudioManager;
+import cc.tomko.outify.playback.AudioPlayer;
+
 import com.google.crypto.tink.aead.AeadConfig;
 
 import java.security.GeneralSecurityException;
@@ -15,6 +17,7 @@ public class OutifyApplication extends Application {
 
     public static SpAuthManager spAuthManager;
     public static AudioManager audioManager;
+    public static AudioPlayer audioPlayer;
     public static Session session;
 
     @Override
@@ -30,6 +33,8 @@ public class OutifyApplication extends Application {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+
+        audioPlayer = new AudioPlayer();
 
         session = new Session();
         session.initializeSession();

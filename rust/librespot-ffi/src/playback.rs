@@ -121,17 +121,17 @@ extern "C" fn rust_pcm_trampoline(
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSession(
     mut env: JNIEnv,
-    _this: JClass,
-    access_token: JString,
+    _this: JObject,
     callback: JObject,
 ) {
-    let token: String = match env.get_string(&access_token) {
-        Ok(s) => s.into(),
-        Err(e) => {
-            error!("Failed to read access token from JNI: {e}");
-            return;
+    let session = match SESSION.get() {
+        Some(s) => s,
+        None => {
+           warn!("Cannot initialize audio, as session is None");
+           return;
         }
     };
+
     let callback_ref = env.new_global_ref(callback).unwrap();
 
     let rt = TOKIO_RUNTIME
@@ -146,13 +146,8 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
         }
     };
 
-    let token_move = token.clone();
-    info!("Auth token: {}", token_move);
-
     rt.spawn(async move {
-        let credentials = Credentials::with_access_token(token_move);
-
-        let result = crate::session::connect(credentials).await;
+        let result = crate::session::connect().await;
 
         let mut env = match jvm.attach_current_thread() {
             Ok(e) => e,

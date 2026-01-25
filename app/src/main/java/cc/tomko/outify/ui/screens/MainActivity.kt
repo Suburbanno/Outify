@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import cc.tomko.outify.Debug
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.SecureStorage
 import cc.tomko.outify.playback.AudioManager
@@ -47,13 +48,11 @@ class MainActivity : ComponentActivity() {
             finish();
         }
 
-        val accessToken =
-            OutifyApplication.secureStorage.getString(SecureStorage.Keys.ACCESS_TOKEN);
         val callback: SessionInitializationCallback = object : SessionInitializationCallback {
             override fun onConnected() {
                 Log.i("MainActivity", "onConnected: Session initialized");
                 OutifyApplication.audioManager.initializePlayer();
-                OutifyApplication.audioManager.playTrack("2WUy2Uywcj5cP0IXQagO3z");
+//                OutifyApplication.audioManager.playTrack("2WUy2Uywcj5cP0IXQagO3z");
             }
 
             override fun onError(message: String?) {
@@ -61,7 +60,9 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        OutifyApplication.audioManager.initializeSession(accessToken, callback);
+//        OutifyApplication.audioManager.initializeSession(callback);
+        val debug = Debug();
+        debug.debug1();
     }
 }
 

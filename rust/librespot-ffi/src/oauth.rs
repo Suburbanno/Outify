@@ -18,8 +18,7 @@ pub const SCOPES: &[&str] = &[
     "user-read-currently-playing",
 ];
 
-static CREDENTIALS: once_cell::sync::Lazy<Mutex<Option<Credentials>>> =
-    once_cell::sync::Lazy::new(|| Mutex::new(None));
+static CREDENTIALS: OnceCell<std::sync::Mutex<Option<Credentials>>> = OnceCell::new();
 static OAUTH_SESSION: OnceCell<Mutex<OAuthSession>> = OnceCell::new();
 
 struct OAuthSession {
@@ -64,7 +63,7 @@ impl OAuthSession {
         let pkce_verifier = self
             .pkce_verifier
             .take()
-            .ok_or(Error::internal(format!("Missing Pkce Verifier")))?;
+            .ok_or_else(|| Error::internal("Missing Pkce Verifier".to_string()))?;
 
         let auth_code = AuthorizationCode::new(code);
 
@@ -74,9 +73,9 @@ impl OAuthSession {
             .await
             .map_err(|e| Error::unavailable(format!("Unable to get OAuth token: {e}")))?;
 
-        // Refreshing token
+        // Refreshing token to provide consistent TokenResponse that contains refresh token
         let refresh_token = token_response.refresh_token.clone();
-        let refreshed = self
+        let _refreshed = self
             .client
             .refresh_token_async(&refresh_token)
             .await
@@ -115,6 +114,18 @@ impl OAuthSession {
             error: None,
         })
     }
+}
+
+// Helper: ensure the Credentials mutex is initialized
+fn credentials_mutex() -> &'static std::sync::Mutex<Option<Credentials>> {
+    CREDENTIALS.get_or_init(|| std::sync::Mutex::new(None))
+}
+
+fn oauth_session_cell() -> &'static Mutex<OAuthSession> {
+    OAUTH_SESSION.get_or_init(|| {
+        // note: we intentionally create an empty placeholder. The real session is set up later in `setup_oauth_session`.
+        Mutex::new(unsafe { std::mem::MaybeUninit::zeroed().assume_init() })
+    })
 }
 
 // Returns the auth URL for OAuth flow
@@ -170,7 +181,6 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getAuthorizationU
 // Retrieves access, refresh token and token expiration.
 //
 // Returns as an object - TokenResponseDto
-// TODO: Implement state for CSRF
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenData(
     mut env: JNIEnv,
@@ -179,9 +189,9 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenData(
     _state: JString,
 ) -> jobject {
     // helper function for returning java errors
-    let return_error =
-        |env: &mut JNIEnv, msg: String| -> jobject { make_error_token_response_dto(env, msg) };
+    let return_error = |env: &mut JNIEnv, msg: String| -> jobject { make_error_token_response_dto(env, msg) };
 
+    // Carefully extract the code string once so we don't hold JNI references across await points.
     let code: String = match env.get_string(&code) {
         Ok(js) => js.into(),
         Err(e) => return return_error(&mut env, format!("JNI: failed to read code: {}", e)),
@@ -194,33 +204,52 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenData(
 
     let session_mutex = match OAUTH_SESSION.get() {
         Some(m) => m,
-        None => {
-            return return_error(&mut env, "OAuth session is not initialized!".to_string());
-        }
+        None => return return_error(&mut env, "OAuth session is not initialized!".to_string()),
     };
 
     let token = match rt.block_on(async {
-        // lock the async mutex
         let mut guard = session_mutex.lock().await;
-        // call the async method that needs &mut self
         guard.get_access_token(code).await
     }) {
         Ok(tok) => tok,
-        Err(e) => {
-            return return_error(&mut env, format!("OAuth error: {}", e));
-        }
+        Err(e) => return return_error(&mut env, format!("OAuth error: {}", e)),
     };
 
-    // Converting instant into remaining nano seconds till JWT token expires
-    let expiraton: i64 = token
+    // Saving credentials if session cache exists
+    if let Err(e) = rt.block_on(async {
+        let guard = session_mutex.lock().await;
+
+        if let Some(cache) = guard.session.cache() {
+            let cred = Credentials::with_access_token(&token.access_token);
+            cache.save_credentials(&cred);
+            // Update global cached credentials safely
+            let mut guard = credentials_mutex().lock().unwrap();
+            *guard = Some(cred);
+        } else {
+            warn!("Session has no cache, cannot persist credentials");
+        }
+
+        Ok::<(), ()>(())
+    }) {
+        warn!("Could not save credentials to cache: {:?}", e);
+    }
+
+    // Convert instant into remaining nano seconds till JWT token expires (saturating)
+    let expiration = token
         .expires_at
         .saturating_duration_since(std::time::Instant::now())
-        .as_nanos() as i64;
+        .as_nanos();
+
+    let expiration_i64 = if expiration > i64::MAX as u128 {
+        i64::MAX
+    } else {
+        expiration as i64
+    };
 
     let dto = TokenResponseDto {
         access_token: token.access_token,
         refresh_token: token.refresh_token,
-        expires_at: expiraton,
+        expires_at: expiration_i64,
         error: None,
     };
 
@@ -229,32 +258,34 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpAuthManager_getTokenData(
 
 // If we already have cached credentials, we will use them, otherwise we will follow OAuth
 pub async fn login() {
-    // Try cached credentials
-    if let Some(cred) = get_cached_credentials() {
-        let mut guard = CREDENTIALS.lock().await;
-        *guard = Some(cred);
-        debug!("Reusing cached credentials");
-        crate::CONNECTING.store(true, std::sync::atomic::Ordering::SeqCst);
-        return;
-    }
-
-    debug!("Getting credentials from OAuth");
-
-    if crate::session::SESSION.get().is_none() {
-        error!("Cannot login using OAuth, because session isn't initialized!");
-        return;
-    }
-
-    let session = crate::session::SESSION.get().unwrap();
+    let session = match crate::session::SESSION.get() {
+        Some(s) => s,
+        None => {
+            error!("Cannot login using OAuth, because session isn't initialized!");
+            return;
+        }
+    };
 
     let osession = match setup_oauth_session(&session) {
-        Some(s) => s,
+        Some(s) => s.lock().await,
         None => {
             warn!("Failed to setup oauth session");
             return;
         }
     };
 
+    // Try cached credentials
+    if let Some(cache) = osession.session.cache() {
+        if let Some(cred) = cache.credentials() {
+            *credentials_mutex().lock().unwrap() = Some(cred);
+
+            debug!("Reusing cached credentials");
+            crate::CONNECTING.store(true, std::sync::atomic::Ordering::SeqCst);
+            return;
+        }
+    }
+
+    debug!("Getting credentials from OAuth");
     crate::CONNECTING.store(false, std::sync::atomic::Ordering::SeqCst);
 }
 
@@ -280,84 +311,47 @@ fn setup_oauth_session(session: &Session) -> Option<&'static Mutex<OAuthSession>
     OAUTH_SESSION.get()
 }
 
-// Retrieves cached credentials if possible
-fn get_cached_credentials() -> Option<Credentials> {
-    let os_cache_dir: PathBuf = CACHE_DIR
-        .get()
-        .expect("Failed to get Cache Dir!")
-        .to_path_buf();
-    let os_files_dir: PathBuf = FILES_DIR
-        .get()
-        .expect("Failed to get Files Dir!")
-        .to_path_buf();
-    let cache: Cache = Cache::new(
-        Some(&os_files_dir),
-        Some(&os_cache_dir),
-        Some(&os_cache_dir),
-        None,
-    )
-    .unwrap();
-    cache.credentials()
-}
-
 // Converts the TokenResponseDto struct into Java Object
 fn token_response_dto_as_jobject(mut env: JNIEnv, dto: TokenResponseDto) -> jobject {
     // helper function for returning java errors
-    let return_error =
-        |env: &mut JNIEnv, msg: String| -> jobject { make_error_token_response_dto(env, msg) };
+    let return_error = |env: &mut JNIEnv, msg: String| -> jobject { make_error_token_response_dto(env, msg) };
 
     // Encapsulating as TokenResponseDto
     let class = match env.find_class("cc/tomko/outify/core/auth/TokenResponseDto") {
         Ok(c) => c,
-        Err(e) => {
-            return return_error(
-                &mut env,
-                format!("JNI: find_class failed for TokenResponseDto: {}", e),
-            );
-        }
+        Err(e) => return return_error(&mut env, format!("JNI: find_class failed for TokenResponseDto: {}", e)),
     };
 
-    let jaccess = match env.new_string(dto.access_token) {
-        Ok(a) => a.into(),
-        Err(e) => {
-            return return_error(&mut env, format!("JNI: new_string failed: {}", e));
-        }
+    let jaccess_obj = match env.new_string(dto.access_token) {
+        Ok(s) => s.into(),
+        Err(e) => return return_error(&mut env, format!("JNI: new_string failed: {}", e)),
     };
 
-    let jrefresh = match env.new_string(dto.refresh_token) {
-        Ok(a) => a.into(),
-        Err(e) => {
-            return return_error(&mut env, format!("JNI: new_string failed: {}", e));
-        }
+    let jrefresh_obj = match env.new_string(dto.refresh_token) {
+        Ok(s) => s.into(),
+        Err(e) => return return_error(&mut env, format!("JNI: new_string failed: {}", e)),
     };
 
-    let jerror: JObject = if let Some(err) = dto.error {
-        match env.new_string(err) {
+    let jerror_obj: JObject = match dto.error {
+        Some(err) => match env.new_string(err) {
             Ok(s) => s.into(),
-            Err(e) => {
-                return return_error(&mut env, format!("JNI: new_string failed: {}", e));
-            }
-        }
-    } else {
-        JObject::null()
+            Err(e) => return return_error(&mut env, format!("JNI: new_string failed: {}", e)),
+        },
+        None => JObject::null(),
     };
 
-    let values = &[
-        JValue::Object(&jaccess),
-        JValue::Object(&jrefresh),
+    let values = [
+        JValue::Object(&jaccess_obj),
+        JValue::Object(&jrefresh_obj),
         JValue::Long(dto.expires_at),
-        JValue::Object(&jerror),
+        JValue::Object(&jerror_obj),
     ];
 
     let ctor_sig = "(Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)V";
-    let obj = match env.new_object(class, ctor_sig, values) {
-        Ok(o) => o,
-        Err(e) => {
-            return return_error(&mut env, format!("JNI: new_object failed: {}", e));
-        }
-    };
-
-    obj.into_raw()
+    match env.new_object(class, ctor_sig, &values) {
+        Ok(o) => o.into_raw(),
+        Err(e) => return_error(&mut env, format!("JNI: new_object failed: {}", e)),
+    }
 }
 
 fn make_error_token_response_dto(env: &mut JNIEnv, error: String) -> jobject {
@@ -389,3 +383,4 @@ fn make_error_token_response_dto(env: &mut JNIEnv, error: String) -> jobject {
     .unwrap_or_else(|_| JObject::null())
     .into_raw()
 }
+

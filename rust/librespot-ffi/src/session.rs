@@ -1,8 +1,10 @@
 use std::path::PathBuf;
 
-use crate::{ANDROID_CLIENT_ID, CACHE_DIR, FILES_DIR, OUTIFY_CLIENT_ID, TOKIO_RUNTIME};
+use crate::{CACHE_DIR, FILES_DIR, TOKIO_RUNTIME};
 use jni::{objects::JClass, sys::JNIEnv};
-use librespot_core::{authentication::Credentials, cache::Cache, config::KEYMASTER_CLIENT_ID, Session, SessionConfig};
+use librespot_core::{
+    Session, SessionConfig, cache::Cache, config::KEYMASTER_CLIENT_ID,
+};
 use once_cell::sync::OnceCell;
 
 pub static SESSION: OnceCell<Session> = OnceCell::new();
@@ -23,9 +25,21 @@ pub async fn initialize_session() {
     };
 
     // Geting session cache dir
-    let os_cache_dir: PathBuf = CACHE_DIR.get().expect("Failed to get Cache Dir!").to_path_buf();
-    let os_files_dir: PathBuf = FILES_DIR.get().expect("Failed to get Files Dir!").to_path_buf();
-    let cache: Cache = Cache::new(Some(&os_files_dir), Some(&os_cache_dir), Some(&os_cache_dir), None).unwrap();
+    let os_cache_dir: PathBuf = CACHE_DIR
+        .get()
+        .expect("Failed to get Cache Dir!")
+        .to_path_buf();
+    let os_files_dir: PathBuf = FILES_DIR
+        .get()
+        .expect("Failed to get Files Dir!")
+        .to_path_buf();
+    let cache: Cache = Cache::new(
+        Some(&os_files_dir),
+        Some(&os_cache_dir),
+        Some(&os_cache_dir),
+        None,
+    )
+    .unwrap();
     trace!("Initialized new cache!");
 
     info!("Os Cache Dir: {}", os_cache_dir.to_str().unwrap());
@@ -46,13 +60,21 @@ pub async fn initialize_session() {
 }
 
 // Connects the already initialized session
-pub async fn connect(credentials: Credentials) -> Result<Session, librespot_core::Error> {
+pub async fn connect() -> Result<Session, librespot_core::Error> {
     let session = SESSION.get().ok_or_else(|| {
         warn!("Attempted to connect session, but session isn't initialized!'");
         librespot_core::Error::internal(format!(
             "Attempted to connect session, but session isn't initialized!'"
         ))
     })?;
+
+    let credentials = session
+        .cache()
+        .and_then(|cache| cache.credentials())
+        .ok_or_else(|| {
+            warn!("No cached credentials available for session");
+            librespot_core::Error::unauthenticated("No cached credentials available".to_string())
+        })?;
 
     session.connect(credentials, false).await.map_err(|e| {
         error!("Session failed to connect: {e}");
