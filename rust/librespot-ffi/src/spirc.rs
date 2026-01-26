@@ -1,15 +1,17 @@
+use std::sync::Arc;
+
 use librespot_connect::{ConnectConfig, LoadRequest, Spirc};
-use librespot_core::{Session, authentication::Credentials};
+use librespot_core::{Session, SpotifyUri, authentication::Credentials, spclient::TransferRequest};
 use librespot_playback::{
     config::{AudioFormat, PlayerConfig},
     mixer::{self, Mixer, MixerConfig},
     player::Player,
 };
-use tokio::task::JoinHandle;
+use tokio::{sync::Mutex, task::JoinHandle};
 
 pub struct SpircRuntime {
-    spirc: Spirc,
-    task: JoinHandle<()>,
+    spirc: Arc<Spirc>,
+    task: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl SpircRuntime {
@@ -50,29 +52,44 @@ impl SpircRuntime {
 
         let task = tokio::spawn(spirc_future);
 
-        Ok(Self { spirc, task })
+        Ok(Self {
+            spirc: Arc::new(spirc),
+            task: Mutex::new(Some(task)),
+        })
     }
 
-    pub async fn play(self) -> Result<(), librespot_core::Error>{
+    pub fn play(&self) -> Result<(), librespot_core::Error> {
         self.spirc.play()
     }
 
-    pub async fn play_pause(self) -> Result<(), librespot_core::Error>{
+    pub fn play_pause(&self) -> Result<(), librespot_core::Error> {
         self.spirc.play_pause()
     }
 
-    pub async fn pause(self) -> Result<(), librespot_core::Error>{
+    pub fn pause(&self) -> Result<(), librespot_core::Error> {
         self.spirc.pause()
     }
 
-    pub async fn load(self, req: LoadRequest) -> Result<(), librespot_core::Error>{
+    pub fn load(&self, req: LoadRequest) -> Result<(), librespot_core::Error> {
         self.spirc.load(req)
     }
 
-    // This function keeps the SpircTask running.
-    // Returns only when SpircTask exits
-    pub async fn run_indefinitely(self) -> Result<(), Box<dyn std::error::Error>> {
-        self.task.await?;
-        Err("Spirc task exited unexpectedly".into())
+    pub fn add_to_queue(&self, uri: SpotifyUri) -> Result<(), librespot_core::error::Error> {
+        self.spirc.add_to_queue(uri)
+    }
+
+    pub fn activate(&self) -> Result<(), librespot_core::Error> {
+        self.spirc.activate()
+    }
+
+    pub fn transfer(&self) -> Result<(), librespot_core::Error> {
+        // TODO: Make configurable from Java?
+        let options = librespot_core::dealer::protocol::TransferOptions {
+            ..Default::default()
+        };
+        let request = TransferRequest {
+            transfer_options: options,
+        };
+        self.spirc.transfer(Some(request))
     }
 }

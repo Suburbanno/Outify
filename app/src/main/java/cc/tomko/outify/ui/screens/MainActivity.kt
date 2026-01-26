@@ -16,6 +16,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import cc.tomko.outify.Debug
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.SecureStorage
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.playback.AudioManager
 import cc.tomko.outify.playback.SessionInitializationCallback
 import cc.tomko.outify.profile.UserProfile
@@ -37,32 +38,38 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        handleAuth();
+        if(!handleAuth()){
+            return;
+        }
+
+        startServices()
     }
 
-    fun handleAuth() {
+    // Checks for existing credentials and redirects to the login page if needed
+    fun handleAuth(): Boolean {
         val authMan = OutifyApplication.spAuthManager;
 
-        if (!authMan.isAuthenticated()) {
+        if (!authMan.hasCachedCredentials()) {
             startActivity(Intent(this, AuthActivity::class.java));
             finish();
+            return false;
         }
+        return true;
+    }
 
-        val callback: SessionInitializationCallback = object : SessionInitializationCallback {
-            override fun onConnected() {
-                Log.i("MainActivity", "onConnected: Session initialized");
-                OutifyApplication.audioManager.initializePlayer();
-//                OutifyApplication.audioManager.playTrack("2WUy2Uywcj5cP0IXQagO3z");
-            }
-
-            override fun onError(message: String?) {
-                Log.e("MainActivity", "onError: Callback failed with: " + message,)
-            }
+    // Starts the required services
+    fun startServices() {
+        // Starting Spirc
+        val spirc = Spirc()
+        if(!spirc.initializeSpirc()){
+            // How do we handle this?
+            return;
         }
+        // Spirc activation and transfer is handled in initializeSpirc -> callback to onSpircInitialize
 
-//        OutifyApplication.audioManager.initializeSession(callback);
-        val debug = Debug();
-        debug.debug1();
+        spirc.load("spotify:track:1BDRKVuooLvqayamtAEV4z")
+
+        OutifyApplication.spirc = spirc
     }
 }
 

@@ -2,6 +2,7 @@
 extern crate log;
 
 pub mod jni_utils;
+pub mod jni_impl;
 pub mod oauth;
 pub mod session;
 
@@ -9,7 +10,6 @@ mod debug;
 mod playback;
 mod profile;
 mod spirc;
-mod jni_impl;
 
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;

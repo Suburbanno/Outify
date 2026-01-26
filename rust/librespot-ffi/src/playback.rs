@@ -69,7 +69,7 @@ extern "C" fn rust_pcm_trampoline(
         }
     };
 
-    // Attach current thread (daemon 
+    // Attach current thread (daemon
     let mut env = match jvm.attach_current_thread_as_daemon() {
         Ok(e) => e,
         Err(e) => {

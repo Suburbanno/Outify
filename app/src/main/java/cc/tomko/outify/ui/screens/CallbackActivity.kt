@@ -46,19 +46,13 @@ class CallbackActivity : ComponentActivity() {
         val state = uri.getQueryParameter("state")
         if (code == null || state == null) return StringArrayResult.Error("Invalid OAuth callback")
 
-        val dto = OutifyApplication.spAuthManager.getTokenData(code, state);
-
-        // Saving auth credentials
-        return try {
-            val storage = OutifyApplication.secureStorage;
-
-            storage.putString(SecureStorage.Keys.ACCESS_TOKEN, dto.accessToken);
-            storage.putString(SecureStorage.Keys.REFRESH_TOKEN, dto.refreshToken);
-            storage.putObject<Long>(SecureStorage.Keys.ACCESS_TOKEN_EXPIRATION, dto.expiresAt);
-            StringArrayResult.Success("Credentials saved!")
-        } catch (e: Exception) {
-            StringArrayResult.Error("An error occurred")
+        val codeSuccess = OutifyApplication.spAuthManager.handleOAuthCode(code, state);
+        // TODO: Handle more appropriately
+        if (codeSuccess) {
+            return StringArrayResult.Success("Credentials saved!")
         }
+
+        return StringArrayResult.Error("An error occurred")
     }
 }
 
