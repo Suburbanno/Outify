@@ -23,6 +23,12 @@ public class SpAuthManager {
     }
 
     /**
+     * Checks for cached credentials.
+     * Performs raw filesystem check
+     */
+    public native boolean hasCachedCredentials();
+
+    /**
      * Gets the access token, if possible.
      * If access token is expired, automatically refreshes it, and stores the new refresh token.
      * @return access token if possible

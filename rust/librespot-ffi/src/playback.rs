@@ -1,7 +1,4 @@
 use crate::TOKIO_RUNTIME;
-#[allow(unused_imports)]
-use crate::{ANDROID_CLIENT_ID, OUTIFY_CLIENT_ID};
-
 use jni::objects::{GlobalRef, JClass, JObject, JString, JValue};
 use jni::sys::jint;
 use jni::{JNIEnv, JavaVM};
@@ -72,7 +69,7 @@ extern "C" fn rust_pcm_trampoline(
         }
     };
 
-    // Attach current thread (daemon attach is fine for worker threads)
+    // Attach current thread (daemon 
     let mut env = match jvm.attach_current_thread_as_daemon() {
         Ok(e) => e,
         Err(e) => {
@@ -127,8 +124,8 @@ pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_initializeSess
     let session = match SESSION.get() {
         Some(s) => s,
         None => {
-           warn!("Cannot initialize audio, as session is None");
-           return;
+            warn!("Cannot initialize audio, as session is None");
+            return;
         }
     };
 

@@ -8,6 +8,8 @@ pub mod session;
 mod debug;
 mod playback;
 mod profile;
+mod spirc;
+mod jni_impl;
 
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
@@ -33,10 +35,6 @@ static FILES_DIR: OnceCell<PathBuf> = OnceCell::new();
 static CACHE_DIR: OnceCell<PathBuf> = OnceCell::new();
 
 static CONNECTING: AtomicBool = AtomicBool::new(false);
-
-// Constants
-pub use librespot_core::config::ANDROID_CLIENT_ID;
-pub const OUTIFY_CLIENT_ID: &str = "819a62c83de24821b2654387bc84f136"; // Outifys client_id, used for OAuth
 
 #[unsafe(no_mangle)]
 pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *mut std::os::raw::c_void) -> jint {
