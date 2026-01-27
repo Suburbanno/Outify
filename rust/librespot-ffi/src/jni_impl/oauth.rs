@@ -9,7 +9,7 @@ use oauth2::url::Url;
 // Checks for cached credentials. Does NOT use Session
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_AuthManager_hasCachedCredentials(
-    env: JNIEnv,
+    _env: JNIEnv,
     _this: JClass,
 ) -> jboolean {
     let dir = match crate::FILES_DIR.get() {

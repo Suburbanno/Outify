@@ -1,6 +1,5 @@
 use crate::{TOKIO_RUNTIME, session::SESSION};
 use jni::{objects::JClass, sys::JNIEnv};
-use librespot_core::Session;
 
 pub async fn get_user_profile() {
     info!("Getting user profile..");
@@ -26,7 +25,7 @@ pub async fn get_user_profile() {
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_profile_UserProfile_getUserProfile(
-    env: JNIEnv,
+    _env: JNIEnv,
     _this: JClass,
 ) {
     info!("GetUserProfile");

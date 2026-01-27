@@ -1,10 +1,4 @@
-use crate::{CACHE_DIR, FILES_DIR, TOKIO_RUNTIME};
-use std::path::PathBuf;
-
-use jni::objects::{JObject, JString, JValue};
-use jni::sys::jstring;
-use jni::{JNIEnv, sys::jobject};
-use librespot_core::{Error, Session, authentication::Credentials, cache::Cache};
+use librespot_core::{Error, Session};
 use librespot_oauth::{OAuthClient, OAuthClientBuilder, OAuthToken};
 use oauth2::{AuthorizationCode, PkceCodeVerifier, url::Url};
 use once_cell::sync::OnceCell;

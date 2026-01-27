@@ -1,12 +1,11 @@
 #[macro_use]
 extern crate log;
 
-pub mod jni_utils;
 pub mod jni_impl;
+pub mod jni_utils;
 pub mod oauth;
 pub mod session;
 
-mod debug;
 mod playback;
 mod profile;
 mod spirc;
@@ -15,7 +14,6 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 
 // Exposing required librespot structs
-use librespot_core::Session;
 pub use librespot_core::authentication::Credentials;
 pub use librespot_playback::audio_backend::android::{AndroidSink, PcmCallback};
 pub use librespot_playback::config::AudioFormat;
@@ -25,7 +23,7 @@ use once_cell::sync::OnceCell;
 use jni::JNIEnv;
 use jni::JavaVM;
 use jni::objects::{JClass, JObject};
-use jni::sys::{jboolean, jint};
+use jni::sys::jint;
 
 use tokio::runtime::Runtime;
 

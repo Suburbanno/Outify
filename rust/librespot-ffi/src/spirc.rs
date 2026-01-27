@@ -4,7 +4,7 @@ use librespot_connect::{ConnectConfig, LoadRequest, Spirc};
 use librespot_core::{Session, SpotifyUri, authentication::Credentials, spclient::TransferRequest};
 use librespot_playback::{
     config::{AudioFormat, PlayerConfig},
-    mixer::{self, Mixer, MixerConfig},
+    mixer::{self, MixerConfig},
     player::Player,
 };
 use tokio::{sync::Mutex, task::JoinHandle};
@@ -78,7 +78,7 @@ impl SpircRuntime {
         self.spirc.add_to_queue(uri)
     }
 
-    pub fn set_volume(&self, volume: u16) -> Result<(), librespot_core:error::Error> {
+    pub fn set_volume(&self, volume: u16) -> Result<(), librespot_core::error::Error> {
         self.spirc.set_volume(volume)
     }
 

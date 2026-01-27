@@ -4,14 +4,13 @@ use jni::{
     sys::jboolean,
 };
 use librespot_connect::LoadRequest;
-use librespot_core::{Session, authentication::Credentials};
 
 use crate::spirc::SpircRuntime;
 
 // Initializes the [SpircRuntime] into OnceCell.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
-    mut env: JNIEnv,
+    env: JNIEnv,
     this: JClass,
 ) -> jboolean {
     debug!("Initializing SpircRuntime");
@@ -111,7 +110,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_load(
     let uri = match env.get_string(&juri) {
         Ok(u) => u.into(),
         Err(e) => {
-            warn!("Failed to get URI from JNI juri!");
+            warn!("Failed to get URI from JNI juri: {}", e);
             return 0;
         }
     };
@@ -136,7 +135,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_load(
 // Activates the Spirc session
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_activate(
-    mut env: JNIEnv,
+    _env: JNIEnv,
     _this: JClass,
 ) -> jboolean {
     let runtime = match super::SPIRC_RUNTIME.get() {
@@ -161,7 +160,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_activate(
 // Transfers the Spirc session to us
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_transfer(
-    mut env: JNIEnv,
+    _env: JNIEnv,
     _this: JClass,
 ) -> jboolean {
     let runtime = match super::SPIRC_RUNTIME.get() {

@@ -6,7 +6,6 @@ import android.util.Log;
 
 public class AudioPlayer {
     private AudioTrack track;
-
     private int currentSampleRate = -1;
     private int currentChannels = -1;
     private AudioFormat currentFormat = null;

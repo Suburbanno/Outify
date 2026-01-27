@@ -42,9 +42,6 @@ pub async fn initialize_session() {
     .unwrap();
     trace!("Initialized new cache!");
 
-    info!("Os Cache Dir: {}", os_cache_dir.to_str().unwrap());
-    info!("Os Files Dir: {}", os_files_dir.to_str().unwrap());
-
     let handle = rt.handle().clone();
     let session_config = SessionConfig {
         client_id: KEYMASTER_CLIENT_ID.to_owned(),

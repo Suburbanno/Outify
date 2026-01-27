@@ -52,10 +52,8 @@ kotlin {
 
 dependencies {
     implementation(libs.appcompat)
-    implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
-    implementation(libs.material)
     implementation(libs.tink.android)
     implementation(libs.lifecycle.runtime.ktx)
     implementation(libs.activity.compose)
@@ -63,8 +61,20 @@ dependencies {
     implementation(libs.ui)
     implementation(libs.ui.graphics)
     implementation(libs.ui.tooling.preview)
-    implementation(libs.material3)
     implementation(libs.animation.core)
+    implementation(libs.navigation3.runtime)
+    implementation(libs.adaptive.navigation3)
+
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
+
+    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
+
+    implementation(platform(libs.compose.bom))
+    implementation(libs.material)
+    implementation(libs.material3.window.size.class1)
+    implementation(libs.navigation.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -73,52 +83,3 @@ dependencies {
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
 }
-
-tasks.register("generateEclipseClasspath") {
-    group = "ide"
-    description = "Generate .classpath with resolved dependency jars for Eclipse/JDTLS (Kotlin DSL)"
-
-    doLast {
-        val outFile = project.rootDir.resolve(".classpath")
-        val sb = StringBuilder()
-        fun line(s: String) { sb.append(s).append('\n') }
-
-        line("""<?xml version="1.0" encoding="UTF-8"?>""")
-        line("<classpath>")
-
-        // JRE container (change JavaSE-21 -> the JRE name you want)
-        line("""  <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/JavaSE-21"/>""")
-
-        // output + source folders
-        line("""  <classpathentry kind="output" path="bin"/>""")
-        line("""  <classpathentry kind="src" path="src/main/java"/>""")
-        line("""  <classpathentry kind="src" path="src/main/kotlin"/>""")
-        line("""  <classpathentry kind="src" path="src/test/java"/>""")
-        line("""  <classpathentry kind="src" path="src/androidTest/java"/>""")
-
-        val seen = mutableSetOf<String>()
-        // prefer the debugCompileClasspath (includes AndroidX) but fall back if absent
-        val conf = configurations.findByName("debugCompileClasspath") ?: configurations.findByName("compileClasspath")
-
-        if (conf == null) {
-            logger.lifecycle("No compile classpath configuration found. Available: ${configurations.map { it.name }}")
-        } else {
-            // force resolution and iterate resolved artifacts
-            conf.resolvedConfiguration.resolvedArtifacts.forEach { art ->
-                val path = art.file.absoluteFile.normalize().absolutePath.replace("\\", "/")
-                if (seen.add(path)) {
-                    // write a lib entry for each jar
-                    line("""  <classpathentry kind="lib" path="$path"/>""")
-                }
-            }
-        }
-
-        // keep the gradle container entry (harmless if Buildship is later available)
-        line("""  <classpathentry kind="con" path="org.eclipse.buildship.core.gradleclasspathcontainer"/>""")
-        line("</classpath>")
-
-        outFile.writeText(sb.toString())
-        logger.lifecycle("Wrote .classpath (${sb.length} chars) to $outFile")
-    }
-}
-

@@ -1,20 +1,14 @@
-use crate::TOKIO_RUNTIME;
-use jni::objects::{GlobalRef, JClass, JObject, JString, JValue};
+use jni::objects::{GlobalRef, JObject, JValue};
 use jni::sys::jint;
 use jni::{JNIEnv, JavaVM};
-use librespot_core::authentication::Credentials;
-use librespot_core::{Session, SessionConfig, SpotifyId, SpotifyUri};
 use librespot_playback::{
     audio_backend::AndroidSink,
-    config::{AudioFormat, PlayerConfig},
-    mixer::NoOpVolume,
+    config::{AudioFormat},
     player::Player,
 };
 use log::{error, warn};
 use once_cell::sync::OnceCell;
 use std::sync::{Arc, Mutex};
-
-use crate::session::SESSION;
 
 static JAVA_VM: OnceCell<JavaVM> = OnceCell::new();
 static PCM_CALLBACK: OnceCell<Mutex<Option<GlobalRef>>> = OnceCell::new();

@@ -10,6 +10,9 @@ public class AudioManager {
         registerPcmCallback(this);
     }
 
+
+
+    //region PCM
     /**
      * This function is called from JNI upon each received PCM data.
      */
@@ -22,4 +25,5 @@ public class AudioManager {
     }
 
     private static native void registerPcmCallback(AudioManager callbackPtr);
+    //endregion
 }

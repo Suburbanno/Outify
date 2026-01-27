@@ -37,6 +37,9 @@ import androidx.core.net.toUri
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.ui.theme.OutifyTheme
 
+/**
+ * The first page the user sees if not logged in
+ */
 class AuthActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

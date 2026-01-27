@@ -1,48 +1,53 @@
-package cc.tomko.outify.ui.screens
+package cc.tomko.outify
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonShapes
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key.Companion.Home
 import androidx.compose.ui.tooling.preview.Preview
-import cc.tomko.outify.Debug
-import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.SecureStorage
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.playback.AudioManager
-import cc.tomko.outify.playback.SessionInitializationCallback
-import cc.tomko.outify.profile.UserProfile
+import cc.tomko.outify.ui.screens.HomeScreen
+import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.screens.auth.AuthActivity
 import cc.tomko.outify.ui.theme.OutifyTheme
+import kotlinx.serialization.Serializable
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+
         setContent {
             OutifyTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                Surface {
+                    PlayerScreen()
                 }
             }
         }
 
-        if(!handleAuth()){
-            return;
-        }
-
-        startServices()
+//        if(!handleAuth()){
+//            return;
+//        }
+//
+//        startServices()
     }
 
     // Checks for existing credentials and redirects to the login page if needed
