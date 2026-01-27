@@ -78,6 +78,10 @@ impl SpircRuntime {
         self.spirc.add_to_queue(uri)
     }
 
+    pub fn set_volume(&self, volume: u16) -> Result<(), librespot_core:error::Error> {
+        self.spirc.set_volume(volume)
+    }
+
     pub fn activate(&self) -> Result<(), librespot_core::Error> {
         self.spirc.activate()
     }

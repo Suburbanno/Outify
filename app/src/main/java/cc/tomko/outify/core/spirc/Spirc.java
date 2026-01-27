@@ -39,5 +39,7 @@ public class Spirc {
         if(!transfer()){
             Log.e("Spirc", "Failed to transfer Spirc session!");
         }
+
+        // TODO: Load the last playing song
     }
 }
