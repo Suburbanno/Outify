@@ -4,6 +4,9 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.util.Log;
 
+/**
+ * Plays the received PCM audio
+ */
 public class AudioPlayer {
     private AudioTrack track;
     private int currentSampleRate = -1;

@@ -5,9 +5,12 @@ use librespot_core::{Session, SpotifyUri, authentication::Credentials, spclient:
 use librespot_playback::{
     config::{AudioFormat, PlayerConfig},
     mixer::{self, MixerConfig},
-    player::Player,
+    player::{Player, PlayerEvent},
 };
-use tokio::{sync::Mutex, task::JoinHandle};
+use tokio::{
+    sync::{Mutex, broadcast, mpsc, watch},
+    task::JoinHandle,
+};
 
 pub struct SpircRuntime {
     spirc: Arc<Spirc>,
@@ -41,16 +44,28 @@ impl SpircRuntime {
             ..Default::default()
         };
 
+        let (event_tx, event_rx) = mpsc::channel::<PlayerEvent>(64);
+
         let (spirc, spirc_future) = Spirc::new(
             connect_config,
             session.clone(),
             credentials,
             player,
             mixer_impl,
+            Some(event_tx.clone()),
         )
         .await?;
 
         let task = tokio::spawn(spirc_future);
+
+        // Handling received Player Events
+        tokio::spawn(async move {
+            let mut rx = event_rx;
+            while let Some(ev) = rx.recv().await {
+                handle_event(ev);
+            }
+            info!("SpircRuntime event receiver closed");
+        });
 
         Ok(Self {
             spirc: Arc::new(spirc),
@@ -95,5 +110,24 @@ impl SpircRuntime {
             transfer_options: options,
         };
         self.spirc.transfer(Some(request))
+    }
+
+    pub async fn shutdown(&self) {}
+}
+
+// Handles each player event accordingly
+fn handle_event(event: PlayerEvent) {
+    match event {
+        PlayerEvent::Playing {
+            play_request_id,
+            ref track_id,
+            position_ms,
+        } => {
+            info!("Handling Playing Player Event");
+            crate::jni_utils::playback::on_player_playing(event);
+        }
+        _ => {
+            // Not yet implemented
+        }
     }
 }

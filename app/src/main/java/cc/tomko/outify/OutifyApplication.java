@@ -36,7 +36,7 @@ public class OutifyApplication extends Application {
         audioPlayer = new AudioPlayer();
 
         session = new Session();
-//        session.initializeSession();
+        session.initializeSession();
 
 //        try {
 //            debug.debug1(secureStorage.getString(SecureStorage.Keys.ACCESS_TOKEN));

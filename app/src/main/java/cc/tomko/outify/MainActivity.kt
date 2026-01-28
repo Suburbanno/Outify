@@ -43,11 +43,11 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-//        if(!handleAuth()){
-//            return;
-//        }
-//
-//        startServices()
+        if(!handleAuth()){
+            return;
+        }
+
+        startServices()
     }
 
     // Checks for existing credentials and redirects to the login page if needed

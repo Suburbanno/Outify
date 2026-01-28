@@ -10,5 +10,5 @@ interface TrackUpdateCallback {
     /**
      * Called when the track changes completely
      */
-    fun onTrackChange(track: NativeTrack)
+    fun onTrackPlaying(track: NativeTrack)
 }

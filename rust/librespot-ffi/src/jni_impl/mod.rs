@@ -2,7 +2,9 @@
 use crate::spirc::SpircRuntime;
 use once_cell::sync::OnceCell;
 
-mod spirc;
 mod oauth;
+pub mod playback;
+mod spirc;
+mod metadata;
 
 static SPIRC_RUNTIME: OnceCell<SpircRuntime> = OnceCell::new();
