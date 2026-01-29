@@ -8,4 +8,17 @@ data class PlayerUIState(
     val artist: String = "",
     val albumArt: String? = null,
     val isPlaying: Boolean = false,
+
+    /**
+     * The total track length
+     */
+    val totalLengthMs: Long = 0L,
+    /**
+     * Elapsed track time
+     */
+    val positionMs: Long = 0L,
+    /**
+     * When did we last get positionMs from Spotify
+     */
+    val lastUpdateTime: Long = 0L,
 )

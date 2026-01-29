@@ -182,11 +182,10 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_transfer(
     1 as jboolean
 }
 
-
 // Plays the player
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPlay(
-    env: JNIEnv,
+    _env: JNIEnv,
     _this: JClass,
 ) -> jboolean {
     let runtime = match super::SPIRC_RUNTIME.get() {
@@ -211,7 +210,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPlay(
 // Pauses the player
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPause(
-    env: JNIEnv,
+    _env: JNIEnv,
     _this: JClass,
 ) -> jboolean {
     let runtime = match super::SPIRC_RUNTIME.get() {
@@ -236,7 +235,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPause(
 // Plays/Pauses the player
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPlayPause(
-    env: JNIEnv,
+    _env: JNIEnv,
     _this: JClass,
 ) -> jboolean {
     let runtime = match super::SPIRC_RUNTIME.get() {
@@ -261,7 +260,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPlayPause(
 // Plays the next track
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerNext(
-    env: JNIEnv,
+    _env: JNIEnv,
     _this: JClass,
 ) -> jboolean {
     let runtime = match super::SPIRC_RUNTIME.get() {
@@ -286,7 +285,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerNext(
 // Plays the previous track
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPrevious(
-    env: JNIEnv,
+    _env: JNIEnv,
     _this: JClass,
 ) -> jboolean {
     let runtime = match super::SPIRC_RUNTIME.get() {

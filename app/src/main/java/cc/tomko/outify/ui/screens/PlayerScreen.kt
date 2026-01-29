@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.screens
 
+import android.os.SystemClock
 import android.util.Log
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -11,24 +12,30 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,11 +44,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cc.tomko.outify.playback.PlaybackStateHolder
@@ -54,7 +63,11 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import kotlinx.coroutines.delay
+import okhttp3.internal.concurrent.formatDuration
+import kotlin.math.min
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
     val vm: PlayerViewModel = viewModel(
@@ -83,8 +96,9 @@ fun PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
                     .build(),
                 contentDescription = "Album cover",
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.clip(RoundedCornerShape(12.dp)).size(300.dp)
-//                placeholder = painterResource(R.drawable.placeholder)
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)).size(300.dp),
+                placeholder = ColorPainter(Color.Gray),
+                error = ColorPainter(Color.Gray)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -101,6 +115,16 @@ fun PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
             )
 
             Spacer(Modifier.height(32.dp))
+
+            // Time seeker
+            TrackProgressBar(
+                durationMs = uiState.totalLengthMs,
+                positionMs = uiState.positionMs,
+                lastSyncMs = uiState.lastUpdateTime,
+                isPlaying = uiState.isPlaying,
+            )
+
+            Spacer(Modifier.height(32.dp))
             PlaybackControls(
                 isPlaying = uiState.isPlaying,
                 onPlayPause = { vm.onAction(PlayerAction.PlayPause) },
@@ -110,6 +134,73 @@ fun PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
         }
     }
 }
+
+@Composable
+fun TrackProgressBar(
+    durationMs: Long,
+    positionMs: Long,
+    lastSyncMs: Long,
+    isPlaying: Boolean,
+    onSeek: (Long) -> Unit = {}
+) {
+    var displayedPosition by remember { mutableStateOf(positionMs.coerceIn(0L, durationMs)) }
+    var isDragging by remember { mutableStateOf(false) }
+
+    LaunchedEffect(positionMs, lastSyncMs, isPlaying) {
+        if (!isDragging) {
+            displayedPosition = if (isPlaying) {
+                val now = SystemClock.elapsedRealtime()
+                val played = positionMs + (now - lastSyncMs)
+                played.coerceIn(0L, durationMs)
+            } else {
+                positionMs.coerceIn(0L, durationMs)
+            }
+        }
+    }
+
+    LaunchedEffect(isPlaying, isDragging) {
+        if (isPlaying && !isDragging) {
+            while (true) {
+                val now = SystemClock.elapsedRealtime()
+                displayedPosition = (positionMs + (now - lastSyncMs)).coerceIn(0L, durationMs)
+                delay(250L)
+            }
+        }
+    }
+
+    val durationSec = (durationMs / 1000f).coerceAtLeast(1f)
+    val valueSec = displayedPosition / 1000f
+
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        Text(
+            text = "${formatTime(displayedPosition)} / ${formatTime(durationMs)}",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Slider(
+            value = valueSec,
+            onValueChange = { newValueSec ->
+                isDragging = true
+                displayedPosition = (newValueSec * 1000f).toLong().coerceIn(0L, durationMs)
+            },
+            onValueChangeFinished = {
+                onSeek(displayedPosition)
+                // TODO: Send seek to spotify
+                isDragging = false
+            },
+            valueRange = 0f..durationSec,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+private fun formatTime(ms: Long): String {
+    val totalSeconds = (ms / 1000).coerceAtLeast(0L)
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "%02d:%02d".format(minutes, seconds)
+}
+
 
 @Composable
 fun PlaybackControls(
@@ -135,8 +226,9 @@ fun PlaybackControls(
         )
 
         // Play/Pause button
+        val icon = if (isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow
         ExpressiveFloatingActionButton(
-            icon = Icons.Outlined.PlayArrow,
+            icon = icon,
             itemWeight = 1.5f,
             checked = false,
             checkedColor = MaterialTheme.colorScheme.primaryContainer,

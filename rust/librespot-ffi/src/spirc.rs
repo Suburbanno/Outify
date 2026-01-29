@@ -131,8 +131,21 @@ fn handle_event(event: PlayerEvent) {
             ref track_id,
             position_ms,
         } => {
-            info!("Handling Playing Player Event");
-            crate::jni_utils::playback::on_player_playing(event);
+            crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
+            crate::jni_utils::playback::on_player_status(true);
+        }
+
+        PlayerEvent::TrackChanged { audio_item } => {
+            crate::jni_utils::playback::on_player_track_update(audio_item.track_id.clone());
+        }
+
+        PlayerEvent::Paused { play_request_id, ref track_id, position_ms } => {
+            crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
+            crate::jni_utils::playback::on_player_status(false);
+        }
+
+        PlayerEvent::Seeked { play_request_id, track_id, position_ms } => {
+            crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
         }
         _ => {
             // Not yet implemented
