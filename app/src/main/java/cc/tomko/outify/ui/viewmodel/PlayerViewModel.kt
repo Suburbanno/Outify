@@ -31,9 +31,10 @@ class PlayerViewModel(
             artist = track?.artists?.joinToString { it.name } ?: "Unknown Artist",
             albumArt = track?.album?.covers?.firstOrNull()?.uri,
             isPlaying = isPlaying,
+            isExplicit = track?.explicit ?: false,
             totalLengthMs = track?.duration ?: 0L,
             positionMs = posMs,
-            lastUpdateTime = lastSync
+            lastUpdateTime = lastSync,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlayerUIState())
 

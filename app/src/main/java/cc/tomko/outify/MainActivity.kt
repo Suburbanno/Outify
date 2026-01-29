@@ -71,8 +71,6 @@ class MainActivity : ComponentActivity() {
         }
         // Spirc activation and transfer is handled in initializeSpirc -> callback to onSpircInitialize
 
-        spirc.load("spotify:track:1BDRKVuooLvqayamtAEV4z")
-
         OutifyApplication.spirc = spirc
     }
 }

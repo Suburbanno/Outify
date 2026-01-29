@@ -8,6 +8,7 @@ data class PlayerUIState(
     val artist: String = "",
     val albumArt: String? = null,
     val isPlaying: Boolean = false,
+    var isExplicit: Boolean = false,
 
     /**
      * The total track length

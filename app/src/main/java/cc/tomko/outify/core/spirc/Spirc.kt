@@ -67,5 +67,6 @@ class Spirc {
         }
 
         // TODO: Load the last playing song
+        load("spotify:track:7EkWXAI1wn8Ii883ecd9xr") // Temp
     }
 }

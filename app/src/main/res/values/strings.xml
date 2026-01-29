@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Outify</string>
     <string name="title_activity_auth">AuthActivity</string>
-    <string name="title_activity_main">MainActivity</string>
+    <string name="title_activity_main">Outify</string>
     <string name="title_activity_callback">CallbackActivity</string>
     <string name="title_activity_home_screen">HomeScreen</string>
 </resources>

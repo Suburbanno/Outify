@@ -43,12 +43,4 @@ class PlaybackStateHolder {
         positionMs.value = newPosition
         lastSync.value = now
     }
-
-    /**
-     * Updates the currently playing status
-     */
-    fun onPlayStateChange(playing: Boolean) {
-        isPlaying.value = playing
-    }
-
 }

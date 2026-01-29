@@ -16,14 +16,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Explicit
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -96,18 +99,32 @@ fun PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
                     .build(),
                 contentDescription = "Album cover",
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.clip(RoundedCornerShape(12.dp)).size(300.dp),
+                modifier = Modifier.clip(RoundedCornerShape(12.dp)).size(400.dp),
                 placeholder = ColorPainter(Color.Gray),
                 error = ColorPainter(Color.Gray)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = uiState.title,
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if(uiState.isExplicit) {
+                    Icon(
+                        imageVector = Icons.Filled.Explicit,
+                        contentDescription = "Explicit",
+                        modifier = Modifier.size(32.dp),
+                    )
+                }
+
+                Text(
+                    text = uiState.title,
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
             Text(
                 text = uiState.artist,
                 style = MaterialTheme.typography.titleMedium,
@@ -125,6 +142,7 @@ fun PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
             )
 
             Spacer(Modifier.height(32.dp))
+
             PlaybackControls(
                 isPlaying = uiState.isPlaying,
                 onPlayPause = { vm.onAction(PlayerAction.PlayPause) },
@@ -143,7 +161,7 @@ fun TrackProgressBar(
     isPlaying: Boolean,
     onSeek: (Long) -> Unit = {}
 ) {
-    var displayedPosition by remember { mutableStateOf(positionMs.coerceIn(0L, durationMs)) }
+    var displayedPosition by remember { mutableLongStateOf(positionMs.coerceIn(0L, durationMs)) }
     var isDragging by remember { mutableStateOf(false) }
 
     LaunchedEffect(positionMs, lastSyncMs, isPlaying) {
@@ -216,7 +234,6 @@ fun PlaybackControls(
         // Previous button
         ExpressiveFloatingActionButton(
             icon = Icons.Outlined.SkipPrevious,
-            itemWeight = .5f,
             checked = true,
             checkedColor = MaterialTheme.colorScheme.secondaryContainer,
             uncheckedColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -227,68 +244,58 @@ fun PlaybackControls(
 
         // Play/Pause button
         val icon = if (isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow
-        ExpressiveFloatingActionButton(
-            icon = icon,
-            itemWeight = 1.5f,
-            checked = false,
-            checkedColor = MaterialTheme.colorScheme.primaryContainer,
-            uncheckedColor = MaterialTheme.colorScheme.onPrimary,
-            onClick = {
-                onPlayPause()
-            }
-        )
+        FilledIconButton(
+            onClick = { onPlayPause() },
+            shape = CircleShape,
+            modifier = Modifier.size(96.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = if (isPlaying) "Pause" else "Play",
+                modifier = Modifier.padding(12.dp).size(42.dp)
+            )
+        }
 
         // Skip
         ExpressiveFloatingActionButton(
             icon = Icons.Outlined.SkipNext,
-            itemWeight = .5f,
             checked = true,
             checkedColor = MaterialTheme.colorScheme.secondaryContainer,
             uncheckedColor = MaterialTheme.colorScheme.onSecondaryContainer,
             onClick = {
                 onNextTrack()
-            }
+            },
         )
     }
 }
+
 @Composable
 fun RowScope.ExpressiveFloatingActionButton(
     icon: ImageVector,
-    itemWeight: Float,
     checked: Boolean,
     checkedColor: Color,
     uncheckedColor: Color,
     onClick: () -> Unit,
 ) {
     var shapeSelected by remember { mutableStateOf(false) }
-    val animatedRadius by animateDpAsState(
-        targetValue = if (shapeSelected) 6.dp else 16.dp,
-        label = "animatedRadius"
-    )
-    val animatedWeight by animateFloatAsState(
-        targetValue = if (shapeSelected) 0.25f else 0f
-    )
+
+    val cornerRadius = if (shapeSelected) 6.dp else 16.dp
+
     val iconSize = 70.dp
     IconButton(
         modifier = Modifier
             .padding(4.dp)
-            .weight(itemWeight + animatedWeight)
-            .height(iconSize)
-            .pointerInput(Unit) {
-                awaitPointerEventScope {
-                    while (true) {
-                        val event = awaitPointerEvent(PointerEventPass.Main)
-                        event.changes.forEach { pointerInputChange ->
-                            shapeSelected = pointerInputChange.pressed
-                        }
-                    }
-                }
-            },
+            .weight(.75f)
+            .height(iconSize),
         colors = IconButtonDefaults.filledIconButtonColors(
             containerColor = if (shapeSelected || checked) checkedColor else uncheckedColor,
             contentColor = if (shapeSelected || checked) uncheckedColor else checkedColor,
         ),
-        shape = MaterialTheme.shapes.large.copy(CornerSize(animatedRadius)),
+        shape = MaterialTheme.shapes.large.copy(CornerSize(cornerRadius)),
         onClick = onClick,
     ) {
         Icon(
