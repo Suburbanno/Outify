@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +43,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.ui.viewmodel.PlayerViewModel
+import cc.tomko.outify.ui.viewmodel.factory.PlayerViewModelFactory
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import coil3.compose.rememberAsyncImagePainter
@@ -50,7 +55,13 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 
 @Composable
-fun PlayerScreen() {
+fun PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
+    val vm: PlayerViewModel = viewModel(
+        factory = PlayerViewModelFactory(playbackStateHolder)
+    )
+
+    val uiState by vm.uiState.collectAsState()
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -66,7 +77,7 @@ fun PlayerScreen() {
 
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data("https://i.scdn.co/image/ab67616d00001e02251adf76d00dcb1356e25b10")
+                    .data("https://i.scdn.co/image/" + uiState.albumArt)
                     .crossfade(true)
                     .build(),
                 contentDescription = "Album cover",
@@ -78,12 +89,12 @@ fun PlayerScreen() {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Song Title",
+                text = uiState.title,
                 style = MaterialTheme.typography.headlineLarge,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Artist Name",
+                text = uiState.artist,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

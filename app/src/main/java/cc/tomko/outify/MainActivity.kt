@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.screens.HomeScreen
 import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.screens.auth.AuthActivity
@@ -29,16 +30,14 @@ import cc.tomko.outify.ui.theme.OutifyTheme
 import kotlinx.serialization.Serializable
 
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-
         setContent {
             OutifyTheme {
                 Surface {
-                    PlayerScreen()
+                    PlayerScreen(OutifyApplication.playbackManager.playbackStateHolder)
                 }
             }
         }

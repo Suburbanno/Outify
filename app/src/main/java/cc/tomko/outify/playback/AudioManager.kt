@@ -3,28 +3,15 @@ package cc.tomko.outify.playback
 import android.util.Log
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Metadata
+import cc.tomko.outify.data.Track
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
-import cc.tomko.outify.playback.callbacks.TrackUpdateCallback
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 
 class AudioManager {
-    constructor() {
+    init {
         registerPcmCallback(this)
-
-        registerPlayerEventListener(object: PlayerEventCallback {
-            override fun onPlaying(
-                spotify_uri: String,
-                position_ms: Long,
-                play_request_id: Long,
-                json: String,
-            ) {
-                Log.i("AudioManager", "Playing " + spotify_uri)
-                Log.i("AudioManager", "onPlaying: " + json);
-            }
-
-        })
     }
-
-    external fun registerPlayerEventListener(callback: PlayerEventCallback);
 
     //region PCM
     /**
@@ -39,6 +26,4 @@ class AudioManager {
     }
 
     private external fun registerPcmCallback(callbackPtr: AudioManager?) //endregion
-
-
 }

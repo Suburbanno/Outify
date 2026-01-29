@@ -1,28 +1,19 @@
 package cc.tomko.outify.data
 
-import cc.tomko.outify.data.native.NativeTrack
+import kotlinx.serialization.Serializable
 
 /**
- * Holds the data about each track
+ * Contains information about single Track.
+ * Data sourced from JSON from FFI
  */
+@Serializable
 data class Track(
-    val id: SpotifyUri,
+    val id: String,
+    val uri: String,
     val name: String,
-    val album: Album,
-    val artists: List<Artist>,
-    val duration: Int,
-    val popularity: Int,
-    val isExplicit: Boolean,
-    // TODO: Implement more data
-
-) {
-    fun NativeTrack.toTrack(album: Album, artists: List<Artist>): Track = Track(
-        id = SpotifyUri(id),
-        name,
-        album,
-        artists,
-        duration,
-        popularity,
-        isExplicit,
-    )
-}
+    val album: Album? = null,
+    val artists: List<Artist> = emptyList(),
+    val popularity: Int = 0,
+    val duration: Long = 0,
+    val explicit: Boolean = false,
+)

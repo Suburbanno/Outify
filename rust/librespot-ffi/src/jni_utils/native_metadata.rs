@@ -3,7 +3,7 @@ use jni::{
     objects::{GlobalRef, JClass, JMethodID, JObject, JValue},
     sys::jboolean,
 };
-use librespot_metadata::{Album, Artist, Track};
+use librespot_metadata::{image::Image, Album, Artist, Track};
 use serde::Serialize;
 
 // Serializable Track object
@@ -14,6 +14,7 @@ pub struct TrackJson {
     name: String,
     album: AlbumJson,       
     artists: Vec<ArtistJson>,
+    popularity: i32,
     duration: i32,
     explicit: bool,
 }
@@ -26,6 +27,7 @@ impl From<&Track> for TrackJson {
             name: track.name.clone(),
             album: AlbumJson::from(&track.album),
             artists: track.artists.iter().map(ArtistJson::from).collect(),
+            popularity: track.popularity,
             duration: track.duration,
             explicit: track.is_explicit,
         }
@@ -60,6 +62,7 @@ pub struct AlbumJson {
     name: String,
     artists: Vec<ArtistJson>,
     popularity: i32,
+    covers: Vec<ImageJson>
 }
 
 impl From<&Album> for AlbumJson {
@@ -70,47 +73,33 @@ impl From<&Album> for AlbumJson {
             name: album.name.clone(),
             artists: album.artists.iter().map(ArtistJson::from).collect(),
             popularity: album.popularity,
+            covers: album.covers.iter().map(ImageJson::from).collect(),
         }
     }
 }
 
-// Converts native track into kotlin compatible NativeTrack
-pub fn convert_track(track: &Track) -> Option<JObject> {
-    let jvm = match crate::JVM.get() {
-        Some(j) => j,
-        None => {
-            warn!("Cannot get class NativeTrack because JVM is not set!",);
-            return None;
+#[derive(Serialize)]
+pub struct ImageJson {
+    pub uri: String,
+    pub size: i8, // 0 -> 3 values ranging by size
+    pub width: i32,
+    pub height: i32,
+}
+
+impl From<&Image> for ImageJson {
+    fn from(img: &Image) -> Self {
+        let size = match img.size {
+            librespot_metadata::image::ImageSize::DEFAULT => 0,
+            librespot_metadata::image::ImageSize::SMALL => 1,
+            librespot_metadata::image::ImageSize::LARGE => 2,
+            librespot_metadata::image::ImageSize::XLARGE => 3,
+        };
+
+        Self {
+            uri: img.id.to_base16(),
+            size,
+            width: img.width,
+            height: img.height,
         }
-    };
-
-    let mut env = match jvm.get_env() {
-        Ok(e) => e,
-        Err(e) => {
-            warn!("failed to get env: {}", e);
-            return None;
-        }
-    };
-
-    let class = env
-        .find_class("cc/tomko/outify/data/native/NativeTrack")
-        .expect("NativeTrack class not found");
-
-    let id = env.new_string(track.id.to_uri()).unwrap();
-    let name = env.new_string(track.name.clone()).unwrap();
-
-    Some(
-        env.new_object(
-            class,
-            "(Ljava/lang/String;Ljava/lang/String;IIZ)V",
-            &[
-                JValue::Object(&id),
-                JValue::Object(&name),
-                JValue::Int(track.duration),
-                JValue::Int(track.popularity),
-                JValue::Bool(track.is_explicit as jboolean),
-            ],
-        )
-        .expect("Failed to create NativeTrack"),
-    )
+    }
 }

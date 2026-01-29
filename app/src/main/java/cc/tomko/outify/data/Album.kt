@@ -1,13 +1,17 @@
 package cc.tomko.outify.data
 
-import cc.tomko.outify.data.native.NativeAlbum
+import kotlinx.serialization.Serializable
 
+/**
+ * Contains information about Album.
+ * Fields sourced from JSON from FFI
+ */
+@Serializable
 data class Album(
-    val id: SpotifyUri,
+    val id: String,
+    val uri: String,
     val name: String,
-) {
-    fun NativeAlbum.toAlbum() = Album(
-        id = SpotifyUri(id),
-        name
-    )
-}
+    val artists: List<Artist> = emptyList(),
+    val popularity: Int = 0,
+    val covers: List<Cover> = emptyList(),
+)

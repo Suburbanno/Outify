@@ -7,6 +7,7 @@ import cc.tomko.outify.core.AuthManager;
 import cc.tomko.outify.core.spirc.Spirc;
 import cc.tomko.outify.playback.AudioManager;
 import cc.tomko.outify.playback.AudioPlayer;
+import cc.tomko.outify.playback.PlaybackManager;
 
 import com.google.crypto.tink.aead.AeadConfig;
 
@@ -15,6 +16,7 @@ public class OutifyApplication extends Application {
 
     public static AuthManager spAuthManager;
     public static AudioManager audioManager;
+    public static PlaybackManager playbackManager;
     public static AudioPlayer audioPlayer;
     public static Session session;
     public static Spirc spirc;
@@ -45,6 +47,7 @@ public class OutifyApplication extends Application {
 //        }
 
         audioManager = new AudioManager();
+        playbackManager = new PlaybackManager();
 
         // Initializing SpAuthManager
         spAuthManager = new AuthManager();
