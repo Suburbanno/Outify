@@ -5,6 +5,9 @@ import cc.tomko.outify.data.Track
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import kotlinx.serialization.json.Json
 
+/**
+ * Manages the playback state, plays tracks, ..
+ */
 class PlaybackManager {
     val playbackStateHolder = PlaybackStateHolder()
 
@@ -12,6 +15,9 @@ class PlaybackManager {
         registerCallbacks()
     }
 
+    /**
+     * Registers rust state callbacks
+     */
     fun registerCallbacks(){
         // TODO: Modularize
         registerPlayerEventListener(object: PlayerEventCallback {
@@ -28,5 +34,9 @@ class PlaybackManager {
         })
     }
 
+    /**
+     * Registers PlayerEvent listener to FFI.
+     * FFI stores the GlobalRef of the callback
+     */
     external fun registerPlayerEventListener(callback: PlayerEventCallback);
 }

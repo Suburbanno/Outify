@@ -85,6 +85,14 @@ impl SpircRuntime {
         self.spirc.pause()
     }
 
+    pub fn next(&self) -> Result<(), librespot_core::Error> {
+        self.spirc.next()
+    }
+
+    pub fn prev(&self) -> Result<(), librespot_core::Error> {
+        self.spirc.prev()
+    }
+
     pub fn load(&self, req: LoadRequest) -> Result<(), librespot_core::Error> {
         self.spirc.load(req)
     }

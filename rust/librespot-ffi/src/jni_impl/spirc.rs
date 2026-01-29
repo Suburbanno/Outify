@@ -181,3 +181,129 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_transfer(
 
     1 as jboolean
 }
+
+
+// Plays the player
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPlay(
+    env: JNIEnv,
+    _this: JClass,
+) -> jboolean {
+    let runtime = match super::SPIRC_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            warn!("Spirc not initialized for transfer");
+            return 0;
+        }
+    };
+
+    match runtime.play() {
+        Ok(_) => {}
+        Err(e) => {
+            error!("Failed to play Spirc: {}", e);
+            return 0 as jboolean;
+        }
+    }
+
+    1 as jboolean
+}
+
+// Pauses the player
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPause(
+    env: JNIEnv,
+    _this: JClass,
+) -> jboolean {
+    let runtime = match super::SPIRC_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            warn!("Spirc not initialized for transfer");
+            return 0;
+        }
+    };
+
+    match runtime.pause() {
+        Ok(_) => {}
+        Err(e) => {
+            error!("Failed to pause Spirc: {}", e);
+            return 0 as jboolean;
+        }
+    }
+
+    1 as jboolean
+}
+
+// Plays/Pauses the player
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPlayPause(
+    env: JNIEnv,
+    _this: JClass,
+) -> jboolean {
+    let runtime = match super::SPIRC_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            warn!("Spirc not initialized for transfer");
+            return 0;
+        }
+    };
+
+    match runtime.play_pause() {
+        Ok(_) => {}
+        Err(e) => {
+            error!("Failed to play_pause Spirc: {}", e);
+            return 0 as jboolean;
+        }
+    }
+
+    1 as jboolean
+}
+
+// Plays the next track
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerNext(
+    env: JNIEnv,
+    _this: JClass,
+) -> jboolean {
+    let runtime = match super::SPIRC_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            warn!("Spirc not initialized for transfer");
+            return 0;
+        }
+    };
+
+    match runtime.next() {
+        Ok(_) => {}
+        Err(e) => {
+            error!("Failed to next Spirc: {}", e);
+            return 0 as jboolean;
+        }
+    }
+
+    1 as jboolean
+}
+
+// Plays the previous track
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPrevious(
+    env: JNIEnv,
+    _this: JClass,
+) -> jboolean {
+    let runtime = match super::SPIRC_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            warn!("Spirc not initialized for transfer");
+            return 0;
+        }
+    };
+
+    match runtime.prev() {
+        Ok(_) => {}
+        Err(e) => {
+            error!("Failed to prev Spirc: {}", e);
+            return 0 as jboolean;
+        }
+    }
+
+    1 as jboolean
+}

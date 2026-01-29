@@ -19,6 +19,10 @@ public class OutifyApplication extends Application {
     public static PlaybackManager playbackManager;
     public static AudioPlayer audioPlayer;
     public static Session session;
+    /**
+     * Holds the Spirc instance.
+     * Instance set in {@link MainActivityKt}
+     */
     public static Spirc spirc;
 
     @Override

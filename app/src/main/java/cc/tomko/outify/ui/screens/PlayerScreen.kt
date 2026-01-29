@@ -45,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.ui.model.PlayerAction
 import cc.tomko.outify.ui.viewmodel.PlayerViewModel
 import cc.tomko.outify.ui.viewmodel.factory.PlayerViewModelFactory
 import coil3.compose.AsyncImage
@@ -100,17 +101,28 @@ fun PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
             )
 
             Spacer(Modifier.height(32.dp))
-            PlaybackControls()
+            PlaybackControls(
+                isPlaying = uiState.isPlaying,
+                onPlayPause = { vm.onAction(PlayerAction.PlayPause) },
+                onNextTrack = { vm.onAction(PlayerAction.Next) },
+                onPreviousTrack = { vm.onAction(PlayerAction.Previous) },
+            )
         }
     }
 }
 
 @Composable
-fun PlaybackControls() {
+fun PlaybackControls(
+    isPlaying: Boolean,
+    onPlayPause: () -> Unit,
+    onNextTrack: () -> Unit,
+    onPreviousTrack: () -> Unit,
+) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Previous button
         ExpressiveFloatingActionButton(
             icon = Icons.Outlined.SkipPrevious,
             itemWeight = .5f,
@@ -118,10 +130,11 @@ fun PlaybackControls() {
             checkedColor = MaterialTheme.colorScheme.secondaryContainer,
             uncheckedColor = MaterialTheme.colorScheme.onSecondaryContainer,
             onClick = {
-                println("Click")
+                onPreviousTrack()
             }
         )
 
+        // Play/Pause button
         ExpressiveFloatingActionButton(
             icon = Icons.Outlined.PlayArrow,
             itemWeight = 1.5f,
@@ -129,10 +142,11 @@ fun PlaybackControls() {
             checkedColor = MaterialTheme.colorScheme.primaryContainer,
             uncheckedColor = MaterialTheme.colorScheme.onPrimary,
             onClick = {
-                println("Click")
+                onPlayPause()
             }
         )
 
+        // Skip
         ExpressiveFloatingActionButton(
             icon = Icons.Outlined.SkipNext,
             itemWeight = .5f,
@@ -140,7 +154,7 @@ fun PlaybackControls() {
             checkedColor = MaterialTheme.colorScheme.secondaryContainer,
             uncheckedColor = MaterialTheme.colorScheme.onSecondaryContainer,
             onClick = {
-                println("Click")
+                onNextTrack()
             }
         )
     }
