@@ -5,6 +5,7 @@ pub mod jni_impl;
 pub mod jni_utils;
 pub mod oauth;
 pub mod session;
+pub mod spclient;
 
 mod playback;
 mod profile;

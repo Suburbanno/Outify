@@ -1,7 +1,5 @@
 package cc.tomko.outify.core;
 
-import cc.tomko.outify.core.auth.TokenResponseDto;
-
 public class AuthManager {
     /**
      * Checks for cached credentials.

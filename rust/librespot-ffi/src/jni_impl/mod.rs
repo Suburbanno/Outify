@@ -6,5 +6,6 @@ mod oauth;
 pub mod playback;
 mod spirc;
 mod metadata;
+mod spclient;
 
 static SPIRC_RUNTIME: OnceCell<SpircRuntime> = OnceCell::new();

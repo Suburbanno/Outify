@@ -17,10 +17,10 @@ class AudioManager {
     /**
      * This function is called from JNI upon each received PCM data.
      */
-    private fun onNativePcm(data: ByteArray?, sampleRate: Int, channels: Int, format: Int) {
+    private fun onNativePcm(data: ByteArray, sampleRate: Int, channels: Int, format: Int) {
         // S16
         if (format == 5) {
-            OutifyApplication.audioPlayer.onPCM(data, sampleRate, channels, AudioFormat.S16)
+            OutifyApplication.audioPlayer.onPcm(data, sampleRate, channels, PcmFormat.S16)
         }
         // TODO: Implement more formats
     }

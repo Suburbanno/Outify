@@ -1,8 +1,10 @@
-package cc.tomko.outify.core;
+package cc.tomko.outify.core
 
 /**
  * Handles the librespot session
  */
-public class Session {
-    public native void initializeSession();
+class Session {
+    val spClient: SpClient = SpClient()
+
+    external fun initializeSession()
 }

@@ -3,6 +3,8 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <attribution android:tag="audioPlayback" android:label="@string/audio_playback_attribution" />
+
     <application
         android:name=".OutifyApplication"
         android:allowBackup="true"
@@ -15,6 +17,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Material3Expressive"
         android:usesCleartextTraffic="true">
+
         <activity
             android:name=".ui.screens.HomeScreen"
             android:exported="false"

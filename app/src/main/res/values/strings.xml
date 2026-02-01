@@ -4,4 +4,5 @@
     <string name="title_activity_main">Outify</string>
     <string name="title_activity_callback">CallbackActivity</string>
     <string name="title_activity_home_screen">HomeScreen</string>
+    <string name="audio_playback_attribution">This app plays audio</string>
 </resources>

@@ -39,7 +39,7 @@ public class OutifyApplication extends Application {
             throw new RuntimeException(e);
         }
 
-        audioPlayer = new AudioPlayer();
+        audioPlayer = new AudioPlayer(this);
 
         session = new Session();
         session.initializeSession();
