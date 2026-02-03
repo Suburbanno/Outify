@@ -50,8 +50,4 @@ class PlayerViewModel(
             PlayerAction.Previous -> spirc.playerPrevious()
         }
     }
-
-    fun updateUiState(update: PlayerUIState.() -> PlayerUIState){
-        _uiState.value = _uiState.value.update()
-    }
 }

@@ -35,7 +35,7 @@ pub async fn initialize_session() {
         .to_path_buf();
     let cache: Cache = Cache::new(
         Some(&os_files_dir),
-        Some(&os_cache_dir),
+        None,
         Some(&os_cache_dir),
         None,
     )

@@ -1710,6 +1710,7 @@ dependencies = [
 name = "librespot-ffi"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "jni",
  "librespot-connect",
  "librespot-core",

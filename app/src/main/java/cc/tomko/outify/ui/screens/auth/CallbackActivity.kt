@@ -46,7 +46,7 @@ class CallbackActivity : ComponentActivity() {
         val state = uri.getQueryParameter("state")
         if (code == null || state == null) return StringArrayResult.Error("Invalid OAuth callback")
 
-        val codeSuccess = OutifyApplication.spAuthManager.handleOAuthCode(code, state);
+        val codeSuccess = OutifyApplication.authManager.handleOAuthCode(code, state);
         // TODO: Handle more appropriately
         if (codeSuccess) {
             return StringArrayResult.Success("Credentials saved!")

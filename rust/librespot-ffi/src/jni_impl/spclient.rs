@@ -1,15 +1,19 @@
 use jni::{
     JNIEnv,
     objects::{JClass, JString},
-    sys::jstring,
+    sys::{jint, jstring},
 };
-use librespot_core::spclient::SpClient;
+use librespot_core::{SpotifyUri, spclient::SpClient};
+use librespot_metadata::{Metadata, Track};
+use oauth2::reqwest;
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_SpClient_search(
     mut env: JNIEnv,
     _class: JClass,
     query: JString,
+    pages: jint,
+    page_offset: jint,
 ) -> jstring {
     let rt = match crate::TOKIO_RUNTIME.get() {
         Some(r) => r,
@@ -27,6 +31,9 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_search(
         }
     };
 
+    let page_offset = page_offset as usize;
+    let pages = pages as usize;
+
     let json_res = rt.block_on(async {
         let uri = format!("spotify:search:{}", query);
 
@@ -35,6 +42,8 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_search(
                 let uris: Vec<String> = context
                     .pages
                     .iter()
+                    .skip(page_offset)
+                    .take(pages)
                     .flat_map(|page| page.tracks.iter())
                     .map(|track| track.uri().to_string())
                     .collect();
@@ -72,6 +81,8 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_search(
 pub extern "system" fn Java_cc_tomko_outify_core_SpClient_getLikedSongs(
     env: JNIEnv,
     _class: JClass,
+    page_offset: jint,
+    pages: jint,
 ) -> jstring {
     let rt = match crate::TOKIO_RUNTIME.get() {
         Some(r) => r,
@@ -82,14 +93,15 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_getLikedSongs(
     };
 
     let user_id = match crate::session::SESSION.get() {
-        Some(s) => {
-            s.username()
-        }
+        Some(s) => s.username(),
         None => {
             error!("failed to get user_id");
-            return std::ptr::null_mut()
+            return std::ptr::null_mut();
         }
     };
+
+    let page_offset = page_offset as usize;
+    let pages = pages as usize;
 
     let json_res = rt.block_on(async {
         let uri = format!("spotify:user:{}:collection", user_id);
@@ -99,6 +111,8 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_getLikedSongs(
                 let uris: Vec<String> = context
                     .pages
                     .iter()
+                    .skip(page_offset)
+                    .take(pages)
                     .flat_map(|page| page.tracks.iter())
                     .map(|track| track.uri().to_string())
                     .collect();

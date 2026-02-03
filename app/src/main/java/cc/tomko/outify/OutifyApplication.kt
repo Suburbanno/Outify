@@ -1,59 +1,84 @@
-package cc.tomko.outify;
+package cc.tomko.outify
 
-import android.app.Application;
+import android.app.Application
+import cc.tomko.outify.core.AuthManager
+import cc.tomko.outify.core.Session
+import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.data.database.AppDatabase
+import cc.tomko.outify.playback.AudioManager
+import cc.tomko.outify.playback.AudioPlayer
+import cc.tomko.outify.playback.PlaybackManager
+import cc.tomko.outify.ui.repository.LibraryRepository
+import cc.tomko.outify.ui.repository.TrackRepository
+import coil3.ImageLoader
+import coil3.disk.DiskCache
+import coil3.disk.directory
+import coil3.request.crossfade
 
-import cc.tomko.outify.core.Session;
-import cc.tomko.outify.core.AuthManager;
-import cc.tomko.outify.core.spirc.Spirc;
-import cc.tomko.outify.playback.AudioManager;
-import cc.tomko.outify.playback.AudioPlayer;
-import cc.tomko.outify.playback.PlaybackManager;
+class OutifyApplication : Application() {
+    lateinit var database: AppDatabase
+        private set
 
-import com.google.crypto.tink.aead.AeadConfig;
+    lateinit var audioPlayer: AudioPlayer
+        private set
 
-public class OutifyApplication extends Application {
-    public static SecureStorage secureStorage;
+    lateinit var trackRepository: TrackRepository
+        private set
+    lateinit var libraryRepository: LibraryRepository
+        private set
 
-    public static AuthManager spAuthManager;
-    public static AudioManager audioManager;
-    public static PlaybackManager playbackManager;
-    public static AudioPlayer audioPlayer;
-    public static Session session;
-    /**
-     * Holds the Spirc instance.
-     * Instance set in {@link MainActivityKt}
-     */
-    public static Spirc spirc;
+    lateinit var imageLoader: ImageLoader
+        private set
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
+    override fun onCreate() {
+        super.onCreate()
+        database = AppDatabase.getInstance(this)
 
-        System.loadLibrary("librespot_ffi");
-        LibrespotFfi.libInit(getApplicationContext());
+        System.loadLibrary("librespot_ffi")
+        LibrespotFfi.libInit(applicationContext)
 
-        try {
-            AeadConfig.register();
-            secureStorage = new SecureStorage(getApplicationContext());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        session = Session()
+        session.initializeSession()
 
-        audioPlayer = new AudioPlayer(this);
+        audioPlayer = AudioPlayer(this)
+        audioManager = AudioManager(audioPlayer)
 
-        session = new Session();
-        session.initializeSession();
+        playbackManager = PlaybackManager()
+        authManager = AuthManager()
+        spirc = Spirc()
 
-//        try {
-//            debug.debug1(secureStorage.getString(SecureStorage.Keys.ACCESS_TOKEN));
-//        } catch (GeneralSecurityException e) {
-//            throw new RuntimeException(e);
-//        }
 
-        audioManager = new AudioManager();
-        playbackManager = new PlaybackManager();
+//        AeadConfig.register()
+        initializeRepositories()
 
-        // Initializing SpAuthManager
-        spAuthManager = new AuthManager();
+        imageLoader = ImageLoader.Builder(this)
+            .crossfade(true)
+            .diskCache(
+                DiskCache.Builder()
+                    .directory(cacheDir.resolve("image_cache"))
+                    .maxSizePercent(0.25)
+                    .build()
+            ).build()
+    }
+
+    private fun initializeRepositories(){
+        trackRepository = TrackRepository(database.trackDao())
+        libraryRepository = LibraryRepository(
+            db = database,
+            trackRepo = trackRepository,
+            trackDao = database.trackDao(),
+            artistDao = database.artistDao(),
+            trackArtistDao = database.trackArtistDao(),
+            albumDao = database.albumDao(),
+            albumArtistDao = database.albumArtistDao()
+        )
+    }
+
+    companion object {
+        lateinit var audioManager: AudioManager
+        lateinit var session: Session
+        lateinit var playbackManager: PlaybackManager
+        lateinit var authManager: AuthManager
+        lateinit var spirc: Spirc
     }
 }

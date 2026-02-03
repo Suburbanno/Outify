@@ -5,12 +5,35 @@ use once_cell::sync::OnceCell;
 use tokio::sync::Mutex;
 
 pub const SPOTIFY_CALLBACK_URI: &str = "http://127.0.0.1:5588/login";
-pub const SCOPES: &[&str] = &[
+static OAUTH_SCOPES: &[&str] = &[
+    "app-remote-control",
+    "playlist-modify",
+    "playlist-modify-private",
+    "playlist-modify-public",
+    "playlist-read",
+    "playlist-read-collaborative",
+    "playlist-read-private",
     "streaming",
-    "user-read-playback-state",
+    "ugc-image-upload",
+    "user-follow-modify",
+    "user-follow-read",
+    "user-library-modify",
+    "user-library-read",
+    "user-modify",
     "user-modify-playback-state",
+    "user-modify-private",
+    "user-personalized",
+    "user-read-birthdate",
     "user-read-currently-playing",
+    "user-read-email",
+    "user-read-play-history",
+    "user-read-playback-position",
+    "user-read-playback-state",
+    "user-read-private",
+    "user-read-recently-played",
+    "user-top-read",
 ];
+
 
 pub static OAUTH_SESSION: OnceCell<Mutex<OAuthSession>> = OnceCell::new();
 
@@ -82,7 +105,7 @@ pub fn setup_oauth_session(session: &Session) -> Option<&'static Mutex<OAuthSess
         return Some(existing);
     }
 
-    let osession = match OAuthSession::new(&session, &SPOTIFY_CALLBACK_URI, SCOPES) {
+    let osession = match OAuthSession::new(&session, &SPOTIFY_CALLBACK_URI, OAUTH_SCOPES) {
         Ok(s) => s,
         Err(e) => {
             error!("OAuth session setup failed with: {}", e);

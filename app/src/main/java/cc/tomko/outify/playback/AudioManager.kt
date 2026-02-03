@@ -8,7 +8,7 @@ import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 
-class AudioManager {
+class AudioManager(val audioPlayer: AudioPlayer) {
     init {
         registerPcmCallback(this)
     }
@@ -20,7 +20,7 @@ class AudioManager {
     private fun onNativePcm(data: ByteArray, sampleRate: Int, channels: Int, format: Int) {
         // S16
         if (format == 5) {
-            OutifyApplication.audioPlayer.onPcm(data, sampleRate, channels, PcmFormat.S16)
+            audioPlayer.onPcm(data, sampleRate, channels, PcmFormat.S16)
         }
         // TODO: Implement more formats
     }

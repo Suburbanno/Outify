@@ -72,7 +72,7 @@ fun InformationText(padding: PaddingValues){
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        val auth = OutifyApplication.spAuthManager
+        val auth = OutifyApplication.authManager
         val context = LocalContext.current
 
         LoginButton {

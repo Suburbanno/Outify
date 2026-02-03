@@ -1,6 +1,7 @@
 plugins {
-    alias(libs.plugins.android.application)
     id("eclipse")
+    id("com.google.devtools.ksp") version "2.3.4"
+    alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 
@@ -53,6 +54,12 @@ kotlin {
 }
 
 dependencies {
+    constraints {
+        implementation("org.jetbrains:annotations:23.0.0") {
+            because("Unify annotations artifact to avoid duplicate classes")
+        }
+    }
+
     implementation(libs.appcompat)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
@@ -80,6 +87,18 @@ dependencies {
     implementation(libs.material)
     implementation(libs.material3.window.size.class1)
     implementation(libs.navigation.compose)
+
+    implementation(libs.room.compiler){
+        exclude(group = "com.intellij", module = "annotations")
+    }
+    implementation(libs.room.runtime){
+        exclude(group = "com.intellij", module = "annotations")
+    }
+    implementation(libs.room.ktx){
+        exclude(group = "com.intellij", module = "annotations")
+    }
+    ksp(libs.room.compiler)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

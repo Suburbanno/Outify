@@ -22,4 +22,5 @@ librespot-playback = { path = "../deps/librespot/playback", default-features = f
 librespot-connect = { path = "../deps/librespot/connect", default-features = false, fetures = ["rustls-tls-webpki-roots"]}
 serde_json = "1.0.149"
 serde = "1.0.228"
+bytes = "1.11.0"
 
