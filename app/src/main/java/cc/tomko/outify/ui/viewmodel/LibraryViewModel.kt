@@ -23,8 +23,10 @@ class LibraryViewModel(
     private var isLoading = false
     private var endReached = false
 
-    init {
-        loadNextPage()
+    fun ensureLoaded(){
+        if(_likedTracks.value.isEmpty() && !isLoading && !endReached) {
+            loadNextPage()
+        }
     }
 
     /**

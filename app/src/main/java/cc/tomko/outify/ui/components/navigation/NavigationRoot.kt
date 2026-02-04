@@ -3,10 +3,13 @@ package cc.tomko.outify.ui.components.navigation
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -27,9 +30,9 @@ fun NavigationRoot(
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
-//        entryDecorators = listOf(
-//            rememberSaveableStateHolderNavEntryDecorator(),
-//        ),
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+        ),
 //        transitionSpec = {
 //            slideInHorizontally(initialOffsetX = { it }) togetherWith slideOutHorizontally(targetOffsetX = { -it })
 //        },
@@ -53,9 +56,11 @@ fun NavigationRoot(
                     NavEntry(key) {
                         val app = LocalContext.current.applicationContext as OutifyApplication?
                         val viewModel = remember { LibraryViewModel(app!!) }
+                        val listState = rememberLazyListState()
 
                         LibraryScreen(
                             viewModel = viewModel,
+                            listState = listState,
                             onTrackClick = { track ->
                                 OutifyApplication.spirc.load(track.uri)
                             }

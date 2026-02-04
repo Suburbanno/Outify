@@ -1,6 +1,7 @@
 package cc.tomko.outify.ui.screens.library
 
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -24,13 +25,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 @Composable
 fun LibraryScreen(
     viewModel: LibraryViewModel,
+    listState: LazyListState,
     onTrackClick: (Track) -> Unit,
 ) {
     val tracks by viewModel.likedTracks.collectAsState()
-    val listState = rememberLazyListState()
+    LaunchedEffect(viewModel) { viewModel.ensureLoaded() }
+
     val context = LocalContext.current
     val density = LocalDensity.current
-    val coroutineScope = rememberCoroutineScope()
 
     val imageSizePx = remember(density) {
         with(density) { 56.dp.roundToPx() }
