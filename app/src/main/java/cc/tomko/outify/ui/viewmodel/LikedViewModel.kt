@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class LibraryViewModel(
+class LikedViewModel(
     application: Application,
     private val repo: LibraryRepository = (application as OutifyApplication).libraryRepository
 ) : AndroidViewModel(application) {
