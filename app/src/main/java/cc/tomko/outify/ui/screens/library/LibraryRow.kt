@@ -15,7 +15,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Track
-import cc.tomko.outify.ui.model.LikedTrack
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -31,7 +30,7 @@ fun LibraryRow(
     val context = LocalContext.current
     val imageLoader = (context.applicationContext as OutifyApplication).imageLoader
 
-    val imageUrl = ("https://i.scdn.co/image/" + track.album?.covers?.getOrNull(0)?.uri)
+    val imageUrl = (OutifyApplication.ALBUM_COVER_URL + track.album?.covers?.getOrNull(0)?.uri)
     val imageRequest = remember(imageUrl) {
         ImageRequest.Builder(context)
             .data(imageUrl)

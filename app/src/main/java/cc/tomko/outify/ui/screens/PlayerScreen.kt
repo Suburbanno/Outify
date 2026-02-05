@@ -1,9 +1,6 @@
 package cc.tomko.outify.ui.screens
 
 import android.os.SystemClock
-import android.util.Log
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,7 +27,6 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -46,29 +42,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.playback.PlaybackStateHolder
-import cc.tomko.outify.ui.model.PlayerAction
+import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.viewmodel.PlayerViewModel
 import cc.tomko.outify.ui.viewmodel.factory.PlayerViewModelFactory
 import coil3.compose.AsyncImage
-import coil3.compose.AsyncImagePainter
-import coil3.compose.rememberAsyncImagePainter
-import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.coroutines.delay
-import okhttp3.internal.concurrent.formatDuration
-import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -94,7 +82,7 @@ fun PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
 
             AsyncImage(
                 model = ImageRequest.Builder(LocalContext.current)
-                    .data("https://i.scdn.co/image/" + uiState.albumArt)
+                    .data(OutifyApplication.ALBUM_COVER_URL + uiState.albumArt)
                     .crossfade(true)
                     .build(),
                 contentDescription = "Album cover",

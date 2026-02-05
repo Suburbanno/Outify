@@ -20,13 +20,17 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.ui.screens.HomeScreen
 import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.screens.library.LibraryScreen
+import cc.tomko.outify.ui.screens.search.SearchScreen
 import cc.tomko.outify.ui.viewmodel.LibraryViewModel
+import cc.tomko.outify.ui.viewmodel.SearchViewModel
 
 @Composable
 fun NavigationRoot(
     backStack: NavBackStack<NavKey>,
     modifier: Modifier = Modifier
 ) {
+    val app = LocalContext.current.applicationContext as OutifyApplication?
+
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
@@ -54,7 +58,6 @@ fun NavigationRoot(
 
                 is Route.LikedScreen -> {
                     NavEntry(key) {
-                        val app = LocalContext.current.applicationContext as OutifyApplication?
                         val viewModel = remember { LibraryViewModel(app!!) }
                         val listState = rememberLazyListState()
 
@@ -65,6 +68,13 @@ fun NavigationRoot(
                                 OutifyApplication.spirc.load(track.uri)
                             }
                         )
+                    }
+                }
+
+                is Route.SearchScreen -> {
+                    NavEntry(key) {
+                        val viewModel = remember { SearchViewModel(app!!, app.metadata) }
+                        SearchScreen(viewModel)
                     }
                 }
                 else -> error("Unknown NavKey: $key")

@@ -1,15 +1,75 @@
 package cc.tomko.outify.ui.viewmodel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.room.util.query
+import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.Metadata
+import cc.tomko.outify.data.Track
+import cc.tomko.outify.ui.model.search.SearchResult
 import cc.tomko.outify.ui.repository.SearchRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 
 class SearchViewModel(
-    repository: SearchRepository
-): ViewModel() {
-    private val query = MutableStateFlow("")
+    application: Application,
+    metadata: Metadata,
+    private val repository: SearchRepository = (application as OutifyApplication).searchRepository
+): AndroidViewModel(application) {
+    private val queryFlow = MutableStateFlow("")
 
-    fun onQueryChange(newQuery: String) {
-        query.value = newQuery
+    private val _results = MutableStateFlow<List<SearchResult>>(emptyList())
+    val results: StateFlow<List<SearchResult>> = _results
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _trackMap = MutableStateFlow<Map<String, Track>>(emptyMap())
+    val trackMap: StateFlow<Map<String, Track>> = _trackMap
+
+    init {
+        viewModelScope.launch {
+            queryFlow
+                .debounce(300)
+                .distinctUntilChanged()
+                .collectLatest { query ->
+                    if (query.isEmpty()) {
+                        _results.value = emptyList()
+                        _trackMap.value = emptyMap()
+                        return@collectLatest
+                    }
+
+                    _isLoading.value = true
+                    try {
+                        val res = repository.search(query)
+                        _results.value = res
+
+                        val trackUris = res.filter { it.uri.startsWith("spotify:track:") }.map { it.uri }
+                        if (trackUris.isNotEmpty()) {
+                            val tracks = try {
+                                metadata.getTrackMetadata(trackUris)
+                            } catch (e: Exception) {
+                                emptyList()
+                            }
+                            _trackMap.value = tracks.associateBy { it.uri }
+                        } else {
+                            _trackMap.value = emptyMap()
+                        }
+
+                    } finally {
+                        _isLoading.value = false
+                    }
+                }
+        }
+    }
+
+    fun onQueryChange(query: String){
+        queryFlow.value = query
     }
 }

@@ -1,4 +1,4 @@
-package cc.tomko.outify.ui.model
+package cc.tomko.outify.ui.model.player
 
 /**
  * Holds the UI state of the player

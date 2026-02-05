@@ -4,11 +4,13 @@ import android.app.Application
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.Session
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.data.Metadata
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.playback.AudioManager
 import cc.tomko.outify.playback.AudioPlayer
 import cc.tomko.outify.playback.PlaybackManager
 import cc.tomko.outify.ui.repository.LibraryRepository
+import cc.tomko.outify.ui.repository.SearchRepository
 import cc.tomko.outify.ui.repository.TrackRepository
 import coil3.ImageLoader
 import coil3.disk.DiskCache
@@ -26,8 +28,12 @@ class OutifyApplication : Application() {
         private set
     lateinit var libraryRepository: LibraryRepository
         private set
+    lateinit var searchRepository: SearchRepository
+        private set
 
     lateinit var imageLoader: ImageLoader
+        private set
+    lateinit var metadata: Metadata
         private set
 
     override fun onCreate() {
@@ -63,7 +69,7 @@ class OutifyApplication : Application() {
 
     private fun initializeRepositories(){
         trackRepository = TrackRepository(database.trackDao())
-        libraryRepository = LibraryRepository(
+        metadata = Metadata(
             db = database,
             trackRepo = trackRepository,
             trackDao = database.trackDao(),
@@ -72,9 +78,14 @@ class OutifyApplication : Application() {
             albumDao = database.albumDao(),
             albumArtistDao = database.albumArtistDao()
         )
+
+        libraryRepository = LibraryRepository(metadata)
+        searchRepository = SearchRepository()
     }
 
     companion object {
+        const val ALBUM_COVER_URL: String = "https://i.scdn.co/image/"
+
         lateinit var audioManager: AudioManager
         lateinit var session: Session
         lateinit var playbackManager: PlaybackManager

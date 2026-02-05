@@ -42,10 +42,8 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_search(
                 let uris: Vec<String> = context
                     .pages
                     .iter()
-                    .skip(page_offset)
-                    .take(pages)
-                    .flat_map(|page| page.tracks.iter())
-                    .map(|track| track.uri().to_string())
+                    .flat_map(|page| &page.tracks)
+                    .filter_map(|track| track.uri.clone())
                     .collect();
 
                 match serde_json::to_string(&uris) {

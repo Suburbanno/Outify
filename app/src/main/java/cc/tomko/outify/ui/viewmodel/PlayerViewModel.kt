@@ -5,13 +5,12 @@ import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.playback.PlaybackStateHolder
-import cc.tomko.outify.ui.model.PlayerAction
-import cc.tomko.outify.ui.model.PlayerUIState
+import cc.tomko.outify.ui.model.player.PlayerAction
+import cc.tomko.outify.ui.model.player.PlayerUIState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class PlayerViewModel(

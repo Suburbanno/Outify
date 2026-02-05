@@ -10,6 +10,9 @@ sealed interface Route: NavKey {
     data object HomeScreen: Route, NavKey
 
     @Serializable
+    data object SearchScreen: Route, NavKey
+
+    @Serializable
     data object PlayerScreen: Route, NavKey
 
     @Serializable

@@ -1,4 +1,4 @@
-package cc.tomko.outify.ui.model
+package cc.tomko.outify.ui.model.player
 
 sealed interface PlayerAction {
     data object PlayPause: PlayerAction
