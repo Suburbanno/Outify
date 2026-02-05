@@ -2,6 +2,8 @@ package cc.tomko.outify.ui.components.navigation
 
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -37,10 +39,16 @@ fun SharedTransitionScope.NavigationRoot(
             rememberSaveableStateHolderNavEntryDecorator(),
         ),
         transitionSpec = {
-            slideInHorizontally(initialOffsetX = { it }) togetherWith slideOutHorizontally(targetOffsetX = { -it })
+            slideInHorizontally { it } + fadeIn() togetherWith
+                    slideOutHorizontally { -it } + fadeOut()
         },
         popTransitionSpec = {
-            slideInHorizontally(initialOffsetX = { -it }) togetherWith slideOutHorizontally(targetOffsetX = { it })
+            slideInHorizontally { -it } + fadeIn() togetherWith
+                    slideOutHorizontally { it } + fadeOut()
+        },
+        predictivePopTransitionSpec = {
+            slideInHorizontally { -it } + fadeIn() togetherWith
+                    slideOutHorizontally { it } + fadeOut()
         },
         entryProvider = { key ->
             when (key) {
