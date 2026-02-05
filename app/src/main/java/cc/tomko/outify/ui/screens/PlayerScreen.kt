@@ -1,6 +1,7 @@
 package cc.tomko.outify.ui.screens
 
 import android.os.SystemClock
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,26 +48,46 @@ import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.viewmodel.PlayerViewModel
 import cc.tomko.outify.ui.viewmodel.factory.PlayerViewModelFactory
+import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import coil3.request.allowHardware
 import coil3.request.crossfade
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
+fun SharedTransitionScope.PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
+    val context = LocalContext.current
+
     val vm: PlayerViewModel = viewModel(
         factory = PlayerViewModelFactory(playbackStateHolder)
     )
 
     val uiState by vm.uiState.collectAsState()
+    val track by vm.currentTrack.collectAsState()
+    val artworkUrl = track ?.album ?.covers ?.firstOrNull() ?.uri ?.let { OutifyApplication.ALBUM_COVER_URL + it }
+
+    val imageSize = 400.dp
+    val imageSizePx = with(LocalDensity.current) { imageSize.roundToPx() }
+
+    val imageRequest = remember(artworkUrl) {
+        ImageRequest.Builder(context)
+            .data(artworkUrl)
+            .size(imageSizePx)
+            .allowHardware(true)
+            .build()
+    }
+    val imageLoader = (LocalContext.current.applicationContext as OutifyApplication).imageLoader
 
     Box(
         modifier = Modifier
@@ -80,17 +102,25 @@ fun PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(OutifyApplication.ALBUM_COVER_URL + uiState.albumArt)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "Album cover",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.clip(RoundedCornerShape(12.dp)).size(400.dp),
-                placeholder = ColorPainter(Color.Gray),
-                error = ColorPainter(Color.Gray)
-            )
+            // Album artwork
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(6.dp),
+                modifier = Modifier
+                    .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
+                    .size(imageSize)
+                    .sharedBounds(
+                        rememberSharedContentState(SharedElementKey.PLAYER_ARTWORK),
+                        animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                    )
+            ) {
+                AsyncImage(
+                    model = imageRequest,
+                    imageLoader = imageLoader,
+                    contentDescription = "Artwork",
+                    modifier = Modifier
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 

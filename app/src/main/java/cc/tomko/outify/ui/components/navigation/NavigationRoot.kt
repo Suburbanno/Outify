@@ -1,5 +1,10 @@
 package cc.tomko.outify.ui.components.navigation
 
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -19,7 +24,7 @@ import cc.tomko.outify.ui.viewmodel.LikedViewModel
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
 
 @Composable
-fun NavigationRoot(
+fun SharedTransitionScope.NavigationRoot(
     backStack: NavBackStack<NavKey>,
     modifier: Modifier = Modifier
 ) {
@@ -31,12 +36,12 @@ fun NavigationRoot(
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
         ),
-//        transitionSpec = {
-//            slideInHorizontally(initialOffsetX = { it }) togetherWith slideOutHorizontally(targetOffsetX = { -it })
-//        },
-//        popTransitionSpec = {
-//            slideInHorizontally(initialOffsetX = { -it }) togetherWith slideOutHorizontally(targetOffsetX = { it })
-//        },
+        transitionSpec = {
+            slideInHorizontally(initialOffsetX = { it }) togetherWith slideOutHorizontally(targetOffsetX = { -it })
+        },
+        popTransitionSpec = {
+            slideInHorizontally(initialOffsetX = { -it }) togetherWith slideOutHorizontally(targetOffsetX = { it })
+        },
         entryProvider = { key ->
             when (key) {
                 is Route.HomeScreen -> {

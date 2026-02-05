@@ -50,17 +50,12 @@ fun OutifyBottomNav(
     tonalElevation: Dp = 2.dp,
     contentPaddingHorizontal: Dp = 16.dp,
     contentPaddingVertical: Dp = 16.dp,
-    cornerRadius: Dp = 28.dp,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     selectedColor: Color = MaterialTheme.colorScheme.primary,
     unselectedColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     showLabels: Boolean = false,
 ){
     Surface(
-        modifier = Modifier.fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 12.dp)
-            .clip(RoundedCornerShape(cornerRadius)),
-        color = containerColor,
+        modifier = Modifier.fillMaxWidth(),
         tonalElevation = tonalElevation,
         shadowElevation = 6.dp
     ) {
