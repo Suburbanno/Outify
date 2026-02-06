@@ -37,6 +37,9 @@ class Metadata(
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
+    /**
+     * Returns list of Tracks with their metadata
+     */
     suspend fun getTrackMetadata(uris: List<String>): List<Track> {
         if (uris.isEmpty()) return emptyList()
 
@@ -106,25 +109,33 @@ class Metadata(
     }
 
     /**
-     * Retrieves track metadata for singular track
+     * Returns list of Albums with their metadata
      */
-    suspend fun getTrackMetadata(uri: String): Track {
-        val uris = listOf(uri)
+    suspend fun getAlbumMetadata(uris: List<String>): List<Album> = supervisorScope {
+        if (uris.isEmpty()) return@supervisorScope emptyList()
 
-        val cached = loadCachedTracks(uris)
-        if(cached.isEmpty()) {
-            return fetchTracks(uris).first().second
-        } else {
-            val track = cached.values.first()
-            val albumId = track.track.albumId ?: "" // TODO: Handle differently?
-            val possibleAlbum = loadAlbums(listOf(albumId))
-            if(!possibleAlbum.isEmpty()){
-                return track.toDomain(possibleAlbum.values.first())
+        val cachedMap = loadCachedAlbumsByUri(uris).toMutableMap()
+
+        val missingUris = uris.filterNot { cachedMap.containsKey(it) }
+        val fetchedAlbums: List<Album> = if (missingUris.isNotEmpty()) {
+            val fetched = fetchAlbums(missingUris)
+            if (fetched.isNotEmpty()) {
+                persistAlbumMetadata(fetched)
             }
-            throw RuntimeException("Track metadata without any album? Track: $uri")
+            fetched
+        } else {
+            emptyList()
+        }
+
+        // combine cached + fetched, maintaining original order
+        uris.map { uri ->
+            fetchedAlbums.find { it.uri == uri } ?: cachedMap[uri]?.toDomain()
+            ?: throw RuntimeException("Missing album metadata for $uri")
         }
     }
 
+
+    //region Tracks
     /**
      * Fetches tracks metadata, that aren't cached.
      */
@@ -136,7 +147,7 @@ class Metadata(
             val deferred = chunk.map { uri ->
                 async {
                     try {
-                        val raw = getMetadata(uri)
+                        val raw = getNativeMetadata(uri)
                         val t = json.decodeFromString<Track>(raw)
                         uri to t
                     } catch (e: Exception) {
@@ -232,9 +243,91 @@ class Metadata(
             uris.forEach { id -> try { trackRepo.touchTrack(id) } catch (_: Exception) {} }
         }
     }
+    //endregion Tracks
+
+    //region Albums
+    private suspend fun fetchAlbums(uris: List<String>): List<Album> = supervisorScope {
+        if (uris.isEmpty()) return@supervisorScope emptyList()
+
+        val results = mutableListOf<Album>()
+
+        uris.chunked(concurrency).forEach { chunk ->
+            val deferred = chunk.map { uri ->
+                async {
+                    try {
+                        val raw = getNativeMetadata(uri)
+                        println(raw)
+                        json.decodeFromString<Album>(raw)
+                    } catch (e: Exception) {
+                        Log.e("Metadata", "fetchAlbums: failed for $uri", e)
+                        null
+                    }
+                }
+            }
+            results += deferred.awaitAll().filterNotNull()
+        }
+
+        results
+    }
+
+    private suspend fun loadCachedAlbumsByUri(
+        uris: List<String>
+    ): Map<String, AlbumWithArtists> {
+        if (uris.isEmpty()) return emptyMap()
+        val entities = albumDao.getAlbumsWithArtists(uris)
+
+        return uris.associateWith { uri ->
+            val entity = entities.find { it.album.uri == uri }
+                ?: return@associateWith null // might be missing
+
+            // map to AlbumWithArtists domain object
+            AlbumWithArtists(
+                album = entity.album,
+                artists = entity.artists
+            )
+        }.filterValues { it != null } as Map<String, AlbumWithArtists>
+    }
+
+    private suspend fun persistAlbumMetadata(albums: List<Album>) {
+        if (albums.isEmpty()) return
+
+        val now = System.currentTimeMillis()
+
+        val albumEntities = mutableListOf<AlbumEntity>()
+        val albumArtistJoins = mutableListOf<AlbumArtistEntity>()
+
+        albums.forEach { album ->
+            albumEntities += AlbumEntity(
+                albumId = album.id,
+                uri = album.uri,
+                name = album.name,
+                artistNames = album.artists.joinToString(", ") { it.name },
+                coverUri = album.covers.firstOrNull()?.uri,
+                popularity = album.popularity,
+                lastUpdated = now
+            )
+
+            album.artists.forEachIndexed { idx, artist ->
+                albumArtistJoins += AlbumArtistEntity(
+                    albumId = album.id,
+                    artistId = artist.id,
+                    position = idx
+                )
+            }
+        }
+
+        db.withTransaction {
+            albumDao.insertAll(albumEntities)
+            if (albumArtistJoins.isNotEmpty()) {
+                albumArtistDao.insertAll(albumArtistJoins)
+            }
+        }
+    }
+
+    //endregion Albums
 
     /**
      * Native method to get JSON Metadata using URI
      */
-    external fun getMetadata(uri: String): String
+    external fun getNativeMetadata(uri: String): String
 }

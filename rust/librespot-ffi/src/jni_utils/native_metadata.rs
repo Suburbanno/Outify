@@ -62,6 +62,7 @@ pub struct AlbumJson {
     name: String,
     artists: Vec<ArtistJson>,
     popularity: i32,
+    tracks: Vec<String>, // Just Spotify URI
     covers: Vec<ImageJson>
 }
 
@@ -73,6 +74,7 @@ impl From<&Album> for AlbumJson {
             name: album.name.clone(),
             artists: album.artists.iter().map(ArtistJson::from).collect(),
             popularity: album.popularity,
+            tracks: album.tracks().map(|uri| uri.to_uri()).collect(),
             covers: album.covers.iter().map(ImageJson::from).collect(),
         }
     }

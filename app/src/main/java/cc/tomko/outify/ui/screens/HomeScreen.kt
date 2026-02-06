@@ -28,8 +28,7 @@ import cc.tomko.outify.ui.theme.OutifyTheme
 fun HomeScreen(modifier: Modifier = Modifier) {
     Scaffold() { innerPaddings ->
         Column(modifier = Modifier
-            .padding(paddingValues = innerPaddings)
-            .padding(start = 24.dp)) {
+            .padding(start = 24.dp, top = 24.dp)) {
             Text(
                 text = "Welcome back,\nUser!",
                 style = MaterialTheme.typography.headlineLargeEmphasized)

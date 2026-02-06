@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.components
 
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -23,10 +24,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -36,7 +40,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
@@ -45,7 +51,7 @@ enum class TrackRowDensity { Compact, Default, Spacious }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TrackRow(
+fun SharedTransitionScope.TrackRow(
     title: String,
     artist: String,
     artworkUrl: String?,
@@ -62,6 +68,9 @@ fun TrackRow(
     onArtistClick: (() -> Unit)? = null,
 
     contentDescription: String? = null,
+
+    sharedTransitionKey: String? = "${SharedElementKey.ALBUM_ARTWORK}_${artworkUrl}",
+    color: Color = MaterialTheme.colorScheme.surfaceVariant,
 
     modifier: Modifier = Modifier
 ) {
@@ -95,11 +104,20 @@ fun TrackRow(
 
     val imageLoader = (LocalContext.current.applicationContext as OutifyApplication).imageLoader
 
+    // Morphing the album cover only if sharedTransitionKey != null
+    val modifierWithSharedBounds = if (sharedTransitionKey != null) {
+        modifier.sharedBounds(
+            rememberSharedContentState(sharedTransitionKey),
+            animatedVisibilityScope = LocalNavAnimatedContentScope.current
+        )
+    } else {
+        modifier
+    }
+
     Surface(
         modifier = combinedModifier.semantics {
             contentDescription?.let { this.contentDescription = it }
         },
-        tonalElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
@@ -111,16 +129,18 @@ fun TrackRow(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(modifier = Modifier
-                .size(imageDp)
-                .clip(RoundedCornerShape(6.dp))
+            Surface(
+                color = color,
+                shape = RoundedCornerShape(6.dp),
+                modifier = Modifier
+                    .padding(start = 16.dp, top = 2.dp, bottom = 2.dp)
+                    .size(imageDp)
             ) {
                 AsyncImage(
                     model = imageRequest,
                     imageLoader = imageLoader,
-                    contentDescription = "Artwork for $title",
-                    modifier = Modifier
-                        .matchParentSize()
+                    contentDescription = "Artwork",
+                    modifier = modifierWithSharedBounds
                         .then(
                             if (onArtworkClick != null) {
                                 Modifier.combinedClickable(

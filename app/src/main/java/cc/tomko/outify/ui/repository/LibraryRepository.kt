@@ -22,6 +22,8 @@ class LibraryRepository(
 ) {
 
     private val json = Json { ignoreUnknownKeys = true }
+    private var cachedLikedUris: List<String>? = null
+
 
     suspend fun getLikedTracks(limit: Int, offset: Int): List<Track> =
         withContext(Dispatchers.IO) {
@@ -38,8 +40,12 @@ class LibraryRepository(
         }
 
     private suspend fun fetchLikedTrackUris(): List<String> {
+        cachedLikedUris?.let { return it }
+
         val jsonUris = spClient.getLikedSongs(0, 1)
-        return json.decodeFromString(jsonUris)
+        val parsed = json.decodeFromString<List<String>>(jsonUris)
+        cachedLikedUris = parsed
+        return parsed
     }
 
     private fun paginate(all: List<String>, limit: Int, offset: Int): List<String> {

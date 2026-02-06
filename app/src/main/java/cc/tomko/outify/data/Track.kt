@@ -1,5 +1,6 @@
 package cc.tomko.outify.data
 
+import androidx.compose.runtime.Immutable
 import cc.tomko.outify.data.database.ArtistEntity
 import cc.tomko.outify.data.database.TrackArtistEntity
 import cc.tomko.outify.data.database.TrackEntity
@@ -11,6 +12,7 @@ import kotlinx.serialization.Serializable
  * Data sourced from JSON from FFI
  */
 @Serializable
+@Immutable
 data class Track(
     val id: String,
     val uri: String,

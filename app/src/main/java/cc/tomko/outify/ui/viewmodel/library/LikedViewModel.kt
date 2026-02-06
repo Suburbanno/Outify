@@ -1,4 +1,4 @@
-package cc.tomko.outify.ui.viewmodel
+package cc.tomko.outify.ui.viewmodel.library
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -12,8 +12,8 @@ import kotlinx.coroutines.launch
 
 class LikedViewModel(
     application: Application,
-    private val repo: LibraryRepository = (application as OutifyApplication).libraryRepository
 ) : AndroidViewModel(application) {
+    private val repo: LibraryRepository = (application as OutifyApplication).libraryRepository
 
     private val _likedTracks = MutableStateFlow<List<Track>>(emptyList())
     val likedTracks: StateFlow<List<Track>> = _likedTracks

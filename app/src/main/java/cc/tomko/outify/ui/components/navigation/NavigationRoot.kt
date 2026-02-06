@@ -1,6 +1,5 @@
 package cc.tomko.outify.ui.components.navigation
 
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -9,9 +8,11 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -21,9 +22,12 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.ui.screens.HomeScreen
 import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.screens.library.LikedScreen
+import cc.tomko.outify.ui.screens.library.album.AlbumScreen
 import cc.tomko.outify.ui.screens.search.SearchScreen
-import cc.tomko.outify.ui.viewmodel.LikedViewModel
+import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
+import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModel
+import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModelFactory
 
 @Composable
 fun SharedTransitionScope.NavigationRoot(
@@ -65,12 +69,13 @@ fun SharedTransitionScope.NavigationRoot(
 
                 is Route.LikedScreen -> {
                     NavEntry(key) {
-                        val viewModel = remember { LikedViewModel(app!!) }
+                        val viewModel: LikedViewModel = viewModel()
                         val listState = rememberLazyListState()
 
                         LikedScreen(
                             viewModel = viewModel,
                             listState = listState,
+                            backStack = backStack,
                             onTrackClick = { track ->
                                 OutifyApplication.spirc.load(track.uri)
                             }
@@ -81,9 +86,51 @@ fun SharedTransitionScope.NavigationRoot(
                 is Route.SearchScreen -> {
                     NavEntry(key) {
                         val viewModel = remember { SearchViewModel(app!!, app.metadata) }
-                        SearchScreen(viewModel)
+                        SearchScreen(backStack,viewModel)
                     }
                 }
+
+                is Route.AlbumScreen -> {
+                    NavEntry(key) {
+                        val context = LocalContext.current.applicationContext as OutifyApplication
+                        val factory = AlbumViewModelFactory(
+                            application = context,
+                            albumUri = key.albumUri
+                        )
+
+                        val viewModel: AlbumViewModel = viewModel(
+                            key = key.albumUri,
+                            factory = factory
+                        )
+
+                        AlbumScreen(
+                            viewModel = viewModel,
+                        )
+                    }
+                }
+
+                is Route.AlbumScreenFromTrack -> {
+                    NavEntry(key) {
+                        val context = LocalContext.current.applicationContext as OutifyApplication
+                        val albumUri = key.track.album?.uri ?: ""
+                        println(albumUri)
+                        val factory = AlbumViewModelFactory(
+                            application = context,
+                            albumUri = albumUri
+                        )
+
+                        val viewModel: AlbumViewModel = viewModel(
+                            key = albumUri,
+                            factory = factory
+                        )
+
+                        AlbumScreen(
+                            viewModel = viewModel,
+                            sourceTrack = key.track
+                        )
+                    }
+                }
+
                 else -> error("Unknown NavKey: $key")
             }
         }

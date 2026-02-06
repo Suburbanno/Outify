@@ -2,15 +2,24 @@ use jni::{
     objects::{JClass, JString},
     sys::jstring,
 };
-use librespot_core::SpotifyUri;
+use librespot_core::{Session, SpotifyUri};
 use librespot_metadata::Metadata;
 
-// Called when we need to get extra metadata from Spotify URI
+// From librespot_metadata
+const SPOTIFY_ITEM_TYPE_ALBUM: &str = "album";
+const SPOTIFY_ITEM_TYPE_ARTIST: &str = "artist";
+const SPOTIFY_ITEM_TYPE_EPISODE: &str = "episode";
+const SPOTIFY_ITEM_TYPE_PLAYLIST: &str = "playlist";
+const SPOTIFY_ITEM_TYPE_SHOW: &str = "show";
+const SPOTIFY_ITEM_TYPE_TRACK: &str = "track";
+const SPOTIFY_ITEM_TYPE_LOCAL: &str = "local";
+const SPOTIFY_ITEM_TYPE_UNKNOWN: &str = "unknown";
+
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_data_Metadata_getMetadata(
-    mut env: jni::JNIEnv<'_>,
-    _this: JClass<'_>,
-    juri: JString<'_>,
+pub extern "system" fn Java_cc_tomko_outify_data_Metadata_getNativeMetadata(
+    mut env: jni::JNIEnv,
+    _this: JClass,
+    juri: JString,
 ) -> jstring {
     let uri: String = match env.get_string(&juri) {
         Ok(u) => u.into(),
@@ -46,19 +55,12 @@ pub extern "system" fn Java_cc_tomko_outify_data_Metadata_getMetadata(
     };
 
     let maybe_json: Option<String> = rt.block_on(async {
-        match librespot_metadata::Track::get(session, &spotify_uri).await {
-            Ok(metadata) => {
-                let track = crate::jni_utils::native_metadata::TrackJson::from(&metadata);
-                match serde_json::to_string(&track) {
-                    Ok(j) => Some(j),
-                    Err(e) => {
-                        error!("getMetadata: serde_json: {}", e);
-                        None
-                    }
-                }
-            }
-            Err(e) => {
-                error!("failed to fetch metadata: {}", e);
+        match spotify_uri.item_type() {
+            SPOTIFY_ITEM_TYPE_TRACK => get_track_metadata(&session, &spotify_uri).await,
+            SPOTIFY_ITEM_TYPE_ALBUM => get_album_metadata(&session, &spotify_uri).await,
+
+            &_ => {
+                info!("Unknown item type!");
                 None
             }
         }
@@ -68,7 +70,7 @@ pub extern "system" fn Java_cc_tomko_outify_data_Metadata_getMetadata(
         Some(j) => j,
         None => {
             error!("failed to get json from maybe_json");
-            return std::ptr::null_mut()
+            return std::ptr::null_mut();
         }
     };
 
@@ -81,3 +83,40 @@ pub extern "system" fn Java_cc_tomko_outify_data_Metadata_getMetadata(
     }
 }
 
+// Retrieves the album metadata as JSON
+async fn get_album_metadata(session: &Session, spotify_uri: &SpotifyUri) -> Option<String> {
+    match librespot_metadata::Album::get(session, &spotify_uri).await {
+        Ok(metadata) => {
+            let album = crate::jni_utils::native_metadata::AlbumJson::from(&metadata);
+            convert_to_string(&album)
+        }
+        Err(e) => {
+            error!("failed to fetch album metadata: {}", e);
+            None
+        }
+    }
+}
+
+// Retrieves the album metadata as JSON
+async fn get_track_metadata(session: &Session, spotify_uri: &SpotifyUri) -> Option<String> {
+    match librespot_metadata::Track::get(session, &spotify_uri).await {
+        Ok(metadata) => {
+            let track = crate::jni_utils::native_metadata::TrackJson::from(&metadata);
+            convert_to_string(&track)
+        }
+        Err(e) => {
+            error!("failed to fetch album metadata: {}", e);
+            None
+        }
+    }
+}
+
+fn convert_to_string<T: serde::Serialize>(metadata: &T) -> Option<String> {
+    match serde_json::to_string(&metadata) {
+        Ok(json) => Some(json),
+        Err(e) => {
+            error!("serde_json: {}", e);
+            None
+        }
+    }
+}

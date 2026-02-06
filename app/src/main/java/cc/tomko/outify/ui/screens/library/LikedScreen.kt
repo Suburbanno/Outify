@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.screens.library
 
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,25 +21,31 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDirections
+import androidx.navigation3.runtime.NavBackStack
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.ui.NavDisplay
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.ui.components.TrackRow
-import cc.tomko.outify.ui.viewmodel.LikedViewModel
-import coil3.ImageLoader
+import cc.tomko.outify.ui.components.navigation.Route
+import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
-import coil3.request.crossfade
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun LikedScreen(
+fun SharedTransitionScope.LikedScreen(
     viewModel: LikedViewModel,
     listState: LazyListState,
+    backStack: NavBackStack<NavKey>,
     onTrackClick: (Track) -> Unit,
 ) {
     val tracks by viewModel.likedTracks.collectAsState()
-    LaunchedEffect(viewModel) { viewModel.ensureLoaded() }
+    LaunchedEffect(Unit) { viewModel.ensureLoaded() }
 
     val itemCount = tracks.size
 
@@ -49,24 +56,17 @@ fun LikedScreen(
         with(density) { 56.dp.roundToPx() }
     }
 
-    val imageLoader = remember {
-        ImageLoader.Builder(context)
-            .crossfade(false)
-            .build()
-    }
+    val imageLoader = (context.applicationContext as OutifyApplication).imageLoader
 
     // Prefetch images for visible range and trigger viewmodel to load more when near end
     LaunchedEffect(listState, tracks) {
         snapshotFlow { listState.firstVisibleItemIndex }
             .distinctUntilChanged()
-            // filter out spurious re-emissions
             .collect { first ->
-                val end = (first + 8).coerceAtMost((tracks.size).coerceAtLeast(0))
-                // enqueue a few images ahead of the viewport
-                for (i in first..end) {
-                    if (i in tracks.indices) {
-                        val url = tracks[i].album?.covers?.getOrNull(0)?.uri
-                        if (!url.isNullOrEmpty()) {
+                withContext(Dispatchers.IO) {
+                    val end = (first + 8).coerceAtMost(tracks.lastIndex)
+                    for (i in first..end) {
+                        tracks.getOrNull(i)?.album?.covers?.firstOrNull()?.uri?.let { url ->
                             imageLoader.enqueue(
                                 ImageRequest.Builder(context)
                                     .data(OutifyApplication.ALBUM_COVER_URL + url)
@@ -77,18 +77,24 @@ fun LikedScreen(
                         }
                     }
                 }
-                viewModel.onVisibleIndex(end)
+                viewModel.onVisibleIndex(first + 8)
             }
     }
 
+    val currentTrack by OutifyApplication
+        .playbackManager
+        .playbackStateHolder
+        .currentTrack
+        .collectAsState(initial = null)
+
     LazyColumn(state = listState) {
         item {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(24.dp))
             Text("Liked Songs", style = MaterialTheme.typography.headlineLargeEmphasized, fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp))
+                modifier = Modifier.padding(start = 24.dp, bottom = 4.dp))
 
             Text("$itemCount songs", style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 16.dp))
+                modifier = Modifier.padding(start = 24.dp, bottom = 4.dp))
             Spacer(Modifier.height(12.dp))
         }
 
@@ -97,9 +103,6 @@ fun LikedScreen(
             key = { it.uri },
             contentType = { "track" }
         ) { track ->
-            val onClick = remember(track.uri) { { onTrackClick(track) } }
-            val currentTrack by OutifyApplication.playbackManager.playbackStateHolder.currentTrack.collectAsState()
-
             TrackRow(
                 title = track.name,
                 artist = track.artists.joinToString { it.name },
@@ -107,10 +110,10 @@ fun LikedScreen(
                 isPlaying = currentTrack?.uri.equals(track.uri),
                 isSelected = false,
 //                trailingContent = TODO(),
-                onRowClick = onClick,
+                onRowClick = remember(track.uri) { { onTrackClick(track) } },
 //                onRowLongClick = TODO(),
                 onArtworkClick = {
-                    println("Album!")
+                    backStack.add(Route.AlbumScreenFromTrack(track))
                 },
 //                onTitleClick = TODO(),
                 onArtistClick = {
