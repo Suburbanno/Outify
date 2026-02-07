@@ -22,9 +22,19 @@ impl SpircRuntime {
         session: &Session,
         credentials: Credentials,
     ) -> Result<Self, Box<dyn std::error::Error>> {
-        let player_config = PlayerConfig::default();
+        let player_config = PlayerConfig {
+            // TODO: Make configurable from app
+            position_update_interval: Some(std::time::Duration::from_millis(5_000)),
+            bitrate: librespot_playback::config::Bitrate::Bitrate320,
+            gapless: true,
+            normalisation: false,
+            ..Default::default()
+        };
         let audio_format = AudioFormat::S16;
-        let mixer_config = MixerConfig::default();
+        let mixer_config = MixerConfig {
+            volume_ctrl: librespot_playback::config::VolumeCtrl::Linear,
+            ..Default::default()
+        };
 
         let sink_builder =
             librespot_playback::audio_backend::find(None).ok_or("no audio backend available")?;
@@ -121,6 +131,16 @@ impl SpircRuntime {
     }
 
     pub async fn shutdown(&self) {}
+
+    pub async fn prev_tracks(&self) -> Result<Vec<librespot_protocol::player::ProvidedTrack>, librespot_core::Error> {
+        self.spirc.prev_tracks().await
+            .ok_or_else(|| librespot_core::Error::internal("Spirc task not available"))
+    }
+
+    pub async fn next_tracks(&self) -> Result<Vec<librespot_protocol::player::ProvidedTrack>, librespot_core::Error> {
+        self.spirc.next_tracks().await
+            .ok_or_else(|| librespot_core::Error::internal("Spirc task not available"))
+    }
 }
 
 // Handles each player event accordingly
@@ -146,6 +166,23 @@ fn handle_event(event: PlayerEvent) {
 
         PlayerEvent::Seeked { play_request_id, track_id, position_ms } => {
             crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
+        }
+        
+        PlayerEvent::PositionChanged { play_request_id, track_id, position_ms } => {
+            crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
+        }
+
+        PlayerEvent::SessionConnected { connection_id, user_name } => {
+            info!("User {} connected session {}",user_name, connection_id);
+        }
+        PlayerEvent::SessionDisconnected { connection_id, user_name } => {
+            info!("User {} disconnected session {}",user_name, connection_id);
+        }
+        PlayerEvent::TimeToPreloadNextTrack { play_request_id, track_id } => {
+            info!("Its time to preload {}", track_id);
+        }
+        PlayerEvent::AddedToQueue { track_id } => {
+            info!("Track added to queue:  {}", track_id);
         }
         _ => {
             // Not yet implemented
