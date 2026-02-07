@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,10 +48,11 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SharedTransitionScope.MiniPlayer(
     backStack: NavBackStack<NavKey>,
+    showQueue: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -154,6 +157,16 @@ fun SharedTransitionScope.MiniPlayer(
                     }
                 }
 
+                IconButton(
+                    onClick = showQueue,
+                ) {
+                    Icon(
+                        Icons.Default.Menu,
+                        contentDescription = "See queue"
+                    )
+                }
+
+                // Playback controls
                 Surface(
                     tonalElevation = 10.dp,
                     shape = RoundedCornerShape(10.dp),

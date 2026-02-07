@@ -1,7 +1,5 @@
 use jni::{
-    JNIEnv,
-    objects::{JClass, JString},
-    sys::jboolean,
+    objects::{JClass, JString}, sys::{jboolean, jstring}, JNIEnv
 };
 use librespot_connect::LoadRequest;
 
@@ -305,4 +303,104 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPrevious(
     }
 
     1 as jboolean
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_previousTracks(
+    env: JNIEnv,
+    _this: JClass,
+) -> jstring {
+    let runtime = match super::SPIRC_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            warn!("Spirc not initialized for previousTracks");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let tracks_raw: Vec<librespot_protocol::player::ProvidedTrack> = match rt.block_on(async move {
+        runtime.prev_tracks().await
+    }) {
+        Ok(tracks) => tracks,
+        Err(e) => {
+            error!("failed to fetch tracks: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let uris: Vec<String> = tracks_raw.into_iter().map(|track| track.uri).collect();
+
+    let json = match serde_json::to_string(&uris) {
+        Ok(j) => j,
+        Err(e) => {
+            error!("serde_json: {}", e);
+            "[]".to_string()
+        }
+    };
+
+    match env.new_string(&json) {
+        Ok(jni_str) => jni_str.into_raw(),
+        Err(e) => {
+            error!("failed to convert json into json: {}", e);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_nextTracks(
+    env: JNIEnv,
+    _this: JClass,
+) -> jstring {
+    let runtime = match super::SPIRC_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            warn!("Spirc not initialized for previousTracks");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let tracks_raw: Vec<librespot_protocol::player::ProvidedTrack> = match rt.block_on(async move {
+        runtime.next_tracks().await
+    }) {
+        Ok(tracks) => tracks,
+        Err(e) => {
+            error!("failed to fetch tracks: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let uris: Vec<String> = tracks_raw.into_iter().map(|track| track.uri).collect();
+
+    let json = match serde_json::to_string(&uris) {
+        Ok(j) => j,
+        Err(e) => {
+            error!("serde_json: {}", e);
+            "[]".to_string()
+        }
+    };
+
+    match env.new_string(&json) {
+        Ok(jni_str) => jni_str.into_raw(),
+        Err(e) => {
+            error!("failed to convert json into json: {}", e);
+            std::ptr::null_mut()
+        }
+    }
 }

@@ -54,6 +54,16 @@ class Spirc {
     external fun playerPrevious(): Boolean
 
     /**
+     * Gets the previous tracks from queue
+     */
+    external fun previousTracks(): String
+
+    /**
+     * Gets the next tracks from queue
+     */
+    external fun nextTracks(): String
+
+    /**
      * Called once Spirc session gets initialized.
      * FFI calls this function
      */

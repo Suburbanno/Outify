@@ -3,7 +3,7 @@ package cc.tomko.outify.ui.viewmodel.factory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import cc.tomko.outify.playback.PlaybackStateHolder
-import cc.tomko.outify.ui.viewmodel.PlayerViewModel
+import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
 
 class PlayerViewModelFactory(
     private val playbackStateHolder: PlaybackStateHolder

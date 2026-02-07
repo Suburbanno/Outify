@@ -55,7 +55,7 @@ import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.model.player.PlayerAction
-import cc.tomko.outify.ui.viewmodel.PlayerViewModel
+import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
 import cc.tomko.outify.ui.viewmodel.factory.PlayerViewModelFactory
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage

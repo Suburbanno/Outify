@@ -1,4 +1,4 @@
-package cc.tomko.outify.ui.viewmodel
+package cc.tomko.outify.ui.viewmodel.player
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -35,14 +35,14 @@ class PlayerViewModel(
             positionMs = posMs,
             lastUpdateTime = lastSync,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlayerUIState())
+    }.stateIn(viewModelScope, SharingStarted.Companion.WhileSubscribed(5_000), PlayerUIState())
 
 
     /**
      * On Player UI action - like play/pause/..
      */
     fun onAction(action: PlayerAction) {
-        val spirc = OutifyApplication.spirc
+        val spirc = OutifyApplication.Companion.spirc
         when (action) {
             PlayerAction.PlayPause -> spirc.playerPlayPause()
             PlayerAction.Next -> spirc.playerNext()
