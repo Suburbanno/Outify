@@ -83,6 +83,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
 
+    implementation(libs.reorderable)
+
     implementation(platform(libs.compose.bom))
     implementation(libs.material)
     implementation(libs.material3.window.size.class1)

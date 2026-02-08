@@ -55,6 +55,8 @@ fun SharedTransitionScope.TrackRow(
     title: String,
     artist: String,
     artworkUrl: String?,
+
+    modifier: Modifier = Modifier,
     isPlaying: Boolean = false,
     isSelected: Boolean = false,
     density: TrackRowDensity = TrackRowDensity.Default,
@@ -71,8 +73,6 @@ fun SharedTransitionScope.TrackRow(
 
     sharedTransitionKey: String? = "${SharedElementKey.ALBUM_ARTWORK}_${artworkUrl}",
     color: Color = MaterialTheme.colorScheme.surfaceVariant,
-
-    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val imageDp: Dp = when (density) {
