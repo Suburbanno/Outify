@@ -6,6 +6,7 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.data.database.AlbumArtistEntity
 import cc.tomko.outify.data.database.AlbumEntity
+import cc.tomko.outify.data.database.AlbumTrackCrossRef
 import cc.tomko.outify.data.database.AlbumWithArtists
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.data.database.ArtistEntity
@@ -14,6 +15,7 @@ import cc.tomko.outify.data.database.TrackEntity
 import cc.tomko.outify.data.database.TrackWithArtists
 import cc.tomko.outify.data.database.dao.AlbumArtistDao
 import cc.tomko.outify.data.database.dao.AlbumDao
+import cc.tomko.outify.data.database.dao.AlbumTrackDao
 import cc.tomko.outify.data.database.dao.ArtistDao
 import cc.tomko.outify.data.database.dao.TrackArtistDao
 import cc.tomko.outify.data.database.dao.TrackDao
@@ -32,6 +34,7 @@ class Metadata(
     private val trackArtistDao: TrackArtistDao,
     private val albumDao: AlbumDao,
     private val albumArtistDao: AlbumArtistDao,
+    private val albumTrackDao: AlbumTrackDao,
     private val spClient: SpClient = OutifyApplication.session.spClient,
     private val concurrency: Int = 10
 ) {
@@ -109,28 +112,85 @@ class Metadata(
     }
 
     /**
-     * Returns list of Albums with their metadata
+     * Returns the cached album with its tracks (ordered URIs).
+     *
+     * If album missing in DB -> fetch remote, persist, return fetched.
+     * If album exists but album_tracks missing -> fetch remote, persist cross-refs, return fetched.
+     * If album + album_tracks exist -> fetch remote, compare track lists:
+     *      - if different -> persist remote and return it
+     *      - if identical  -> return cached immediately
      */
-    suspend fun getAlbumMetadata(uris: List<String>): List<Album> = supervisorScope {
-        if (uris.isEmpty()) return@supervisorScope emptyList()
+    suspend fun getAlbumMetadata(uri: String): Album? {
+        if (uri.isBlank()) return null
 
-        val cachedMap = loadCachedAlbumsByUri(uris).toMutableMap()
+        val cleanedId = uri.removePrefix("spotify:album:")
 
-        val missingUris = uris.filterNot { cachedMap.containsKey(it) }
-        val fetchedAlbums: List<Album> = if (missingUris.isNotEmpty()) {
-            val fetched = fetchAlbums(missingUris)
+        val albumMap = loadCachedAlbumsByUri(listOf(uri))
+        val albumWithArtists = albumMap[uri]
+
+        if (albumWithArtists == null) {
+            val fetched = try {
+                fetchAlbums(listOf(uri))
+            } catch (e: Exception) {
+                Log.w("Metadata", "Failed to fetch album $uri", e)
+                emptyList()
+            }
+
             if (fetched.isNotEmpty()) {
                 persistAlbumMetadata(fetched)
+                return fetched.first()
             }
-            fetched
-        } else {
-            emptyList()
+
+            return null
         }
 
-        // combine cached + fetched, maintaining original order
-        uris.map { uri ->
-            fetchedAlbums.find { it.uri == uri } ?: cachedMap[uri]?.toDomain()
-            ?: throw RuntimeException("Missing album metadata for $uri")
+        val cachedTrackUris = getCachedAlbumTracks(cleanedId)
+
+        if (cachedTrackUris.isEmpty()) {
+            val fetched = try {
+                fetchAlbums(listOf(uri))
+            } catch (e: Exception) {
+                Log.w("Metadata", "Failed to fetch album tracks for $uri", e)
+                emptyList()
+            }
+
+            if (fetched.isNotEmpty()) {
+                persistAlbumMetadata(fetched)
+                return fetched.first()
+            }
+
+            // fallback: cached album without tracks
+            val cachedDomain = albumWithArtists.toDomain()
+            return cachedDomain.copy(tracks = emptyList())
+        }
+
+        // Fetch remote album and compare track lists.
+        val remoteAlbums = try {
+            fetchAlbums(listOf(uri))
+        } catch (e: Exception) {
+            Log.w("Metadata", "Failed to fetch album (verification) for $uri", e)
+            null
+        }
+
+        if (remoteAlbums == null || remoteAlbums.isEmpty()) {
+            // Remote unavailable
+            val cachedDomain = albumWithArtists.toDomain()
+            return cachedDomain.copy(tracks = cachedTrackUris)
+        }
+
+        val remoteAlbum = remoteAlbums.first()
+
+        val remoteTrackUris = remoteAlbum.tracks
+
+        val unchanged = remoteTrackUris.size == cachedTrackUris.size &&
+                remoteTrackUris.zip(cachedTrackUris).all { (r, c) -> r == c }
+
+        return if (unchanged) {
+            val cachedDomain = albumWithArtists.toDomain()
+            cachedDomain.copy(tracks = cachedTrackUris)
+        } else {
+            persistAlbumMetadata(listOf(remoteAlbum))
+            remoteAlbum
         }
     }
 
@@ -191,6 +251,7 @@ class Metadata(
         val trackArtistJoins = mutableListOf<TrackArtistEntity>()
         val albumEntities = mutableListOf<AlbumEntity>()
         val albumArtistJoins = mutableListOf<AlbumArtistEntity>()
+        val albumTrackJoins = mutableListOf<AlbumTrackCrossRef>()
 
         metadata.forEach { (_, domainTrack) ->
             val (tEntity, aEntities, joins) = domainTrack.toEntities(now)
@@ -217,6 +278,14 @@ class Metadata(
                         position = idx
                     )
                 }
+
+                album.tracks.forEachIndexed { index, track ->
+                    albumTrackJoins += AlbumTrackCrossRef(
+                        albumId = album.id,
+                        trackId = track,
+                        position = index,
+                    )
+                }
             }
         }
 
@@ -225,6 +294,7 @@ class Metadata(
             if (albumEntities.isNotEmpty()) albumDao.insertAll(albumEntities)
             if (albumArtistJoins.isNotEmpty()) albumArtistDao.insertAll(albumArtistJoins)
             if (trackEntities.isNotEmpty()) trackRepo.upsertTracks(trackEntities, isLibrary = true)
+            if (trackArtistJoins.isNotEmpty()) trackArtistDao.insertAll(trackArtistJoins)
             if (trackArtistJoins.isNotEmpty()) trackArtistDao.insertAll(trackArtistJoins)
         }
     }
@@ -246,6 +316,10 @@ class Metadata(
     //endregion Tracks
 
     //region Albums
+
+    /**
+     * Fetches albums from native source.
+     */
     private suspend fun fetchAlbums(uris: List<String>): List<Album> = supervisorScope {
         if (uris.isEmpty()) return@supervisorScope emptyList()
 
@@ -256,7 +330,6 @@ class Metadata(
                 async {
                     try {
                         val raw = getNativeMetadata(uri)
-                        println(raw)
                         json.decodeFromString<Album>(raw)
                     } catch (e: Exception) {
                         Log.e("Metadata", "fetchAlbums: failed for $uri", e)
@@ -270,17 +343,20 @@ class Metadata(
         results
     }
 
+    /**
+     * Loads album entities for given spotify album URIs.
+     */
     private suspend fun loadCachedAlbumsByUri(
         uris: List<String>
     ): Map<String, AlbumWithArtists> {
         if (uris.isEmpty()) return emptyMap()
-        val entities = albumDao.getAlbumsWithArtists(uris)
+        val cleanedIds = uris.map { it.removePrefix("spotify:album:") }
+
+        // albumDao.getAlbumsWithArtists expects album IDs (not URIs)
+        val entities = albumDao.getAlbumsWithArtists(cleanedIds)
 
         return uris.associateWith { uri ->
-            val entity = entities.find { it.album.uri == uri }
-                ?: return@associateWith null // might be missing
-
-            // map to AlbumWithArtists domain object
+            val entity = entities.find { it.album.uri == uri } ?: return@associateWith null
             AlbumWithArtists(
                 album = entity.album,
                 artists = entity.artists
@@ -288,6 +364,9 @@ class Metadata(
         }.filterValues { it != null } as Map<String, AlbumWithArtists>
     }
 
+    /**
+     * Persist album metadata and album-track joins
+     */
     private suspend fun persistAlbumMetadata(albums: List<Album>) {
         if (albums.isEmpty()) return
 
@@ -295,6 +374,7 @@ class Metadata(
 
         val albumEntities = mutableListOf<AlbumEntity>()
         val albumArtistJoins = mutableListOf<AlbumArtistEntity>()
+        val albumTrackJoins = mutableListOf<AlbumTrackCrossRef>()
 
         albums.forEach { album ->
             albumEntities += AlbumEntity(
@@ -314,17 +394,42 @@ class Metadata(
                     position = idx
                 )
             }
+
+            album.tracks.forEachIndexed { index, trackUri ->
+                albumTrackJoins += AlbumTrackCrossRef(
+                    albumId = album.id,
+                    trackId = trackUri,
+                    position = index
+                )
+            }
         }
 
         db.withTransaction {
+            val albumIds = albums.map { it.id }
+
             albumDao.insertAll(albumEntities)
+
             if (albumArtistJoins.isNotEmpty()) {
                 albumArtistDao.insertAll(albumArtistJoins)
+            }
+
+            // Replace joins atomically for the affected albums
+            albumTrackDao.deleteByAlbumIds(albumIds)
+            if (albumTrackJoins.isNotEmpty()) {
+                albumTrackDao.insertAll(albumTrackJoins)
             }
         }
     }
 
-    //endregion Albums
+    /**
+     * Returns cached track URIs for the given album ID (ordered by position).
+     */
+    private suspend fun getCachedAlbumTracks(albumId: String): List<String> {
+        if (albumId.isBlank()) return emptyList()
+        return albumTrackDao.getTrackIdsForAlbum(albumId)
+    }
+
+//endregion Albums
 
     /**
      * Native method to get JSON Metadata using URI

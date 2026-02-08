@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalAnimatedVisibilityScope
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
@@ -46,7 +47,6 @@ import cc.tomko.outify.ui.screens.auth.AuthActivity
 import cc.tomko.outify.ui.theme.OutifyTheme
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
 
-val MiniPlayerHeight = 80.dp
 class MainActivity : ComponentActivity() {
 
     data object MainActivity {

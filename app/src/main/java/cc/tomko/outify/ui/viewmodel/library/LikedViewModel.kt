@@ -64,7 +64,6 @@ class LikedViewModel(
         }
     }
 
-    /** Optional: refresh the whole list */
     fun refresh() {
         offset = 0
         endReached = false

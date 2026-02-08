@@ -76,7 +76,8 @@ class OutifyApplication : Application() {
             artistDao = database.artistDao(),
             trackArtistDao = database.trackArtistDao(),
             albumDao = database.albumDao(),
-            albumArtistDao = database.albumArtistDao()
+            albumArtistDao = database.albumArtistDao(),
+            albumTrackDao = database.albumTrackDao(),
         )
 
         libraryRepository = LibraryRepository(metadata)

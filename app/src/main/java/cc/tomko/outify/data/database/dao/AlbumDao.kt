@@ -7,14 +7,32 @@ import androidx.room.Query
 import androidx.room.Transaction
 import cc.tomko.outify.data.database.AlbumEntity
 import cc.tomko.outify.data.database.AlbumWithArtists
+import cc.tomko.outify.data.database.AlbumWithTracks
+import cc.tomko.outify.data.database.TrackWithArtists
 
 @Dao
 interface AlbumDao {
+    @Transaction
     @Query("SELECT * FROM albums WHERE albumId = :albumId")
     suspend fun getAlbumWithArtists(albumId: String): AlbumWithArtists?
 
+    @Transaction
     @Query("SELECT * FROM albums WHERE albumId IN (:albumIds)")
     suspend fun getAlbumsWithArtists(albumIds: List<String>): List<AlbumWithArtists>
+
+    @Transaction
+    @Query("SELECT * FROM albums WHERE albumId = :albumId")
+    suspend fun getAlbumWithTracks(albumId: String): AlbumWithTracks
+
+    @Transaction
+    @Query("""
+    SELECT t.trackUri 
+    FROM tracks t
+    INNER JOIN album_tracks at ON t.id = at.trackId
+    WHERE at.albumId = :albumId
+    ORDER BY at.position
+""")
+    suspend fun getTrackUrisForAlbum(albumId: String): List<String>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(albums: List<AlbumEntity>)

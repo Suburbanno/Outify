@@ -2,12 +2,10 @@ package cc.tomko.outify.ui.viewmodel.library.album
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Metadata
 import cc.tomko.outify.data.Track
-import cc.tomko.outify.data.toHeaderUi
 import cc.tomko.outify.ui.screens.library.album.AlbumUiState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,12 +25,14 @@ class AlbumViewModel(
     val uiState: StateFlow<AlbumUiState> = _uiState
 
     fun loadAlbum() {
-        println("Loading album")
         viewModelScope.launch {
             try {
                 val album = metadata
-                    .getAlbumMetadata(listOf(albumUri))
-                    .first()
+                    .getAlbumMetadata(albumUri)
+
+                if(album == null){
+                    return@launch
+                }
 
                 val trackUris: List<String> = album.tracks.map { it }
 
@@ -42,7 +42,7 @@ class AlbumViewModel(
 
                 _uiState.value = AlbumUiState(
                     isLoading = false,
-                    album = album.toHeaderUi(),
+                    album = album,
                     tracks = tracks,
                 )
             } catch (e: Exception) {

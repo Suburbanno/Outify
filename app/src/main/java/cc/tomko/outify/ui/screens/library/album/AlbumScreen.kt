@@ -78,7 +78,7 @@ fun SharedTransitionScope.AlbumScreen(
     val imageSize = 72.dp
     val imageSizePx = with(LocalDensity.current) { imageSize.roundToPx() }
 
-    val artworkUrl = OutifyApplication.ALBUM_COVER_URL + (sourceTrack?.album?.covers?.first()?.uri ?: uiState.album?.artworkUrl)
+    val artworkUrl = OutifyApplication.ALBUM_COVER_URL + (sourceTrack?.album?.covers?.first()?.uri ?: uiState.album?.covers?.first()?.uri)
     val imageLoader = remember { (context.applicationContext as OutifyApplication).imageLoader }
     val imageRequest = remember(artworkUrl, imageSizePx) {
         ImageRequest.Builder(context)
@@ -91,8 +91,8 @@ fun SharedTransitionScope.AlbumScreen(
 
     val currentTrack by OutifyApplication.playbackManager.playbackStateHolder.currentTrack.collectAsState()
 
-    val albumUri = sourceTrack?.album?.uri ?: uiState.album?.albumUri
-    val albumName = sourceTrack?.album?.name ?: uiState.album?.title
+    val albumUri = sourceTrack?.album?.uri ?: ""
+    val albumName = sourceTrack?.album?.name ?: ""
     val artists = sourceTrack?.artists?.joinToString { it.name } ?: uiState.album?.artists
 
     LazyColumn(
@@ -159,15 +159,15 @@ fun SharedTransitionScope.AlbumScreen(
                 modifier = Modifier
                     .padding(start = 24.dp, top = 4.dp, bottom = 4.dp)
             ) {
-                Text(
-                    text = artists ?: "Loading",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 3,
-                    modifier = Modifier
-                        .padding(bottom = 8.dp)
-                )
+//                Text(
+//                    text = artists ?: "Loading",
+//                    style = MaterialTheme.typography.headlineMedium,
+//                    color = MaterialTheme.colorScheme.error,
+//                    fontWeight = FontWeight.SemiBold,
+//                    maxLines = 3,
+//                    modifier = Modifier
+//                        .padding(bottom = 8.dp)
+//                )
 
                 Text(
                     text = "Tracks:",

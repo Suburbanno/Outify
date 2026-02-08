@@ -22,6 +22,7 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.ui.screens.HomeScreen
 import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.screens.library.LikedScreen
+import cc.tomko.outify.ui.screens.library.album.AlbumDetailScreen
 import cc.tomko.outify.ui.screens.library.album.AlbumScreen
 import cc.tomko.outify.ui.screens.search.SearchScreen
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
@@ -124,9 +125,12 @@ fun SharedTransitionScope.NavigationRoot(
                             factory = factory
                         )
 
-                        AlbumScreen(
+                        AlbumDetailScreen(
                             viewModel = viewModel,
-                            sourceTrack = key.track
+                            onBack = {
+                                backStack.removeAt(backStack.lastIndex)
+                            }
+//                            sourceTrack = key.track
                         )
                     }
                 }

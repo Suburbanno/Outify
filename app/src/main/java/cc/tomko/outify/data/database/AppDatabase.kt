@@ -7,6 +7,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import cc.tomko.outify.data.database.dao.AlbumArtistDao
 import cc.tomko.outify.data.database.dao.AlbumDao
+import cc.tomko.outify.data.database.dao.AlbumTrackDao
 import cc.tomko.outify.data.database.dao.ArtistDao
 import cc.tomko.outify.data.database.dao.TrackArtistDao
 import cc.tomko.outify.data.database.dao.TrackDao
@@ -17,9 +18,10 @@ import cc.tomko.outify.data.database.dao.TrackDao
         ArtistEntity::class,
         TrackArtistEntity::class,
         AlbumEntity::class,
-        AlbumArtistEntity::class
+        AlbumTrackCrossRef::class,
+        AlbumArtistEntity::class,
     ],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase() {
@@ -28,6 +30,7 @@ abstract class AppDatabase: RoomDatabase() {
     abstract fun trackArtistDao(): TrackArtistDao
     abstract fun albumDao(): AlbumDao
     abstract fun albumArtistDao(): AlbumArtistDao
+    abstract fun albumTrackDao(): AlbumTrackDao
 
     companion object {
         @Volatile
