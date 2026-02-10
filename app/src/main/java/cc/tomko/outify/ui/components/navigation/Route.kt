@@ -3,7 +3,6 @@ package cc.tomko.outify.ui.components.navigation
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.data.Track
 import kotlinx.serialization.Serializable
-import java.io.Serial
 
 @Serializable
 sealed interface Route: NavKey {
@@ -20,7 +19,7 @@ sealed interface Route: NavKey {
     data object LikedScreen: Route, NavKey
 
     @Serializable
-    data class AlbumScreen(val albumUri: String): Route, NavKey
+    data class AlbumScreen(val trackUri: String): Route, NavKey
 
     @Serializable
     data class AlbumScreenFromTrack(val track: Track): Route, NavKey

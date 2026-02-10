@@ -3,13 +3,14 @@ package cc.tomko.outify.playback
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioTrack
 import android.os.Build
 import android.util.Log
+import cc.tomko.outify.data.Track
+import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import kotlin.math.max
 
-private const val TAG = "AudioPlayer"
+private const val TAG = "AudioEngine"
 
 enum class PcmFormat {
     S16,
@@ -18,26 +19,32 @@ enum class PcmFormat {
 /**
  * Plays the received PCM audio using modern AudioAttributes/AudioFormat API.
  */
-class AudioPlayer(context: Context) {
+class AudioEngine(
+    val context: Context,
+    eventCallback: PlayerEventCallback,
+) {
     @Volatile
-    private var track: AudioTrack? = null
-
+    private var audioTrack: AudioTrack? = null
     private var currentSampleRate = -1
     private var currentChannels = -1
     private var currentFormat: PcmFormat? = null
 
-    private val audioContext: Context =
-        if (Build.VERSION.SDK_INT >= 31) {
-            context.createAttributionContext("audioPlayback")
-        } else {
-            context
-        }
+    init {
+        println("Initializing audioengine")
+        // Registers this class as the PCM callback.
+        // Rust stores the GlobalRef and calls the onPcm method
+        registerPcmCallback(this)
+
+        // Registers callbacks to handle librespot events
+        registerPlayerEventListener(eventCallback)
+    }
 
     /**
      * Feed raw PCM bytes into the player.
      */
     @Synchronized
-    fun onPcm(data: ByteArray, sampleRate: Int, channels: Int, format: PcmFormat) {
+    fun onPcm(data: ByteArray, sampleRate: Int, channels: Int, rawFormat: Int) {
+        val format = PcmFormat.S16
         if (!ensureAudioTrack(sampleRate, channels, format)) {
             // unsupported format or allocation failed
             return
@@ -48,7 +55,7 @@ class AudioPlayer(context: Context) {
 
     @Synchronized
     private fun ensureAudioTrack(sampleRate: Int, channels: Int, format: PcmFormat): Boolean {
-        val existing = track
+        val existing = audioTrack
         if (existing != null
             && sampleRate == currentSampleRate
             && channels == currentChannels
@@ -117,7 +124,7 @@ class AudioPlayer(context: Context) {
 
             newTrack.play()
 
-            track = newTrack
+            audioTrack = newTrack
             currentSampleRate = sampleRate
             currentChannels = channels
             currentFormat = format
@@ -132,7 +139,7 @@ class AudioPlayer(context: Context) {
 
     @Synchronized
     private fun writePcm(data: ByteArray, format: PcmFormat) {
-        val t = track ?: run {
+        val t = audioTrack ?: run {
             Log.w(TAG, "writePcm called with no audio track")
             return
         }
@@ -160,7 +167,7 @@ class AudioPlayer(context: Context) {
 
     @Synchronized
     fun releaseAudioTrack() {
-        val t = track ?: return
+        val t = audioTrack ?: return
         try {
             if (t.playState == AudioTrack.PLAYSTATE_PLAYING) {
                 try {
@@ -180,7 +187,7 @@ class AudioPlayer(context: Context) {
                 t.release()
             } catch (ignored: Exception) {
             }
-            track = null
+            audioTrack = null
             currentSampleRate = -1
             currentChannels = -1
             currentFormat = null
@@ -189,7 +196,7 @@ class AudioPlayer(context: Context) {
 
     @Synchronized
     fun pause() {
-        track?.let {
+        audioTrack?.let {
             try {
                 it.pause()
             } catch (e: IllegalStateException) {
@@ -200,7 +207,7 @@ class AudioPlayer(context: Context) {
 
     @Synchronized
     fun flush() {
-        track?.let {
+        audioTrack?.let {
             try {
                 it.flush()
             } catch (e: IllegalStateException) {
@@ -208,4 +215,16 @@ class AudioPlayer(context: Context) {
             }
         }
     }
+
+    /**
+     * Marks this class as the one to receive onPcm data
+     */
+    private external fun registerPcmCallback(callbackPtr: AudioEngine?)
+
+
+    /**
+     * Registers PlayerEvent listener to FFI.
+     * FFI stores the GlobalRef of the callback
+     */
+    external fun registerPlayerEventListener(callback: PlayerEventCallback);
 }

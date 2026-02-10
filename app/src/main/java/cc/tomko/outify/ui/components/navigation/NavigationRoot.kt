@@ -8,7 +8,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,11 +20,12 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.Metadata
+import cc.tomko.outify.data.Track
 import cc.tomko.outify.ui.screens.HomeScreen
 import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.screens.library.LikedScreen
 import cc.tomko.outify.ui.screens.library.album.AlbumDetailScreen
-import cc.tomko.outify.ui.screens.library.album.AlbumScreen
 import cc.tomko.outify.ui.screens.search.SearchScreen
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
@@ -64,7 +66,7 @@ fun SharedTransitionScope.NavigationRoot(
                 }
                 is Route.PlayerScreen -> {
                     NavEntry(key) {
-                        PlayerScreen(OutifyApplication.playbackManager.playbackStateHolder)
+                        PlayerScreen(OutifyApplication.playbackStateHolder)
                     }
                 }
 
@@ -94,18 +96,26 @@ fun SharedTransitionScope.NavigationRoot(
                 is Route.AlbumScreen -> {
                     NavEntry(key) {
                         val context = LocalContext.current.applicationContext as OutifyApplication
+                        val track by produceState<Track?>(initialValue = null, key1 = key.trackUri) {
+                            value = context.metadata.getTrackMetadata(listOf(key.trackUri)).firstOrNull()
+                        }
+
+                        val albumUri = track?.album?.uri ?: ""
                         val factory = AlbumViewModelFactory(
                             application = context,
-                            albumUri = key.albumUri
+                            albumUri = albumUri
                         )
 
                         val viewModel: AlbumViewModel = viewModel(
-                            key = key.albumUri,
+                            key = albumUri,
                             factory = factory
                         )
 
-                        AlbumScreen(
+                        AlbumDetailScreen(
                             viewModel = viewModel,
+                            onBack = {
+                                backStack.removeAt(backStack.lastIndex)
+                            }
                         )
                     }
                 }
@@ -114,7 +124,6 @@ fun SharedTransitionScope.NavigationRoot(
                     NavEntry(key) {
                         val context = LocalContext.current.applicationContext as OutifyApplication
                         val albumUri = key.track.album?.uri ?: ""
-                        println(albumUri)
                         val factory = AlbumViewModelFactory(
                             application = context,
                             albumUri = albumUri

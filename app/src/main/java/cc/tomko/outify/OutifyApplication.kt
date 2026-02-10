@@ -1,14 +1,15 @@
 package cc.tomko.outify
 
 import android.app.Application
+import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.Session
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.Metadata
 import cc.tomko.outify.data.database.AppDatabase
-import cc.tomko.outify.playback.AudioManager
-import cc.tomko.outify.playback.AudioPlayer
-import cc.tomko.outify.playback.PlaybackManager
+import cc.tomko.outify.playback.AudioEngine
+import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.playback.Player
 import cc.tomko.outify.ui.repository.LibraryRepository
 import cc.tomko.outify.ui.repository.SearchRepository
 import cc.tomko.outify.ui.repository.TrackRepository
@@ -17,13 +18,16 @@ import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.request.crossfade
 
+const val ALBUM_COVER_URL: String = "https://i.scdn.co/image/"
+
 class OutifyApplication : Application() {
+
+    @UnstableApi
+    lateinit var player: Player
+        private set
+
     lateinit var database: AppDatabase
         private set
-
-    lateinit var audioPlayer: AudioPlayer
-        private set
-
     lateinit var trackRepository: TrackRepository
         private set
     lateinit var libraryRepository: LibraryRepository
@@ -36,6 +40,7 @@ class OutifyApplication : Application() {
     lateinit var metadata: Metadata
         private set
 
+    @UnstableApi
     override fun onCreate() {
         super.onCreate()
         database = AppDatabase.getInstance(this)
@@ -46,13 +51,10 @@ class OutifyApplication : Application() {
         session = Session()
         session.initializeSession()
 
-        audioPlayer = AudioPlayer(this)
-        audioManager = AudioManager(audioPlayer)
-
-        playbackManager = PlaybackManager()
         authManager = AuthManager()
         spirc = Spirc()
 
+        player = Player(this, stateHolder = playbackStateHolder)
 
 //        AeadConfig.register()
         initializeRepositories()
@@ -85,12 +87,9 @@ class OutifyApplication : Application() {
     }
 
     companion object {
-        const val ALBUM_COVER_URL: String = "https://i.scdn.co/image/"
-
-        lateinit var audioManager: AudioManager
         lateinit var session: Session
-        lateinit var playbackManager: PlaybackManager
         lateinit var authManager: AuthManager
         lateinit var spirc: Spirc
+        var playbackStateHolder = PlaybackStateHolder()
     }
 }

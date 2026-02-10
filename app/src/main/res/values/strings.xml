@@ -5,4 +5,6 @@
     <string name="title_activity_callback">CallbackActivity</string>
     <string name="title_activity_home_screen">HomeScreen</string>
     <string name="audio_playback_attribution">This app plays audio</string>
+    <string name="media_notificationn_channel">Media playback</string>
+    <string name="media_notification_channel_description">Controls for audio playback</string>
 </resources>

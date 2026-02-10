@@ -60,6 +60,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.ui.components.TrackRow
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
@@ -80,9 +81,11 @@ fun SharedTransitionScope.QueueBottomSheet(
     val queueState by viewModel.queueState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
+    val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
+
     // Load queue when sheet is opened
     LaunchedEffect(viewModel) {
-        viewModel.loadQueue()
+        viewModel.loadQueue(currentTrack)
     }
 
     // Local state for drag-and-drop operations
@@ -137,7 +140,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                     // Account for header item (index 0)
                     val adjustedFirst = maxOf(0, first - 1)
                     val adjustedLast = maxOf(0, last - 1)
-                    viewModel.onScrollPositionChanged(adjustedFirst, adjustedLast)
+                    viewModel.onScrollPositionChanged(adjustedFirst, adjustedLast, currentTrack)
                 }
             }
     }
@@ -272,7 +275,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                                 localTracks.indexOf(item)
                             }
                             val artworkUrl = remember(item.track.album?.covers) {
-                                OutifyApplication.ALBUM_COVER_URL +
+                                ALBUM_COVER_URL +
                                         item.track.album?.covers?.firstOrNull()?.uri.orEmpty()
                             }
 

@@ -52,6 +52,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
+import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.model.player.PlayerAction
@@ -75,7 +76,7 @@ fun SharedTransitionScope.PlayerScreen(playbackStateHolder: PlaybackStateHolder)
 
     val uiState by vm.uiState.collectAsState()
     val track by vm.currentTrack.collectAsState()
-    val artworkUrl = track ?.album ?.covers ?.firstOrNull() ?.uri ?.let { OutifyApplication.ALBUM_COVER_URL + it }
+    val artworkUrl = track ?.album ?.covers ?.firstOrNull() ?.uri ?.let { ALBUM_COVER_URL + it }
 
     val imageSize = 400.dp
     val imageSizePx = with(LocalDensity.current) { imageSize.roundToPx() }

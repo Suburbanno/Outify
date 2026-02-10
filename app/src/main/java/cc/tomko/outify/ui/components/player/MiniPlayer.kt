@@ -41,12 +41,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
+import kotlinx.coroutines.coroutineScope
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -57,16 +59,16 @@ fun SharedTransitionScope.MiniPlayer(
 ) {
     val context = LocalContext.current
 
-    val playbackState = OutifyApplication.playbackManager.playbackStateHolder
-    val currentTrack by playbackState.currentTrack.collectAsState()
-    val isPlaying by playbackState.isPlaying.collectAsState()
+    val playbackState by OutifyApplication.playbackStateHolder.state.collectAsState()
+    val currentTrack = playbackState.currentTrack
+    val isPlaying = playbackState.isPlaying
 
-    val currentTime by playbackState.positionMs.collectAsState()
+    val currentTime = playbackState.position.active.inWholeMilliseconds
     val totalTime = currentTrack?.duration
 
     val imageSize = 40.dp
     val imageSizePx = with(LocalDensity.current) { imageSize.roundToPx() }
-    val artworkUrl = currentTrack ?.album ?.covers ?.firstOrNull() ?.uri ?.let { OutifyApplication.ALBUM_COVER_URL + it }
+    val artworkUrl = currentTrack ?.album ?.covers ?.firstOrNull() ?.uri ?.let { ALBUM_COVER_URL + it }
 
     val imageRequest = remember(artworkUrl, imageSizePx) {
         ImageRequest.Builder(context)
@@ -186,6 +188,7 @@ fun SharedTransitionScope.MiniPlayer(
                         }
 
                         IconButton(onClick = {
+                            OutifyApplication.playbackStateHolder.setTrack(currentTrack)
                             OutifyApplication.spirc.playerPlayPause()
                         }) {
                             if (isPlaying) {

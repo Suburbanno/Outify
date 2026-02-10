@@ -75,16 +75,29 @@ dependencies {
     implementation(libs.navigation3.runtime)
     implementation(libs.adaptive.navigation3)
 
+    // Hilt
+    implementation("com.google.dagger:hilt-android:2.59.1")
+    implementation(libs.androidx.lifecycle.service)
+    ksp("com.google.dagger:hilt-compiler:2.59.1")
+
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
 
+    // Coil images
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
 
+    // Native metadata serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
 
+    // Reorderable lists
     implementation(libs.reorderable)
+
+    // Media3
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.common)
+    implementation(libs.androidx.media3.session)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.material)

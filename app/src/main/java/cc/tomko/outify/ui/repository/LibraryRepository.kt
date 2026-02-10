@@ -8,7 +8,6 @@ import cc.tomko.outify.data.Metadata
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.database.*
 import cc.tomko.outify.data.database.dao.*
-import cc.tomko.outify.data.toEntities
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll

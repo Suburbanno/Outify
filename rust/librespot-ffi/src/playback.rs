@@ -91,7 +91,7 @@ extern "C" fn rust_pcm_trampoline(
     // void onNativePcm(byte[] data, int sampleRate, int channels, int format)
     let call_result = env.call_method(
         cb_ref.as_obj(),
-        "onNativePcm",
+        "onPcm",
         "([BIII)V",
         &[
             JValue::Object(&jbuf_obj),
@@ -110,7 +110,7 @@ extern "C" fn rust_pcm_trampoline(
 
 /// JNI registration function — called from Java.
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_playback_AudioManager_registerPcmCallback(
+pub extern "system" fn Java_cc_tomko_outify_playback_AudioEngine_registerPcmCallback(
     env: JNIEnv,
     _class: JObject,
     callback: JObject,

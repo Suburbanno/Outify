@@ -25,6 +25,7 @@ import androidx.navigation.NavDirections
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
+import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.ui.components.TrackRow
@@ -69,7 +70,7 @@ fun SharedTransitionScope.LikedScreen(
                         tracks.getOrNull(i)?.album?.covers?.firstOrNull()?.uri?.let { url ->
                             imageLoader.enqueue(
                                 ImageRequest.Builder(context)
-                                    .data(OutifyApplication.ALBUM_COVER_URL + url)
+                                    .data(ALBUM_COVER_URL + url)
                                     .size(imageSizePx)
                                     .allowHardware(true)
                                     .build()
@@ -81,11 +82,7 @@ fun SharedTransitionScope.LikedScreen(
             }
     }
 
-    val currentTrack by OutifyApplication
-        .playbackManager
-        .playbackStateHolder
-        .currentTrack
-        .collectAsState(initial = null)
+    val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
 
     LazyColumn(state = listState) {
         item {
@@ -106,7 +103,7 @@ fun SharedTransitionScope.LikedScreen(
             TrackRow(
                 title = track.name,
                 artist = track.artists.joinToString { it.name },
-                artworkUrl = (OutifyApplication.ALBUM_COVER_URL + track.album?.covers?.first()?.uri),
+                artworkUrl = (ALBUM_COVER_URL + track.album?.covers?.first()?.uri),
                 isPlaying = currentTrack?.uri.equals(track.uri),
                 isSelected = false,
 //                trailingContent = TODO(),

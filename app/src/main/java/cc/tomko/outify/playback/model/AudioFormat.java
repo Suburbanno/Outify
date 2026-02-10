@@ -1,4 +1,4 @@
-package cc.tomko.outify.playback;
+package cc.tomko.outify.playback.model;
 
 // Copy of librespot/playback/src/config.rs -> AudioFormat enum
 public enum AudioFormat {

@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.ui.components.TrackRow
 import cc.tomko.outify.ui.components.TrackRowDensity
@@ -55,7 +56,7 @@ fun SharedTransitionScope.SearchScreen(
     val trackMap by viewModel.trackMap.collectAsState()
 
     val listState = rememberLazyListState()
-    val currentTrack by OutifyApplication.playbackManager.playbackStateHolder.currentTrack.collectAsState()
+    val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
 
     Column(modifier = modifier.fillMaxSize()) {
         MaterialSearchBar(
@@ -78,7 +79,7 @@ fun SharedTransitionScope.SearchScreen(
                             TrackRow(
                                 title = domainTrack.name,
                                 artist = domainTrack.artists.joinToString(", ") { it.name },
-                                artworkUrl = OutifyApplication.ALBUM_COVER_URL + domainTrack.album?.covers?.firstOrNull()?.uri,
+                                artworkUrl = ALBUM_COVER_URL + domainTrack.album?.covers?.firstOrNull()?.uri,
                                 isPlaying = currentTrack?.uri.equals(item.uri),
                                 isSelected = false,
                                 density = TrackRowDensity.Default,

@@ -11,7 +11,7 @@ pub static PLAYER_EVENT_LISTENER: OnceCell<Mutex<GlobalRef>> = OnceCell::new();
 
 // Registers the track update callback and stores its GlobalRef
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_playback_PlaybackManager_registerPlayerEventListener(
+pub extern "system" fn Java_cc_tomko_outify_playback_AudioEngine_registerPlayerEventListener(
     env: JNIEnv,
     _this: JClass,
     callback: JObject,

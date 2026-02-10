@@ -1,9 +1,14 @@
 package cc.tomko.outify
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -31,11 +36,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.media3.common.util.UnstableApi
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalAnimatedVisibilityScope
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.services.MusicService
 import cc.tomko.outify.ui.components.navigation.NavDestination
 import cc.tomko.outify.ui.components.navigation.NavigationRoot
 import cc.tomko.outify.ui.components.navigation.OutifyBottomNav
@@ -64,6 +72,8 @@ class MainActivity : ComponentActivity() {
                 }
             )
         }
+
+        requestNotifications()
 
         if(!handleAuth()){
             return;
@@ -153,6 +163,7 @@ class MainActivity : ComponentActivity() {
     }
 
     // Starts the required services
+    @androidx.annotation.OptIn(UnstableApi::class)
     fun startServices() {
         // Starting Spirc
         val spirc = Spirc()
@@ -163,5 +174,35 @@ class MainActivity : ComponentActivity() {
         // Spirc activation and transfer is handled in initializeSpirc -> callback to onSpircInitialize
 
         OutifyApplication.spirc = spirc
+
+        // MediaSession
+        val intent = Intent(this, MusicService::class.java)
+        ContextCompat.startForegroundService(this, intent)
     }
+
+    fun requestNotifications(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                Toast.makeText(this, "Permission already granted!", Toast.LENGTH_SHORT).show()
+            } else {
+                // Ask for permission
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            Toast.makeText(this, "No need to request notification permission on this Android version", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                Toast.makeText(this, "Notification permission granted!", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Notification permission denied.", Toast.LENGTH_SHORT).show()
+            }
+        }
 }

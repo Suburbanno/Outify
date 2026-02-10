@@ -1,6 +1,7 @@
 package cc.tomko.outify.ui.viewmodel.player
 
 import android.app.Application
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.OutifyApplication
@@ -57,7 +58,7 @@ class QueueViewModel(
     /**
      * Initial queue load - fetches URIs and loads initial chunk
      */
-    suspend fun loadQueue() {
+    suspend fun loadQueue(currentTrack: Track?) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 _queueState.update { it.copy(isLoading = true, error = null) }
@@ -65,7 +66,6 @@ class QueueViewModel(
                 allPreviousUris = loadPreviousUris()
                 allNextUris = loadNextUris()
 
-                val currentTrack = OutifyApplication.playbackManager.playbackStateHolder.currentTrack.value
                 val currentIndex = allPreviousUris.size
 
                 val total = allPreviousUris.size + (if (currentTrack != null) 1 else 0) + allNextUris.size
@@ -99,7 +99,7 @@ class QueueViewModel(
     /**
      * Load more tracks when user scrolls near the edges
      */
-    fun onScrollPositionChanged(firstVisibleIndex: Int, lastVisibleIndex: Int) {
+    fun onScrollPositionChanged(firstVisibleIndex: Int, lastVisibleIndex: Int, currentTrack: Track?) {
         val state = _queueState.value
         if (state.isLoading || state.tracks.isEmpty()) return
         if (state.isLoadingPrevious || state.isLoadingNext) return
@@ -110,16 +110,16 @@ class QueueViewModel(
 
         // load previous pages
         if (canonicalFirst < loadedRange.first + PREFETCH_THRESHOLD && loadedRange.first > 0) {
-            loadPreviousPage()
+            loadPreviousPage(currentTrack)
         } else if (canonicalLast > loadedRange.last - PREFETCH_THRESHOLD && loadedRange.last < state.totalSize) {
-            loadNextPage()
+            loadNextPage(currentTrack)
         }
     }
 
     /**
      * Load previous page of tracks
      */
-    private fun loadPreviousPage() {
+    private fun loadPreviousPage(currentTrack: Track?) {
         if (previousLoadJob?.isActive == true) return
 
         previousLoadJob = viewModelScope.launch(Dispatchers.IO) {
@@ -131,7 +131,6 @@ class QueueViewModel(
 
                 _queueState.update { it.copy(isLoadingPrevious = true, error = null) }
 
-                val currentTrack = OutifyApplication.playbackManager.playbackStateHolder.currentTrack.value
                 val newEntries = loadTracksInRange(newStartIndex, currentRange.first, currentTrack)
 
                 _queueState.update { current ->
@@ -154,7 +153,7 @@ class QueueViewModel(
     /**
      * Load next page of tracks
      */
-    private fun loadNextPage() {
+    private fun loadNextPage(currentTrack: Track?) {
         if (nextLoadJob?.isActive == true) return
 
         nextLoadJob = viewModelScope.launch(Dispatchers.IO) {
@@ -166,7 +165,6 @@ class QueueViewModel(
 
                 _queueState.update { it.copy(isLoadingNext = true, error = null) }
 
-                val currentTrack = OutifyApplication.playbackManager.playbackStateHolder.currentTrack.value
                 val newEntries = loadTracksInRange(currentRange.last, newEndIndex, currentTrack)
 
                 _queueState.update { current ->
