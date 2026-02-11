@@ -1,14 +1,18 @@
-package cc.tomko.outify.ui.screens.library.album
+package cc.tomko.outify.ui.screens.library.artist
 
+import android.widget.ImageButton
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,19 +20,30 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.KeyboardDoubleArrowRight
+import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeExtendedFloatingActionButton
 import androidx.compose.material3.MaterialShapes
@@ -47,6 +62,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -66,18 +82,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
+import androidx.compose.ui.zIndex
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Album
+import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.TrackRow
+import cc.tomko.outify.ui.components.navigation.Route
+import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
+import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
 import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModel
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
+import coil3.request.crossfade
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -86,21 +110,18 @@ import kotlin.math.roundToInt
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SharedTransitionScope.AlbumDetailScreen(
-    viewModel: AlbumViewModel,
+fun SharedTransitionScope.ArtistDetailScreen(
+    viewModel: ArtistViewModel,
+    onArtworkClick: (Track) -> Unit,
     onBack: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(viewModel) {
-        viewModel.loadAlbum()
-    }
-
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
 
-    when {
-        uiState.isLoading -> {
+    when (uiState) {
+        ArtistUiState.Loading -> {
             Box(modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
@@ -109,7 +130,7 @@ fun SharedTransitionScope.AlbumDetailScreen(
             }
         }
 
-        uiState.error != null -> {
+        is ArtistUiState.Error -> {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -117,17 +138,23 @@ fun SharedTransitionScope.AlbumDetailScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = uiState.error!!,
+                    text = (uiState as ArtistUiState.Error).message,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
         }
 
-        uiState.album != null -> {
-            val album = uiState.album!!
-            val tracks = uiState.tracks
-            val artworkUrl = ALBUM_COVER_URL + album.getCover(CoverSize.LARGE)?.uri
+        is ArtistUiState.Success -> {
+            val artist = (uiState as ArtistUiState.Success).artist
+            val artworkUrl = ALBUM_COVER_URL + artist.getCover(CoverSize.LARGE)?.uri
+
+            val likedTracks by viewModel.likedTracks.collectAsState()
+            val likedTrackCount = likedTracks.size
+
+            val popularTracks by viewModel.popularTracks.collectAsState()
+
+            val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
 
             val lazyList = rememberLazyListState()
 
@@ -210,28 +237,44 @@ fun SharedTransitionScope.AlbumDetailScreen(
                     .nestedScroll(nestedScroll)
             ) {
                 val currentTopBarHeightDp = with(density) { topBarHeight.value.toDp() }
+
+                val topPadding = currentTopBarHeightDp + if(likedTrackCount > 0) 8.dp else 0.dp
                 LazyColumn(
                     state = lazyList,
                     contentPadding = PaddingValues(
-                        top = currentTopBarHeightDp,
+                        top = topPadding,
                         start = 16.dp,
                         end = if ((lazyList.canScrollForward || lazyList.canScrollBackward) && collapseFraction > 0.95f) 24.dp else 16.dp,
                     ),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    items(tracks, key = { track -> "album_song_${track.uri}" }) { track ->
+                    if (likedTrackCount > 0) {
+                        item {
+                            Spacer(modifier = Modifier.height(48.dp))
+                        }
+                        item {
+                            LikedArtistTracksHeader(
+                                likedCount = likedTrackCount,
+                                artworkUrl = artworkUrl,
+                            )
+                        }
+                    }
+
+                    items(popularTracks, key = { track -> "artist_song_${track.uri}" }) { track ->
+                        val trackArtworkUrl: String = remember(track.album?.uri) {
+                            track.album?.getCover(CoverSize.MEDIUM)?.uri.let { ALBUM_COVER_URL + it }
+                        }
+
                         TrackRow(
                             title = track.name,
                             artist = track.artists.joinToString { it.name },
-                            artworkUrl = artworkUrl,
-//                            isPlaying = currentTrack?.uri.equals(track.uri),
+                            artworkUrl = trackArtworkUrl,
+                            isPlaying = currentTrack?.uri.equals(track.uri),
                             isSelected = false,
                             onRowClick = remember(track.uri) { { OutifyApplication.spirc.load(track.uri) } },
-                            onArtistClick = {
-                                println("Artistt!")
-                            },
+                            onArtworkClick = {onArtworkClick(track)},
                             sharedTransitionKey = null
                         )
                     }
@@ -249,12 +292,13 @@ fun SharedTransitionScope.AlbumDetailScreen(
 //                    )
 //                }
 
-                CollapsingAlbumTopBar(
-                    album = album,
-                    songsCount = tracks.size,
+                CollapsingArtistTopBar(
+                    artist = artist,
+                    likedSongs = likedTrackCount,
                     collapseFraction = collapseFraction,
                     headerHeight = currentTopBarHeightDp,
                     onBackPressed = onBack,
+                    artworkUrl = artworkUrl,
                     onPlayClick = {
                     }
                 )
@@ -265,11 +309,12 @@ fun SharedTransitionScope.AlbumDetailScreen(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun SharedTransitionScope.CollapsingAlbumTopBar(
-    album: Album,
-    songsCount: Int,
+private fun SharedTransitionScope.CollapsingArtistTopBar(
+    artist: Artist,
+    likedSongs: Int,
     collapseFraction: Float,
     headerHeight: Dp,
+    artworkUrl: String,
     onBackPressed: () -> Unit,
     onPlayClick: () -> Unit
 ) {
@@ -296,11 +341,10 @@ private fun SharedTransitionScope.CollapsingAlbumTopBar(
     val titleContainerHeight = lerp(88.dp, 56.dp, collapseFraction)
     val yOffsetCorrection = lerp((titleContainerHeight / 2) - 64.dp, 0.dp, collapseFraction)
 
-    val artworkUrl = ALBUM_COVER_URL + album.covers.first().uri
     val imageRequest = ImageRequest.Builder(context)
-            .data(artworkUrl)
-            .allowHardware(true)
-            .build()
+        .data(artworkUrl)
+        .allowHardware(true)
+        .build()
     val imageLoader = (context.applicationContext as OutifyApplication).imageLoader
 
     Box(
@@ -395,7 +439,7 @@ private fun SharedTransitionScope.CollapsingAlbumTopBar(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = album.name,
+                        text = artist.name,
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontSize = 26.sp,
                             textGeometricTransform = TextGeometricTransform(scaleX = 1.2f),
@@ -406,7 +450,7 @@ private fun SharedTransitionScope.CollapsingAlbumTopBar(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${album.artists.joinToString { it.name }} • $songsCount songs",
+                        text = "$likedSongs liked songs",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -428,6 +472,108 @@ private fun SharedTransitionScope.CollapsingAlbumTopBar(
                     }
             ) {
                 Icon(Icons.Rounded.Shuffle, contentDescription = "Shuffle play album")
+            }
+        }
+    }
+}
+
+@Composable
+fun LikedArtistTracksHeader(
+    likedCount: Int,
+    artworkUrl: String?,
+    modifier: Modifier = Modifier,
+    imageSize: Dp = 48.dp,
+    onClick: () -> Unit = {}
+){
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        tonalElevation = 6.dp,
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable(onClick = onClick)
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // artwork + heart overlay
+            Box(
+                modifier = Modifier
+                    .size(imageSize)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!artworkUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = artworkUrl,
+                        contentDescription = "Liked songs artwork",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.MusicNote,
+                            contentDescription = null
+                        )
+                    }
+                }
+
+                // Full overlay scrim
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = 0.35f))
+                )
+
+                // Centered heart icon
+                Icon(
+                    imageVector = Icons.Filled.Favorite,
+                    contentDescription = "Liked",
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Title + subtitle
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 8.dp)
+            ) {
+                Text(
+                    text = "Liked Songs",
+                    style = MaterialTheme.typography.headlineSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "You have $likedCount liked songs",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // trailing arrow
+            IconButton(onClick = onClick) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowForward,
+                    contentDescription = "Open liked songs"
+                )
             }
         }
     }

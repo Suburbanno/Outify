@@ -54,7 +54,9 @@ import cc.tomko.outify.ui.components.player.rememberQueueBottomSheetState
 import cc.tomko.outify.ui.screens.auth.AuthActivity
 import cc.tomko.outify.ui.theme.OutifyTheme
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     data object MainActivity {

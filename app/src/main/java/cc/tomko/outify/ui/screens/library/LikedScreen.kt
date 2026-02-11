@@ -116,7 +116,7 @@ fun SharedTransitionScope.LikedScreen(
                 },
 //                onTitleClick = TODO(),
                 onArtistClick = {
-                    println("Artistt!")
+                    backStack.add(Route.ArtistScreen(track.artists.first().uri))
                 },
             )
         }

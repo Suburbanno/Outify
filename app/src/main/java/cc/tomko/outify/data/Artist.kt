@@ -12,4 +12,11 @@ data class Artist(
     val uri: String,
     val name: String,
     val popularity: Int,
+    val portraits: List<String> = emptyList(),
+    val tracks: List<String> = emptyList(), // Just track uris
+    val covers: List<Cover> = emptyList(),
 )
+
+fun Artist.getCover(size: CoverSize): Cover? {
+    return covers.firstOrNull { it.size == size.asInt() }
+}

@@ -17,9 +17,11 @@ import coil3.ImageLoader
 import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.request.crossfade
+import dagger.hilt.android.HiltAndroidApp
 
 const val ALBUM_COVER_URL: String = "https://i.scdn.co/image/"
 
+@HiltAndroidApp
 class OutifyApplication : Application() {
 
     @UnstableApi

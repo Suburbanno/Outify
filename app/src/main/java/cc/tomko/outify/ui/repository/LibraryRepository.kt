@@ -41,7 +41,7 @@ class LibraryRepository(
     private suspend fun fetchLikedTrackUris(): List<String> {
         cachedLikedUris?.let { return it }
 
-        val jsonUris = spClient.getLikedSongs(0, 1)
+        val jsonUris = spClient.getUserCollection()
         val parsed = json.decodeFromString<List<String>>(jsonUris)
         cachedLikedUris = parsed
         return parsed

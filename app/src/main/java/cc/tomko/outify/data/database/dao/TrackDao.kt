@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import cc.tomko.outify.data.database.TrackEntity
 import cc.tomko.outify.data.database.TrackWithArtists
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TrackDao {
@@ -37,6 +38,9 @@ interface TrackDao {
     @Transaction
     @Query("SELECT * FROM tracks WHERE trackUri IN (:trackUris)")
     suspend fun getTracksWithArtists(trackUris: List<String>): List<TrackWithArtists>
+
+    @Query("SELECT * FROM tracks WHERE trackUri IN (:uris)")
+    fun getTracksWithArtistsFlow(uris: List<String>): Flow<List<TrackWithArtists>>
 
     /**
      * Update the lastAccessed value of TrackEntity

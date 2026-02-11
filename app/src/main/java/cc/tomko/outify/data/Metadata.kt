@@ -21,8 +21,16 @@ import cc.tomko.outify.data.database.dao.TrackArtistDao
 import cc.tomko.outify.data.database.dao.TrackDao
 import cc.tomko.outify.data.database.toDomain
 import cc.tomko.outify.ui.repository.TrackRepository
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.serialization.json.Json
 
@@ -194,8 +202,69 @@ class Metadata(
         }
     }
 
+    suspend fun getArtistMetadata(uri: String): Artist? {
+        try {
+            val raw = getNativeMetadata(uri)
+            println(raw)
+            return json.decodeFromString<Artist>(raw)
+        } catch (e: Exception) {
+            Log.e("Metadata", "fetchAlbums: failed for $uri", e)
+            return null
+        }
+    }
 
     //region Tracks
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun observeTracks(uris: List<String>): Flow<List<Track>> {
+        if (uris.isEmpty()) return flowOf(emptyList())
+
+        return flow {
+            coroutineScope {
+                launch {
+                    try {
+                        val cached = loadCachedTracks(uris)
+                        val missing = uris.filterNot { cached.containsKey(it) }
+                        if (missing.isNotEmpty()) {
+                            val fetched = fetchTracks(missing)
+                            if (fetched.isNotEmpty()) persistMetadata(fetched)
+                        }
+                    } catch (e: Exception) {
+                        Log.w("Metadata", "observeTracks: background fetch failed", e)
+                    }
+                }
+            }
+
+            emitAll(
+                trackDao.getTracksWithArtistsFlow(uris)
+                    .mapLatest { rows ->
+
+                        if (rows.isEmpty()) return@mapLatest emptyList()
+
+                        val albumIds = rows.mapNotNull { it.track.albumId }.distinct()
+
+                        val albumsMap = loadAlbums(albumIds)
+
+                        // Map rows by trackUri for ordering
+                        val rowsByUri = rows.associateBy { it.track.trackUri }
+
+                        // Preserve requested order; skip missing entries
+                        uris.mapNotNull { uri ->
+                            val twa = rowsByUri[uri] ?: return@mapNotNull null
+                            val albumId = twa.track.albumId ?: ""
+                            val albumWithArtists =
+                                albumsMap[albumId]
+                            try {
+                                twa.toDomain(albumWithArtists)
+                            } catch (e: Exception) {
+                                // If domain mapping fails, skip that track
+                                null
+                            }
+                        }
+                    }
+            )
+        }
+    }
+
     /**
      * Fetches tracks metadata, that aren't cached.
      */

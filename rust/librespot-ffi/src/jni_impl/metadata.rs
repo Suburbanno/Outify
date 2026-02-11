@@ -58,6 +58,7 @@ pub extern "system" fn Java_cc_tomko_outify_data_Metadata_getNativeMetadata(
         match spotify_uri.item_type() {
             SPOTIFY_ITEM_TYPE_TRACK => get_track_metadata(&session, &spotify_uri).await,
             SPOTIFY_ITEM_TYPE_ALBUM => get_album_metadata(&session, &spotify_uri).await,
+            SPOTIFY_ITEM_TYPE_ARTIST => get_artist_metadata(&session, &spotify_uri).await,
 
             &_ => {
                 info!("Unknown item type!");
@@ -106,6 +107,20 @@ async fn get_track_metadata(session: &Session, spotify_uri: &SpotifyUri) -> Opti
         }
         Err(e) => {
             error!("failed to fetch album metadata: {}", e);
+            None
+        }
+    }
+}
+
+// Retrieves the artist metadata as JSON
+async fn get_artist_metadata(session: &Session, spotify_uri: &SpotifyUri) -> Option<String> {
+    match librespot_metadata::Artist::get(session, &spotify_uri).await {
+        Ok(metadata) => {
+            let artist = crate::jni_utils::native_metadata::ArtistJson::from(&metadata);
+            convert_to_string(&artist)
+        }
+        Err(e) => {
+            error!("failed to fetch artist metadata: {}", e);
             None
         }
     }

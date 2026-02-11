@@ -41,15 +41,34 @@ pub struct ArtistJson {
     uri: String,
     name: String,
     popularity: i32,
+    portraits: Vec<ImageJson>,
+    tracks: Vec<String>, // Just raw SpotifyUris
+    covers: Vec<ImageJson>
 }
 
 impl From<&Artist> for ArtistJson {
     fn from(artist: &Artist) -> Self {
+        let tracks = artist.top_tracks.0.iter()
+            .flat_map(|top| top.tracks.iter())
+            .map(|track| track.to_uri())
+            .collect();
+
+        for ele in artist.portraits.iter() {
+            info!("Portrait uri: {}", ele.id.to_string());
+        }
+
+        for ele in artist.portrait_group.iter() {
+            info!("Portrait g uri: {}", ele.id.to_string());
+        }
+
         Self {
             id: artist.id.to_id(),
             uri: artist.id.to_uri(),
             name: artist.name.clone(),
             popularity: artist.popularity,
+            portraits: artist.portraits.iter().map(ImageJson::from).collect(),
+            tracks: tracks,
+            covers: artist.portrait_group.iter().map(ImageJson::from).collect(),
         }
     }
 }

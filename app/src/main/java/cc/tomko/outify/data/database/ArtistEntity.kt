@@ -20,6 +20,8 @@ fun ArtistEntity.toDomain(): Artist {
         id = artistId,
         uri = uri,
         name = name,
-        popularity = popularity
+        popularity = popularity,
+        portraits = emptyList(),
+        tracks = emptyList(),
     )
 }

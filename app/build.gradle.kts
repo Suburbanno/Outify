@@ -1,6 +1,7 @@
 plugins {
     id("eclipse")
     id("com.google.devtools.ksp") version "2.3.4"
+    id("com.google.dagger.hilt.android") version "2.59.1"
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
@@ -79,6 +80,8 @@ dependencies {
     implementation("com.google.dagger:hilt-android:2.59.1")
     implementation(libs.androidx.lifecycle.service)
     ksp("com.google.dagger:hilt-compiler:2.59.1")
+    ksp("com.google.dagger:hilt-android-compiler:2.59.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
 
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")

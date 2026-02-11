@@ -75,18 +75,31 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_search(
     }
 }
 
+// Gets user collection
+// Query can be used to get liked songs from artist
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_core_SpClient_getLikedSongs(
-    env: JNIEnv,
+pub extern "system" fn Java_cc_tomko_outify_core_SpClient_getUserCollection(
+    mut env: JNIEnv,
     _class: JClass,
-    page_offset: jint,
-    pages: jint,
+    query: JString,
 ) -> jstring {
     let rt = match crate::TOKIO_RUNTIME.get() {
         Some(r) => r,
         None => {
             error!("failed to get Tokio runtime!");
             return std::ptr::null_mut();
+        }
+    };
+
+    let query: Option<String> = if query.is_null() {
+        None
+    } else {
+        match env.get_string(&query) {
+            Ok(js) => Some(js.into()),
+            Err(e) => {
+                error!("failed to get query uri: {}", e);
+                return std::ptr::null_mut();
+            }
         }
     };
 
@@ -98,19 +111,17 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_getLikedSongs(
         }
     };
 
-    let page_offset = page_offset as usize;
-    let pages = pages as usize;
-
     let json_res = rt.block_on(async {
-        let uri = format!("spotify:user:{}:collection", user_id);
+        let uri = match query {
+            Some(ref q) => format!("spotify:user:{}:collection{}", user_id, q),
+            None => format!("spotify:user:{}:collection", user_id),
+        };
 
         match crate::spclient::get_context(&uri).await {
             Ok(context) => {
                 let uris: Vec<String> = context
                     .pages
                     .iter()
-                    .skip(page_offset)
-                    .take(pages)
                     .flat_map(|page| page.tracks.iter())
                     .map(|track| track.uri().to_string())
                     .collect();
