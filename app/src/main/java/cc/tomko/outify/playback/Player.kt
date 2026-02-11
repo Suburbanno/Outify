@@ -18,7 +18,9 @@ import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import cc.tomko.outify.playback.model.PlayState
 import cc.tomko.outify.playback.model.RepeatMode
@@ -76,14 +78,6 @@ class Player(
             }
         }
     })
-
-    @Volatile
-    private var lastState: State = State.Builder()
-        .setAvailableCommands(Player.Commands.EMPTY)
-        .setPlayWhenReady(false, Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
-        .setCurrentMediaItemIndex(0)
-        .setContentPositionMs(0)
-        .build()
 
     init {
         scope.launch {
@@ -199,7 +193,7 @@ fun Track.toMediaItem(): MediaItem {
         .setArtist(artists.joinToString { it.name })
         .setAlbumTitle(album?.name)
         .setTotalTrackCount(album?.tracks?.size ?: 0)
-        .setArtworkUri((ALBUM_COVER_URL + album?.covers?.first()?.uri).toUri())
+        .setArtworkUri((ALBUM_COVER_URL + album?.getCover(CoverSize.MEDIUM)).toUri())
         .setDurationMs(duration.takeIf { it > 0 })
         .build()
 

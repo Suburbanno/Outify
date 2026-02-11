@@ -15,8 +15,12 @@ data class AlbumEntity(
     val uri: String,
     val name: String,
     val artistNames: String,
-    val coverUri: String?, // Just the hash at the end of the URL
     val popularity: Int,
 
     val lastUpdated: Long,
+
+    // Covers
+    val smallCoverUri: String?,
+    val mediumCoverUri: String?,
+    val largeCoverUri: String?,
 )

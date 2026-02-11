@@ -4,7 +4,9 @@ import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.ui.model.player.PlayerAction
@@ -26,15 +28,6 @@ class PlayerViewModel(
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
 
-    val currentTrack: StateFlow<Track?> =
-        state
-            .map { it.currentTrack }
-            .stateIn(
-                scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = null
-            )
-
     val uiState: StateFlow<PlayerUIState> =
         playbackStateHolder.state
             .map { state ->
@@ -43,14 +36,14 @@ class PlayerViewModel(
                 PlayerUIState(
                     title = track?.name ?: "Unknown Track",
                     artist = track?.artists?.joinToString { it.name } ?: "Unknown Artist",
-                    albumArt = track?.album?.covers?.firstOrNull()?.uri,
+                    albumArt = track?.album?.getCover(CoverSize.LARGE)?.uri,
                     isPlaying = state.isPlaying,
                     isExplicit = track?.explicit ?: false,
                     totalLengthMs = track?.duration ?: 0L,
                     positionMs = position.active.inWholeMilliseconds,
                     lastUpdateTime = position.lastSync,
                 )
-            }.stateIn(viewModelScope, SharingStarted.Companion.WhileSubscribed(5_000), PlayerUIState())
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlayerUIState())
 
     /**
      * On Player UI action - like play/pause/..

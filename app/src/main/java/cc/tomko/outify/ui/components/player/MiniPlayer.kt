@@ -43,6 +43,8 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
@@ -68,7 +70,7 @@ fun SharedTransitionScope.MiniPlayer(
 
     val imageSize = 40.dp
     val imageSizePx = with(LocalDensity.current) { imageSize.roundToPx() }
-    val artworkUrl = currentTrack ?.album ?.covers ?.firstOrNull() ?.uri ?.let { ALBUM_COVER_URL + it }
+    val artworkUrl = currentTrack ?.album ?.getCover(CoverSize.SMALL)?.uri.let { ALBUM_COVER_URL + it }
 
     val imageRequest = remember(artworkUrl, imageSizePx) {
         ImageRequest.Builder(context)

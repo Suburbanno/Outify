@@ -209,6 +209,7 @@ class Metadata(
                     try {
                         val raw = getNativeMetadata(uri)
                         val t = json.decodeFromString<Track>(raw)
+                        println(raw)
                         uri to t
                     } catch (e: Exception) {
                         Log.e("Metadata", "fetchMissingTracks: failed to fetch: " + uri, e)
@@ -260,14 +261,25 @@ class Metadata(
             trackArtistJoins += joins
 
             domainTrack.album?.let { album ->
+                val sortedByArea = album.covers
+                    .sortedBy { it.width * it.height }
+
+                val small = sortedByArea.firstOrNull()
+                val large = sortedByArea.lastOrNull()
+                val medium = sortedByArea.getOrNull(sortedByArea.size / 2)
+
+
                 val albumEntity = AlbumEntity(
                     albumId = album.id,
                     uri = album.uri,
                     name = album.name,
                     artistNames = album.artists.joinToString(", ") { it.name },
-                    coverUri = album.covers.firstOrNull()?.uri,
                     popularity = album.popularity,
-                    lastUpdated = now
+                    lastUpdated = now,
+
+                    smallCoverUri = small?.uri,
+                    mediumCoverUri = medium?.uri,
+                    largeCoverUri = large?.uri
                 )
                 albumEntities += albumEntity
 
@@ -350,18 +362,19 @@ class Metadata(
         uris: List<String>
     ): Map<String, AlbumWithArtists> {
         if (uris.isEmpty()) return emptyMap()
-        val cleanedIds = uris.map { it.removePrefix("spotify:album:") }
 
-        // albumDao.getAlbumsWithArtists expects album IDs (not URIs)
+        val cleanedIds = uris.map { it.removePrefix("spotify:album:") }
         val entities = albumDao.getAlbumsWithArtists(cleanedIds)
 
-        return uris.associateWith { uri ->
-            val entity = entities.find { it.album.uri == uri } ?: return@associateWith null
-            AlbumWithArtists(
-                album = entity.album,
-                artists = entity.artists
-            )
-        }.filterValues { it != null } as Map<String, AlbumWithArtists>
+        val byUri: Map<String, AlbumWithArtists> = entities
+            .associateBy { it.album.uri }
+            .mapValues { (_, v) ->
+                AlbumWithArtists(album = v.album, artists = v.artists)
+            }
+
+        return uris.mapNotNull { uri ->
+            byUri[uri]?.let { uri to it }
+        }.toMap()
     }
 
     /**
@@ -377,14 +390,24 @@ class Metadata(
         val albumTrackJoins = mutableListOf<AlbumTrackCrossRef>()
 
         albums.forEach { album ->
+            val sortedByArea = album.covers
+                .sortedBy { it.width * it.height }
+
+            val small = sortedByArea.firstOrNull()
+            val large = sortedByArea.lastOrNull()
+            val medium = sortedByArea.getOrNull(sortedByArea.size / 2)
+
             albumEntities += AlbumEntity(
                 albumId = album.id,
                 uri = album.uri,
                 name = album.name,
                 artistNames = album.artists.joinToString(", ") { it.name },
-                coverUri = album.covers.firstOrNull()?.uri,
                 popularity = album.popularity,
-                lastUpdated = now
+                lastUpdated = now,
+
+                smallCoverUri = small?.uri,
+                mediumCoverUri = medium?.uri,
+                largeCoverUri = large?.uri
             )
 
             album.artists.forEachIndexed { idx, artist ->

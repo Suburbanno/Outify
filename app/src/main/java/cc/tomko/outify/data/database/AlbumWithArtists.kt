@@ -5,6 +5,8 @@ import androidx.room.Junction
 import androidx.room.Relation
 import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Cover
+import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.asInt
 
 data class AlbumWithArtists (
     @Embedded val album: AlbumEntity,
@@ -15,21 +17,39 @@ data class AlbumWithArtists (
     )
     val artists: List<ArtistEntity>
 )
-
 fun AlbumWithArtists.toDomain(): Album {
     val domainArtists = artists.map { it.toDomain() }
+
+    val covers = listOfNotNull(
+        album.smallCoverUri?.takeIf { it.isNotBlank() }?.let {
+            Cover(
+                uri = it, size = CoverSize.SMALL.asInt(),
+                width = 64,
+                height = 64
+            )
+        },
+        album.mediumCoverUri?.takeIf { it.isNotBlank() }?.let {
+            Cover(
+                uri = it, size = CoverSize.MEDIUM.asInt(),
+                width = 300,
+                height = 300
+            )
+        },
+        album.largeCoverUri?.takeIf { it.isNotBlank() }?.let {
+            Cover(
+                uri = it, size = CoverSize.LARGE.asInt(),
+                width = 640,
+                height = 640
+            )
+        }
+    )
+
     return Album(
         id = album.albumId,
         uri = album.uri,
         name = album.name,
         artists = domainArtists,
         popularity = album.popularity,
-        covers = listOf(
-            Cover(
-                uri = album.coverUri ?: "null",
-                width = 420,
-                height = 420,
-            )
-        )
+        covers = covers
     )
 }

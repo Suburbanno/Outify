@@ -21,10 +21,6 @@ data class Album(
     val covers: List<Cover> = emptyList(),
 )
 
-fun Album.toHeaderUi() = AlbumHeaderUi(
-    albumUri = uri,
-    title = name,
-    artists = artists.joinToString { it.name },
-    artworkUrl = covers.firstOrNull()?.uri
-)
-
+fun Album.getCover(size: CoverSize): Cover? {
+    return covers.firstOrNull { it.size == size.asInt() }
+}

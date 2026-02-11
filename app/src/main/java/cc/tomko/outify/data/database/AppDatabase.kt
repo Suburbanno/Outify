@@ -21,7 +21,7 @@ import cc.tomko.outify.data.database.dao.TrackDao
         AlbumTrackCrossRef::class,
         AlbumArtistEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase() {
@@ -43,7 +43,7 @@ abstract class AppDatabase: RoomDatabase() {
                     AppDatabase::class.java,
                     "outify_database"
                 )
-                    .fallbackToDestructiveMigration() // IMPORTANT TODO: REMOVE IN PROD
+                    .fallbackToDestructiveMigration(true) // IMPORTANT TODO: REMOVE IN PROD
                     .build()
                 INSTANCE = instance
                 instance

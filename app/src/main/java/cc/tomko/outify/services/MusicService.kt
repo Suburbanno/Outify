@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
@@ -22,14 +23,19 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.ui.PlayerNotificationManager
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.R
-import cc.tomko.outify.playback.Player
-import cc.tomko.outify.playback.media3.MediaNotificationManager
+import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.getCover
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.allowHardware
+import coil3.toBitmap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.net.URL
 
 
@@ -42,7 +48,9 @@ class MusicService : MediaSessionService() {
     private lateinit var mediaSession: MediaSession
 
     private var currentArtwork: Bitmap? = null
-    private var currentArtworkUrl: URL? = null
+    private var currentArtworkUrl: String? = null
+
+    private var currentTrack: Track? = null
 
     private val serviceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
 
@@ -75,6 +83,29 @@ class MusicService : MediaSessionService() {
                 .setChannelId(CHANNEL_ID)
                 .build()
         )
+
+        val playbackStateHolder = OutifyApplication.playbackStateHolder
+        serviceScope.launch {
+            playbackStateHolder.state.collect { state ->
+                val track = state.currentTrack
+                val cover = track?.album?.getCover(CoverSize.LARGE)
+                val artworkUri = cover?.uri
+
+                println("Cover Size: ${cover?.size}")
+                println("Cover url: ${artworkUri}")
+
+                if (artworkUri != null) {
+                    val url = ALBUM_COVER_URL + artworkUri
+                    loadArtworkFromUrl(url) {}
+                } else {
+                    postOrStartForegroundNotification(startInForeground = false)
+                }
+
+                currentTrack = track
+            }
+        }
+
+        startForeground(notificationId, buildNotification())
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession {
@@ -107,15 +138,8 @@ class MusicService : MediaSessionService() {
     }
 
     private fun buildNotification(): Notification {
-        val currentTrack = OutifyApplication.playbackStateHolder.state.value.currentTrack
-        val artworkUrl = ALBUM_COVER_URL + currentTrack?.album?.covers?.first()?.uri
-
-        loadArtworkFromUrl(URL(artworkUrl)) { bitmap ->
-            currentArtwork = bitmap
-        }
-
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(androidx.media3.session.R.drawable.media3_icon_circular_play)
+            .setSmallIcon(androidx.media3.session.R.drawable.media3_icon_play)
             .setContentTitle(currentTrack?.name ?: "Currently not playing")
             .setContentText(currentTrack?.artists?.joinToString { it.name } ?: "Outify")
             .setSubText(currentTrack?.album?.name ?: "Unknown")
@@ -130,7 +154,7 @@ class MusicService : MediaSessionService() {
     }
 
     private fun postOrStartForegroundNotification(startInForeground: Boolean) {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         val notification = buildNotification()
 
         if (startInForeground) {
@@ -148,18 +172,29 @@ class MusicService : MediaSessionService() {
         }
     }
 
-    private fun loadArtworkFromUrl(url: URL, callback: (Bitmap?) -> Unit) {
-        if(url != currentArtworkUrl) {
+    private fun loadArtworkFromUrl(url: String, callback: (Bitmap?) -> Unit) {
+        if (url != currentArtworkUrl) {
             currentArtworkUrl = url
+
             serviceScope.launch {
-                try {
-                    val inputStream = url.openConnection().getInputStream()
-                    val bitmap = BitmapFactory.decodeStream(inputStream)
-                    callback(bitmap)
-                } catch(e: Exception) {
-                    callback(null)
-                }
+                val loader = this@MusicService.applicationContext.imageLoader
+
+                val request = ImageRequest.Builder(this@MusicService)
+                    .size(coil3.size.Size.ORIGINAL)
+                    .data(url)
+                    .allowHardware(false)
+                    .build()
+
+                val result = loader.execute(request)
+
+                val bitmap = result.image?.toBitmap()
+
+                currentArtwork = bitmap
+                postOrStartForegroundNotification(startInForeground = false)
+                callback(bitmap)
             }
+        } else {
+            callback(currentArtwork)
         }
     }
 

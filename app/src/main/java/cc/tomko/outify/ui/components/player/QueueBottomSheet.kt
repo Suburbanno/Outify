@@ -62,6 +62,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.TrackRow
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -274,9 +276,9 @@ fun SharedTransitionScope.QueueBottomSheet(
                             val trackIndex = remember(localTracks) {
                                 localTracks.indexOf(item)
                             }
-                            val artworkUrl = remember(item.track.album?.covers) {
+                            val artworkUrl = remember(item.track.album?.getCover(CoverSize.MEDIUM)) {
                                 ALBUM_COVER_URL +
-                                        item.track.album?.covers?.firstOrNull()?.uri.orEmpty()
+                                        item.track.album?.getCover(CoverSize.MEDIUM)
                             }
 
                             ReorderableItem(

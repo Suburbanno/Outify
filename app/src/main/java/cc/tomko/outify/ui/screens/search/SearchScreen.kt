@@ -39,6 +39,8 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.TrackRow
 import cc.tomko.outify.ui.components.TrackRowDensity
 import cc.tomko.outify.ui.components.navigation.Route
@@ -79,7 +81,7 @@ fun SharedTransitionScope.SearchScreen(
                             TrackRow(
                                 title = domainTrack.name,
                                 artist = domainTrack.artists.joinToString(", ") { it.name },
-                                artworkUrl = ALBUM_COVER_URL + domainTrack.album?.covers?.firstOrNull()?.uri,
+                                artworkUrl = ALBUM_COVER_URL + domainTrack.album?.getCover(CoverSize.SMALL)?.uri,
                                 isPlaying = currentTrack?.uri.equals(item.uri),
                                 isSelected = false,
                                 density = TrackRowDensity.Default,

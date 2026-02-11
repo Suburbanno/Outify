@@ -27,7 +27,9 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.TrackRow
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
@@ -103,7 +105,7 @@ fun SharedTransitionScope.LikedScreen(
             TrackRow(
                 title = track.name,
                 artist = track.artists.joinToString { it.name },
-                artworkUrl = (ALBUM_COVER_URL + track.album?.covers?.first()?.uri),
+                artworkUrl = (ALBUM_COVER_URL + track.album?.getCover(CoverSize.SMALL)?.uri),
                 isPlaying = currentTrack?.uri.equals(track.uri),
                 isSelected = false,
 //                trailingContent = TODO(),
