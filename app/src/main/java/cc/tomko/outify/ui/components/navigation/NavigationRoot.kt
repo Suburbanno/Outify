@@ -29,6 +29,7 @@ import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.screens.library.LikedScreen
 import cc.tomko.outify.ui.screens.library.album.AlbumDetailScreen
 import cc.tomko.outify.ui.screens.library.artist.ArtistDetailScreen
+import cc.tomko.outify.ui.screens.library.artist.ArtistLikedTracksScreen
 import cc.tomko.outify.ui.screens.search.SearchScreen
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
@@ -159,7 +160,26 @@ fun SharedTransitionScope.NavigationRoot(
                             viewModel,
                             onArtworkClick = { track ->
                                 backStack.add(Route.AlbumScreenFromTrack(track))
+                            },
+                            onLikedTracksClick = {
+                                backStack.add(Route.ArtistLikedTracksScreen(key.artistUri))
                             }
+                        ) { }
+                    }
+                }
+
+                is Route.ArtistLikedTracksScreen -> {
+                    NavEntry(key) {
+                        val viewModel: ArtistViewModel = hiltViewModel()
+                        LaunchedEffect(viewModel) {
+                            viewModel.loadArtist(key.artistUri)
+                        }
+
+                        ArtistLikedTracksScreen(
+                            viewModel,
+                            onArtworkClick = { track ->
+                                backStack.add(Route.AlbumScreenFromTrack(track))
+                            },
                         ) { }
                     }
                 }

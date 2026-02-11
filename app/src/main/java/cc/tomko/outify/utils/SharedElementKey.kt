@@ -3,4 +3,7 @@ package cc.tomko.outify.utils
 object SharedElementKey {
     const val PLAYER_ARTWORK = "player_artwork"
     const val ALBUM_ARTWORK = "album_artwork"
+
+    const val ARTIST_DETAILS_TOPBAR_IMAGE = "artist_details_topbar_image"
+    const val ARTIST_DETAILS_TOPBAR_TEXT = "artist_details_topbar_text"
 }
