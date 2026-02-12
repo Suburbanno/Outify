@@ -84,9 +84,6 @@ fun SharedTransitionScope.NavigationRoot(
                             viewModel = viewModel,
                             listState = listState,
                             backStack = backStack,
-                            onTrackClick = { track ->
-                                OutifyApplication.spirc.load(track.uri)
-                            }
                         )
                     }
                 }
@@ -120,6 +117,9 @@ fun SharedTransitionScope.NavigationRoot(
                             viewModel = viewModel,
                             onBack = {
                                 backStack.removeAt(backStack.lastIndex)
+                            },
+                            artistClick = { uri ->
+                                backStack.add(Route.ArtistScreen(uri))
                             }
                         )
                     }
@@ -143,6 +143,9 @@ fun SharedTransitionScope.NavigationRoot(
                             viewModel = viewModel,
                             onBack = {
                                 backStack.removeAt(backStack.lastIndex)
+                            },
+                            artistClick = { uri ->
+                                backStack.add(Route.ArtistScreen(uri))
                             }
 //                            sourceTrack = key.track
                         )

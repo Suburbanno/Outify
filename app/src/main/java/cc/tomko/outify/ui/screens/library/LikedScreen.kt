@@ -55,7 +55,6 @@ fun SharedTransitionScope.LikedScreen(
     viewModel: LikedViewModel,
     listState: LazyListState,
     backStack: NavBackStack<NavKey>,
-    onTrackClick: (Track) -> Unit,
 ) {
     val tracks by viewModel.likedTracks.collectAsState()
     LaunchedEffect(Unit) { viewModel.ensureLoaded() }
@@ -148,7 +147,11 @@ fun SharedTransitionScope.LikedScreen(
                     isPlaying = currentTrack?.uri.equals(track.uri),
                     isSelected = false,
 //                trailingContent = TODO(),
-                    onRowClick = remember(track.uri) { { onTrackClick(track) } },
+                    onRowClick = remember(track.uri) {
+                        {
+                            OutifyApplication.spirc.load(null,track.uri)
+                        }
+                    },
 //                onRowLongClick = TODO(),
                     onArtworkClick = {
                         backStack.add(Route.AlbumScreenFromTrack(track))

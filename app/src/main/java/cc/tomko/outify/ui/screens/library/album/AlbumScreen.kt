@@ -89,6 +89,7 @@ import kotlin.math.roundToInt
 fun SharedTransitionScope.AlbumDetailScreen(
     viewModel: AlbumViewModel,
     onBack: () -> Unit,
+    artistClick: (uri: String) -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -228,10 +229,8 @@ fun SharedTransitionScope.AlbumDetailScreen(
                             artworkUrl = artworkUrl,
 //                            isPlaying = currentTrack?.uri.equals(track.uri),
                             isSelected = false,
-                            onRowClick = remember(track.uri) { { OutifyApplication.spirc.load(track.uri) } },
-                            onArtistClick = {
-                                println("Artistt!")
-                            },
+                            onRowClick = remember(track.uri) { { OutifyApplication.spirc.load(album.uri,track.uri) } },
+                            onArtistClick = { artistClick(track.artists.first().uri) }, // TODO: Make some popup where user chooses the artist, in case of multiple artists
                             sharedTransitionKey = null
                         )
                     }

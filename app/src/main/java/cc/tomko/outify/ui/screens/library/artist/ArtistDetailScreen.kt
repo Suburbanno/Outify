@@ -264,7 +264,9 @@ fun SharedTransitionScope.ArtistDetailScreen(
                             artworkUrl = trackArtworkUrl,
                             isPlaying = currentTrack?.uri.equals(track.uri),
                             isSelected = false,
-                            onRowClick = remember(track.uri) { { OutifyApplication.spirc.load(track.uri) } },
+                            onRowClick = remember(track.uri) { {
+                                OutifyApplication.spirc.load(artist.uri, track.uri)
+                            } },
                             onArtworkClick = {onArtworkClick(track)},
                             sharedTransitionKey = null
                         )

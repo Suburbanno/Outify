@@ -1,7 +1,9 @@
 use jni::{
-    objects::{JClass, JString}, sys::{jboolean, jstring}, JNIEnv
+    JNIEnv,
+    objects::{JClass, JString},
+    sys::{jboolean, jstring},
 };
-use librespot_connect::LoadRequest;
+use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, PlayingTrack};
 use librespot_core::SpotifyUri;
 
 use crate::spirc::SpircRuntime;
@@ -97,6 +99,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_load(
     mut env: JNIEnv,
     _this: JClass,
     juri: JString,
+    jplaying_track: JString,
 ) -> jboolean {
     let runtime = match super::SPIRC_RUNTIME.get() {
         Some(r) => r,
@@ -106,20 +109,52 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_load(
         }
     };
 
-    let uri = match env.get_string(&juri) {
-        Ok(u) => u.into(),
-        Err(e) => {
-            warn!("Failed to get URI from JNI juri: {}", e);
-            return 0;
+    // If uri is not present - set to users liked collection
+    // If uri is present - use that uri
+    let uri = if juri.is_null() {
+        let user_id = match crate::session::SESSION.get() {
+            Some(s) => s.username(),
+            None => {
+                error!("failed to get user_id");
+                return 0;
+            }
+        };
+
+        format!("spotify:user:{}:collection", user_id)
+    } else {
+        match env.get_string(&juri) {
+            Ok(u) => u.into(),
+            Err(e) => {
+                warn!("Failed to get URI from JNI juri: {}", e);
+                return 0;
+            }
         }
     };
 
-    let req = LoadRequest::from_context_uri(
-        uri,
-        librespot_connect::LoadRequestOptions {
-            ..Default::default()
-        },
-    );
+    let track_uri: Option<String> = if jplaying_track.is_null() {
+        None
+    } else {
+        match env.get_string(&jplaying_track) {
+            Ok(js) => Some(js.into()),
+            Err(e) => {
+                error!("failed to get playing track uri: {}", e);
+                return 0;
+            }
+        }
+    };
+
+    let track = match track_uri {
+        Some(uri) => Some(PlayingTrack::Uri(uri)),
+        None => None,
+    };
+
+    let options = LoadRequestOptions {
+        start_playing: true,
+        playing_track: track,
+        ..Default::default()
+    };
+
+    let req = LoadRequest::from_context_uri(uri, options);
 
     match runtime.load(req) {
         Ok(_) => {}
@@ -163,12 +198,10 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_addToQueue(
     };
 
     match runtime.add_to_queue(spotify_uri) {
-        Ok(_) => {
-            return 1
-        },
+        Ok(_) => return 1,
         Err(e) => {
             warn!("Failed to add to queue: {}", e);
-            return 0
+            return 0;
         }
     }
 }
@@ -369,15 +402,14 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_previousTracks(
         }
     };
 
-    let tracks_raw: Vec<librespot_protocol::player::ProvidedTrack> = match rt.block_on(async move {
-        runtime.prev_tracks().await
-    }) {
-        Ok(tracks) => tracks,
-        Err(e) => {
-            error!("failed to fetch tracks: {}", e);
-            return std::ptr::null_mut();
-        }
-    };
+    let tracks_raw: Vec<librespot_protocol::player::ProvidedTrack> =
+        match rt.block_on(async move { runtime.prev_tracks().await }) {
+            Ok(tracks) => tracks,
+            Err(e) => {
+                error!("failed to fetch tracks: {}", e);
+                return std::ptr::null_mut();
+            }
+        };
 
     let uris: Vec<String> = tracks_raw.into_iter().map(|track| track.uri).collect();
 
@@ -419,15 +451,14 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_nextTracks(
         }
     };
 
-    let tracks_raw: Vec<librespot_protocol::player::ProvidedTrack> = match rt.block_on(async move {
-        runtime.next_tracks().await
-    }) {
-        Ok(tracks) => tracks,
-        Err(e) => {
-            error!("failed to fetch tracks: {}", e);
-            return std::ptr::null_mut();
-        }
-    };
+    let tracks_raw: Vec<librespot_protocol::player::ProvidedTrack> =
+        match rt.block_on(async move { runtime.next_tracks().await }) {
+            Ok(tracks) => tracks,
+            Err(e) => {
+                error!("failed to fetch tracks: {}", e);
+                return std::ptr::null_mut();
+            }
+        };
 
     let uris: Vec<String> = tracks_raw.into_iter().map(|track| track.uri).collect();
 

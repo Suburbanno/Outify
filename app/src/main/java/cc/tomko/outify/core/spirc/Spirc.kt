@@ -11,10 +11,11 @@ class Spirc {
 
     /**
      * Loads a SpotifyURI
-     * @param spotifyUri valid form of URI, that will get loaded
+     * @param context valid form of URI, that will get loaded. Leave empty for liked tracks
+     * @param playingTrackUri from which to start playing in this context. Leave empty for first/random
      * @return `true` if loaded successfully
      */
-    external fun load(spotifyUri: String?): Boolean
+    external fun load(context: String? = null, playingTrackUri: String? = null): Boolean
 
     /**
      * Adds a SpotifyURI to queue
