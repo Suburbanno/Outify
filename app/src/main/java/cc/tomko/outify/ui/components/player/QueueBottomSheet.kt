@@ -278,7 +278,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                             }
                             val artworkUrl = remember(item.track.album?.getCover(CoverSize.MEDIUM)) {
                                 ALBUM_COVER_URL +
-                                        item.track.album?.getCover(CoverSize.MEDIUM)
+                                        item.track.album?.getCover(CoverSize.MEDIUM)?.uri
                             }
 
                             ReorderableItem(
