@@ -2,6 +2,7 @@ use jni::{
     objects::{JClass, JString}, sys::{jboolean, jstring}, JNIEnv
 };
 use librespot_connect::LoadRequest;
+use librespot_core::SpotifyUri;
 
 use crate::spirc::SpircRuntime;
 
@@ -128,6 +129,48 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_load(
     }
 
     1
+}
+
+// Adds a Spotify URI to queue
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_addToQueue(
+    mut env: JNIEnv,
+    _this: JClass,
+    juri: JString,
+) -> jboolean {
+    let runtime = match super::SPIRC_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            warn!("Spirc not initialized for load");
+            return 0;
+        }
+    };
+
+    let uri: String = match env.get_string(&juri) {
+        Ok(u) => u.into(),
+        Err(e) => {
+            warn!("Failed to get URI from JNI juri: {}", e);
+            return 0;
+        }
+    };
+
+    let spotify_uri = match SpotifyUri::from_uri(uri.as_str()) {
+        Ok(uri) => uri,
+        Err(e) => {
+            warn!("failed to get SpotifyURI: {}", e);
+            return 0;
+        }
+    };
+
+    match runtime.add_to_queue(spotify_uri) {
+        Ok(_) => {
+            return 1
+        },
+        Err(e) => {
+            warn!("Failed to add to queue: {}", e);
+            return 0
+        }
+    }
 }
 
 // Activates the Spirc session

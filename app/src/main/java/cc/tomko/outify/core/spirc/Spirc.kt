@@ -17,6 +17,13 @@ class Spirc {
     external fun load(spotifyUri: String?): Boolean
 
     /**
+     * Adds a SpotifyURI to queue
+     * @param spotifyUri valid form of URI, that will get loaded
+     * @return `true` if loaded successfully
+     */
+    external fun addToQueue(spotifyUri: String?): Boolean
+
+    /**
      * Activates current Spirc session
      * @return `true` if success
      */

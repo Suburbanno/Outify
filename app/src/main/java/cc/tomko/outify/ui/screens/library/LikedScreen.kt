@@ -2,12 +2,21 @@ package cc.tomko.outify.ui.screens.library
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddToPhotos
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.QueuePlayNext
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,19 +26,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDirections
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.ui.NavDisplay
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.ui.components.SwipeGesture
+import cc.tomko.outify.ui.components.SwipeableRowWithGestures
 import cc.tomko.outify.ui.components.TrackRow
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
@@ -102,23 +112,53 @@ fun SharedTransitionScope.LikedScreen(
             key = { it.uri },
             contentType = { "track" }
         ) { track ->
-            TrackRow(
-                title = track.name,
-                artist = track.artists.joinToString { it.name },
-                artworkUrl = (ALBUM_COVER_URL + track.album?.getCover(CoverSize.SMALL)?.uri),
-                isPlaying = currentTrack?.uri.equals(track.uri),
-                isSelected = false,
+            SwipeableRowWithGestures(
+                endGestures = listOf(
+                    SwipeGesture(
+                        thresholdFraction = 0.05f,
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.AddToPhotos,
+                                contentDescription = "Add to queue",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        },
+                        onTrigger = {
+                            OutifyApplication.spirc.addToQueue(track.uri)
+                        },
+                        backgroundColor = Color(0xC43C8C52)
+                    ),
+                    SwipeGesture(
+                        thresholdFraction = 0.45f,
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.QueuePlayNext,
+                                contentDescription = "Play next",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        },
+                        onTrigger = {  },
+                    )
+                )
+            ) {
+                TrackRow(
+                    title = track.name,
+                    artist = track.artists.joinToString { it.name },
+                    artworkUrl = (ALBUM_COVER_URL + track.album?.getCover(CoverSize.SMALL)?.uri),
+                    isPlaying = currentTrack?.uri.equals(track.uri),
+                    isSelected = false,
 //                trailingContent = TODO(),
-                onRowClick = remember(track.uri) { { onTrackClick(track) } },
+                    onRowClick = remember(track.uri) { { onTrackClick(track) } },
 //                onRowLongClick = TODO(),
-                onArtworkClick = {
-                    backStack.add(Route.AlbumScreenFromTrack(track))
-                },
+                    onArtworkClick = {
+                        backStack.add(Route.AlbumScreenFromTrack(track))
+                    },
 //                onTitleClick = TODO(),
-                onArtistClick = {
-                    backStack.add(Route.ArtistScreen(track.artists.first().uri))
-                },
-            )
+                    onArtistClick = {
+                        backStack.add(Route.ArtistScreen(track.artists.first().uri))
+                    },
+                )
+            }
         }
     }
 }
