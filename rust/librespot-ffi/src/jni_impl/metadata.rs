@@ -5,6 +5,8 @@ use jni::{
 use librespot_core::{Session, SpotifyUri};
 use librespot_metadata::Metadata;
 
+use crate::session::with_session;
+
 // From librespot_metadata
 const SPOTIFY_ITEM_TYPE_ALBUM: &str = "album";
 const SPOTIFY_ITEM_TYPE_ARTIST: &str = "artist";
@@ -37,15 +39,6 @@ pub extern "system" fn Java_cc_tomko_outify_data_Metadata_getNativeMetadata(
         }
     };
 
-    // Getting session
-    let session = match crate::session::SESSION.get() {
-        Some(s) => s,
-        None => {
-            error!("failed to retrieve session: not initialized");
-            return std::ptr::null_mut();
-        }
-    };
-
     let rt = match crate::TOKIO_RUNTIME.get() {
         Some(r) => r,
         None => {
@@ -54,18 +47,25 @@ pub extern "system" fn Java_cc_tomko_outify_data_Metadata_getNativeMetadata(
         }
     };
 
-    let maybe_json: Option<String> = rt.block_on(async {
-        match spotify_uri.item_type() {
-            SPOTIFY_ITEM_TYPE_TRACK => get_track_metadata(&session, &spotify_uri).await,
-            SPOTIFY_ITEM_TYPE_ALBUM => get_album_metadata(&session, &spotify_uri).await,
-            SPOTIFY_ITEM_TYPE_ARTIST => get_artist_metadata(&session, &spotify_uri).await,
-
-            &_ => {
-                info!("Unknown item type!");
-                None
+    let maybe_json: Option<String> = match with_session(|session| {
+        rt.block_on(async move {
+            match spotify_uri.item_type() {
+                SPOTIFY_ITEM_TYPE_TRACK => get_track_metadata(&session, &spotify_uri).await,
+                SPOTIFY_ITEM_TYPE_ALBUM => get_album_metadata(&session, &spotify_uri).await,
+                SPOTIFY_ITEM_TYPE_ARTIST => get_artist_metadata(&session, &spotify_uri).await,
+                &_ => {
+                    info!("Unknown item type!");
+                    None
+                }
             }
+        })
+    }) {
+        Ok(val) => val,
+        Err(e) => {
+            error!("Failed to get session: {}", e);
+            return std::ptr::null_mut(); // return null on error
         }
-    });
+    };
 
     let json = match maybe_json {
         Some(j) => j,

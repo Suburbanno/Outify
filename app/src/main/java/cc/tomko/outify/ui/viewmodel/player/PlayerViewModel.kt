@@ -4,6 +4,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
@@ -49,11 +50,10 @@ class PlayerViewModel(
      * On Player UI action - like play/pause/..
      */
     fun onAction(action: PlayerAction) {
-        val spirc = OutifyApplication.spirc
         when (action) {
-            PlayerAction.PlayPause -> spirc.playerPlayPause()
-            PlayerAction.Next -> spirc.playerNext()
-            PlayerAction.Previous -> spirc.playerPrevious()
+            PlayerAction.PlayPause -> Spirc.playerPlayPause()
+            PlayerAction.Next -> Spirc.playerNext()
+            PlayerAction.Previous -> Spirc.playerPrevious()
         }
     }
 }

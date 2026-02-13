@@ -18,6 +18,7 @@ import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.request.crossfade
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.Runnable
 
 const val ALBUM_COVER_URL: String = "https://i.scdn.co/image/"
 
@@ -51,10 +52,11 @@ class OutifyApplication : Application() {
         LibrespotFfi.libInit(applicationContext)
 
         session = Session()
-        session.initializeSession()
+        val callback = java.lang.Runnable {
+        }
+        session.initializeSession(callback)
 
         authManager = AuthManager()
-        spirc = Spirc()
 
         player = Player(this, stateHolder = playbackStateHolder)
 
@@ -91,7 +93,6 @@ class OutifyApplication : Application() {
     companion object {
         lateinit var session: Session
         lateinit var authManager: AuthManager
-        lateinit var spirc: Spirc
         var playbackStateHolder = PlaybackStateHolder()
     }
 }

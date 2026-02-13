@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use librespot_connect::{ConnectConfig, LoadRequest, Spirc};
 use librespot_core::{Session, SpotifyUri, authentication::Credentials, spclient::TransferRequest};
@@ -7,10 +7,19 @@ use librespot_playback::{
     mixer::{self, MixerConfig},
     player::{Player, PlayerEvent},
 };
+use once_cell::sync::OnceCell;
 use tokio::{
     sync::{Mutex, broadcast, mpsc, watch},
     task::JoinHandle,
 };
+
+use crate::session::with_session;
+
+static SPIRC_RUNTIME: OnceCell<RwLock<Option<SpircRuntime>>> = OnceCell::new();
+
+pub fn init_spirc_container() {
+    SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
+}
 
 pub struct SpircRuntime {
     spirc: Arc<Spirc>,
@@ -132,13 +141,21 @@ impl SpircRuntime {
 
     pub async fn shutdown(&self) {}
 
-    pub async fn prev_tracks(&self) -> Result<Vec<librespot_protocol::player::ProvidedTrack>, librespot_core::Error> {
-        self.spirc.prev_tracks().await
+    pub async fn prev_tracks(
+        &self,
+    ) -> Result<Vec<librespot_protocol::player::ProvidedTrack>, librespot_core::Error> {
+        self.spirc
+            .prev_tracks()
+            .await
             .ok_or_else(|| librespot_core::Error::internal("Spirc task not available"))
     }
 
-    pub async fn next_tracks(&self) -> Result<Vec<librespot_protocol::player::ProvidedTrack>, librespot_core::Error> {
-        self.spirc.next_tracks().await
+    pub async fn next_tracks(
+        &self,
+    ) -> Result<Vec<librespot_protocol::player::ProvidedTrack>, librespot_core::Error> {
+        self.spirc
+            .next_tracks()
+            .await
             .ok_or_else(|| librespot_core::Error::internal("Spirc task not available"))
     }
 }
@@ -147,7 +164,7 @@ impl SpircRuntime {
 fn handle_event(event: PlayerEvent) {
     match event {
         PlayerEvent::Playing {
-            play_request_id,
+            play_request_id: _,
             ref track_id,
             position_ms,
         } => {
@@ -159,26 +176,47 @@ fn handle_event(event: PlayerEvent) {
             crate::jni_utils::playback::on_player_track_update(audio_item.track_id.clone());
         }
 
-        PlayerEvent::Paused { play_request_id, ref track_id, position_ms } => {
+        PlayerEvent::Paused {
+            play_request_id: _,
+            ref track_id,
+            position_ms,
+        } => {
             crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
             crate::jni_utils::playback::on_player_status(false);
         }
 
-        PlayerEvent::Seeked { play_request_id, track_id, position_ms } => {
-            crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
-        }
-        
-        PlayerEvent::PositionChanged { play_request_id, track_id, position_ms } => {
+        PlayerEvent::Seeked {
+            play_request_id: _,
+            track_id,
+            position_ms,
+        } => {
             crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
         }
 
-        PlayerEvent::SessionConnected { connection_id, user_name } => {
-            info!("User {} connected session {}",user_name, connection_id);
+        PlayerEvent::PositionChanged {
+            play_request_id: _,
+            track_id,
+            position_ms,
+        } => {
+            crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
         }
-        PlayerEvent::SessionDisconnected { connection_id, user_name } => {
-            info!("User {} disconnected session {}",user_name, connection_id);
+
+        PlayerEvent::SessionConnected {
+            connection_id,
+            user_name,
+        } => {
+            info!("User {} connected session {}", user_name, connection_id);
         }
-        PlayerEvent::TimeToPreloadNextTrack { play_request_id, track_id } => {
+        PlayerEvent::SessionDisconnected {
+            connection_id,
+            user_name,
+        } => {
+            info!("User {} disconnected session {}", user_name, connection_id);
+        }
+        PlayerEvent::TimeToPreloadNextTrack {
+            play_request_id: _,
+            track_id,
+        } => {
             info!("Its time to preload {}", track_id);
         }
         PlayerEvent::AddedToQueue { track_id } => {
@@ -188,4 +226,83 @@ fn handle_event(event: PlayerEvent) {
             // Not yet implemented
         }
     }
+}
+
+pub async fn initialize_spirc() -> Result<(), librespot_core::Error> {
+    debug!("Initializing SpircRuntime");
+
+    let container = SPIRC_RUNTIME
+        .get()
+        .expect("SPIRC container not initialized");
+
+    {
+        let guard = container.read().unwrap();
+        if guard.is_some() {
+            warn!("Spirc already initialized!");
+            return Err(librespot_core::Error::internal("Spirc already initialized"));
+        }
+    }
+
+    let session = match with_session(|s| s.clone()) {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to get session: {}", e);
+            return Err(librespot_core::Error::internal("Failed to get session"));
+        }
+    };
+
+    info!("session id 2: {}", session.session_id());
+    info!("session con 2: {}", session.connection_id());
+
+    if session.cache().is_none() {
+        error!("Cannot initialize SpircRuntime as session cache is none!");
+        return Err(librespot_core::Error::internal(
+            "Cannot initialize SpircRuntime as session cache is none",
+        ));
+    }
+
+    let cache = session.cache().unwrap();
+    let credentials = match cache.credentials() {
+        Some(c) => c,
+        None => {
+            error!("Cannot initialize SpircRuntime as cached credentials are None!");
+            return Err(librespot_core::Error::internal(
+                "Cannot initialize SpircRuntime as cached credentials are None!",
+            ));
+        }
+    };
+
+    let runtime = match SpircRuntime::new(&session, credentials).await {
+        Ok(r) => r,
+        Err(e) => {
+            error!("Failed to create SpircRuntime with err: {}", e);
+            return Err(librespot_core::Error::internal(format!(
+                "Failed to create SpircRuntime with err: {}",
+                e
+            )));
+        }
+    };
+
+    let mut guard = container.write().unwrap();
+    *guard = Some(runtime);
+
+    debug!("SpircRuntime initialized");
+
+    Ok(())
+}
+
+pub fn with_spirc<F, R>(f: F) -> Result<R, librespot_core::Error>
+where
+    F: FnOnce(&SpircRuntime) -> R,
+{
+    let container = SPIRC_RUNTIME
+        .get()
+        .expect("Spirc container not initialized");
+
+    let guard = container.read().unwrap();
+    let runtime = guard
+        .as_ref()
+        .ok_or_else(|| librespot_core::Error::internal("Spirc not created"))?;
+
+    Ok(f(runtime))
 }

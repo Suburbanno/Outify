@@ -80,6 +80,7 @@ import androidx.compose.ui.util.lerp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
@@ -265,7 +266,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
                             isPlaying = currentTrack?.uri.equals(track.uri),
                             isSelected = false,
                             onRowClick = remember(track.uri) { {
-                                OutifyApplication.spirc.load(artist.uri, track.uri)
+                                Spirc.load(artist.uri, track.uri)
                             } },
                             onArtworkClick = {onArtworkClick(track)},
                             sharedTransitionKey = null

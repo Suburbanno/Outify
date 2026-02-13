@@ -6,6 +6,8 @@ use jni::{
 use librespot_core::authentication::Credentials;
 use oauth2::url::Url;
 
+use crate::session::with_session;
+
 // Checks for cached credentials. Does NOT use Session
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_AuthManager_hasCachedCredentials(
@@ -37,24 +39,23 @@ pub extern "system" fn Java_cc_tomko_outify_core_AuthManager_getAuthorizationURL
         }
     };
 
-    let session = match crate::session::SESSION.get() {
-        Some(s) => s,
-        None => {
-            warn!("Cannot get auth url as Session isn't initialized");
-            return std::ptr::null_mut();
+    let auth_url_opt: Option<Url> = match with_session(|session| {
+        rt.block_on(async move {
+            match crate::oauth::setup_oauth_session(&session) {
+                Some(mutex) => {
+                    let guard = mutex.lock().await;
+                    Some(guard.auth_url().clone())
+                }
+                None => None,
+            }
+        })
+    }) {
+        Ok(val) => val,
+        Err(e) => {
+            error!("Failed to get session: {}", e);
+            None 
         }
     };
-
-    let auth_url_opt: Option<Url> = rt.block_on(async {
-        match crate::oauth::setup_oauth_session(session) {
-            Some(mutex) => {
-                // Obtain async lock and clone auth_url
-                let guard = mutex.lock().await;
-                Some(guard.auth_url().clone())
-            }
-            None => None,
-        }
-    });
 
     let auth_url = match auth_url_opt {
         Some(u) => u,

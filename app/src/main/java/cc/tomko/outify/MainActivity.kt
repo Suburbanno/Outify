@@ -168,14 +168,12 @@ class MainActivity : ComponentActivity() {
     @androidx.annotation.OptIn(UnstableApi::class)
     fun startServices() {
         // Starting Spirc
-        val spirc = Spirc()
-        if(!spirc.initializeSpirc()){
-            // How do we handle this?
-            return;
-        }
+//        println("Initializing spirc")
+//        if(!Spirc.initializeSpirc()){
+//            // How do we handle this?
+//            return;
+//        }
         // Spirc activation and transfer is handled in initializeSpirc -> callback to onSpircInitialize
-
-        OutifyApplication.spirc = spirc
 
         // MediaSession
         val intent = Intent(this, MusicService::class.java)

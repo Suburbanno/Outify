@@ -35,6 +35,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
@@ -123,7 +124,7 @@ fun SharedTransitionScope.LikedScreen(
                             )
                         },
                         onTrigger = {
-                            OutifyApplication.spirc.addToQueue(track.uri)
+                            Spirc.addToQueue(track.uri)
                         },
                         backgroundColor = Color(0xC43C8C52)
                     ),
@@ -149,10 +150,12 @@ fun SharedTransitionScope.LikedScreen(
 //                trailingContent = TODO(),
                     onRowClick = remember(track.uri) {
                         {
-                            OutifyApplication.spirc.load(null,track.uri)
+                            Spirc.load(null,track.uri)
                         }
                     },
-//                onRowLongClick = TODO(),
+                onRowLongClick = {
+                    OutifyApplication.session.shutdown()
+                },
                     onArtworkClick = {
                         backStack.add(Route.AlbumScreenFromTrack(track))
                     },

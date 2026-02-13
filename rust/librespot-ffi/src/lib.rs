@@ -23,7 +23,7 @@ use once_cell::sync::OnceCell;
 
 use jni::JNIEnv;
 use jni::JavaVM;
-use jni::objects::{JClass, JObject};
+use jni::objects::{GlobalRef, JClass, JObject};
 use jni::sys::jint;
 
 use tokio::runtime::Runtime;
@@ -34,6 +34,8 @@ static FILES_DIR: OnceCell<PathBuf> = OnceCell::new();
 static CACHE_DIR: OnceCell<PathBuf> = OnceCell::new();
 
 static CONNECTING: AtomicBool = AtomicBool::new(false);
+
+static SESSION_CLASS: OnceCell<GlobalRef> = OnceCell::new();
 
 #[unsafe(no_mangle)]
 pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *mut std::os::raw::c_void) -> jint {
@@ -76,4 +78,26 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(
     if CACHE_DIR.set(cache_dir).is_err() {
         error!("Failed to set cache dir concurrently!");
     }
+
+    session::init_session_container();
+    spirc::init_spirc_container();
+
+    // Finding JVM classes
+    let session_class = match env.find_class("cc/tomko/outify/core/Session") {
+        Ok(c) => {
+            match env.new_global_ref(c) {
+                Ok(r) => r,
+                Err(_) => {
+                    error!("Failed to create sesson global ref!");
+                    return;
+                },
+            }
+        },
+        Err(e) => {
+            error!("Failed to find session class!");
+            return;
+        }
+    };
+
+    SESSION_CLASS.set(session_class);
 }

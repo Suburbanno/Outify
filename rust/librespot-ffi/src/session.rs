@@ -1,19 +1,29 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::RwLock};
 
 use crate::{CACHE_DIR, FILES_DIR, TOKIO_RUNTIME};
-use jni::{objects::JClass, sys::JNIEnv};
-use librespot_core::{
-    Session, SessionConfig, cache::Cache, config::KEYMASTER_CLIENT_ID,
+use jni::{
+    objects::{JClass, JObject},
+    sys::JNIEnv,
 };
+use librespot_core::{Session, SessionConfig, cache::Cache, config::KEYMASTER_CLIENT_ID};
 use once_cell::sync::OnceCell;
 
-pub static SESSION: OnceCell<Session> = OnceCell::new();
+pub static SESSION: OnceCell<RwLock<Option<Session>>> = OnceCell::new();
+
+pub fn init_session_container() {
+    SESSION.get_or_init(|| RwLock::new(None));
+}
 
 // Initializes the session work further usage
 pub async fn initialize_session() {
-    if SESSION.get().is_some() {
-        warn!("Session is already initialized!");
-        return;
+    let container = SESSION.get().expect("Session container not initialized");
+
+    {
+        let guard = container.read().unwrap();
+        if guard.is_some() {
+            warn!("Session already exists!");
+            return;
+        }
     }
 
     let rt = match TOKIO_RUNTIME.get() {
@@ -33,13 +43,7 @@ pub async fn initialize_session() {
         .get()
         .expect("Failed to get Files Dir!")
         .to_path_buf();
-    let cache: Cache = Cache::new(
-        Some(&os_files_dir),
-        None,
-        Some(&os_cache_dir),
-        None,
-    )
-    .unwrap();
+    let cache: Cache = Cache::new(Some(&os_files_dir), None, Some(&os_cache_dir), None).unwrap();
     trace!("Initialized new cache!");
 
     let handle = rt.handle().clone();
@@ -48,22 +52,22 @@ pub async fn initialize_session() {
         ..Default::default()
     };
     let session = Session::with_handle(session_config, Some(cache), handle);
-    if SESSION.set(session).is_err() {
-        warn!("Session was concurrently set!");
-        return;
-    }
+
+    let mut guard = container.write().unwrap();
+    *guard = Some(session);
 
     debug!("Session initialized!");
 }
 
 // Connects the already initialized session
 pub async fn connect() -> Result<Session, librespot_core::Error> {
-    let session = SESSION.get().ok_or_else(|| {
-        warn!("Attempted to connect session, but session isn't initialized!'");
-        librespot_core::Error::internal(format!(
-            "Attempted to connect session, but session isn't initialized!'"
-        ))
-    })?;
+    let session = match with_session(|s| s.clone()) {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to get session: {}", e);
+            return Err(librespot_core::Error::internal("Failed to get session"));
+        }
+    };
 
     let credentials = session
         .cache()
@@ -79,23 +83,34 @@ pub async fn connect() -> Result<Session, librespot_core::Error> {
     })?;
 
     info!("Session connected!");
+    start_shutdown_listener(session.clone());
+    info!("session id: {}", session.session_id());
+    info!("session con: {}", session.connection_id());
     Ok(session.clone())
 }
 
-#[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_core_Session_initializeSession(
-    _env: JNIEnv,
-    _this: JClass,
-) {
-    let rt = match TOKIO_RUNTIME.get() {
-        Some(r) => r,
-        None => {
-            warn!("Failed to initialize session as Tokio Runtime is not initialized!");
-            return;
-        }
-    };
+fn start_shutdown_listener(session: Session) {
+    tokio::spawn(async move {
+        let mut shutdown_rx = session.subscribe_shutdown();
+        shutdown_rx.changed().await.ok();
 
-    rt.block_on(async {
-        initialize_session().await;
+        warn!("Session shutdown!");
     });
+}
+
+pub fn with_session<F, R>(f: F) -> Result<R, librespot_core::Error>
+where
+    F: FnOnce(&Session) -> R,
+{
+    let container = SESSION
+        .get()
+        .ok_or_else(|| librespot_core::Error::internal("Session container not initialized"))?;
+
+    let guard = container.read().unwrap();
+
+    let session = guard
+        .as_ref()
+        .ok_or_else(|| librespot_core::Error::internal("Session not created"))?;
+
+    Ok(f(session))
 }
