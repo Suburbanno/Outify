@@ -1,11 +1,14 @@
 package cc.tomko.outify
 
 import android.app.Application
+import android.util.Log
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.Session
+import cc.tomko.outify.core.SessionCallback
+import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.core.spirc.SpircWrapper
+import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.data.Metadata
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.playback.AudioEngine
@@ -19,6 +22,7 @@ import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.request.crossfade
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.Runnable
 
 const val ALBUM_COVER_URL: String = "https://i.scdn.co/image/"
 
@@ -51,8 +55,7 @@ class OutifyApplication : Application() {
         System.loadLibrary("librespot_ffi")
         LibrespotFfi.libInit(applicationContext)
 
-        session = Session()
-        session.initializeSession()
+        spircController.start()
 
         authManager = AuthManager()
         spirc = SpircWrapper(this)
@@ -90,9 +93,10 @@ class OutifyApplication : Application() {
     }
 
     companion object {
-        lateinit var session: Session
         lateinit var authManager: AuthManager
         lateinit var spirc: SpircWrapper
         var playbackStateHolder = PlaybackStateHolder()
+        var session: Session = Session()
+        var spircController = SpircController()
     }
 }

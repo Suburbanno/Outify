@@ -7,6 +7,8 @@ use librespot_core::{SpotifyUri, spclient::SpClient};
 use librespot_metadata::{Metadata, Track};
 use oauth2::reqwest;
 
+use crate::session::with_session;
+
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_SpClient_search(
     mut env: JNIEnv,
@@ -103,10 +105,10 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_getUserCollection(
         }
     };
 
-    let user_id = match crate::session::SESSION.get() {
-        Some(s) => s.username(),
-        None => {
-            error!("failed to get user_id");
+    let user_id = match with_session(|session| session.username()) {
+        Ok(u) => u,
+        Err(e) => {
+            error!("Failed to get user_id: {e}");
             return std::ptr::null_mut();
         }
     };

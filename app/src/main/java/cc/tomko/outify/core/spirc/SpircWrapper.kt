@@ -1,4 +1,4 @@
-package cc.tomko.outify.core.spirc
+package cc.tomko.outify.core.Spirc
 
 import android.content.Context
 import android.content.Intent
@@ -7,11 +7,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.services.MusicService
 
 class SpircWrapper(val context: Context) {
-    val spirc: Spirc = Spirc()
-
     @OptIn(UnstableApi::class)
     private fun ensureServiceRunning() {
         val intent = Intent(context, MusicService::class.java)
@@ -27,7 +26,7 @@ class SpircWrapper(val context: Context) {
      */
     fun load(context: String? = null, playingTrackUri: String? = null): Boolean {
         ensureServiceRunning()
-        return spirc.load(context, playingTrackUri)
+        return Spirc.load(context, playingTrackUri)
     }
 
     /**
@@ -36,7 +35,7 @@ class SpircWrapper(val context: Context) {
      * @return `true` if loaded successfully
      */
     fun addToQueue(spotifyUri: String?): Boolean {
-        return spirc.addToQueue(spotifyUri)
+        return Spirc.addToQueue(spotifyUri)
     }
 
     /**
@@ -44,7 +43,7 @@ class SpircWrapper(val context: Context) {
      * @return `true` if success
      */
     fun activate(): Boolean {
-        return spirc.activate()
+        return Spirc.activate()
     }
 
     /**
@@ -52,7 +51,7 @@ class SpircWrapper(val context: Context) {
      * @return `true` if success
      */
     fun transfer(): Boolean {
-        return spirc.transfer()
+        return Spirc.transfer()
     }
 
     /**
@@ -60,7 +59,7 @@ class SpircWrapper(val context: Context) {
      */
     fun playerPlay(): Boolean {
         ensureServiceRunning()
-        return spirc.playerPlay()
+        return Spirc.playerPlay()
     }
 
     /**
@@ -68,7 +67,7 @@ class SpircWrapper(val context: Context) {
      */
     fun playerPause(): Boolean {
         ensureServiceRunning()
-        return spirc.playerPause()
+        return Spirc.playerPause()
     }
 
     /**
@@ -76,34 +75,34 @@ class SpircWrapper(val context: Context) {
      */
     fun playerPlayPause(): Boolean {
         ensureServiceRunning()
-        return spirc.playerPlayPause()
+        return Spirc.playerPlayPause()
     }
 
     /**
      * Tells the player to skip to the next track
      */
     fun playerNext(): Boolean {
-        return spirc.playerNext()
+        return Spirc.playerNext()
     }
 
     /**
      * Tells the player to play the previous track, or return to the start of current track
      */
     fun playerPrevious(): Boolean {
-        return spirc.playerPrevious()
+        return Spirc.playerPrevious()
     }
 
     /**
      * Gets the previous tracks from queue
      */
     fun previousTracks(): String {
-        return spirc.previousTracks()
+        return Spirc.previousTracks()
     }
 
     /**
      * Gets the next tracks from queue
      */
     fun nextTracks(): String {
-        return spirc.nextTracks()
+        return Spirc.nextTracks()
     }
 }

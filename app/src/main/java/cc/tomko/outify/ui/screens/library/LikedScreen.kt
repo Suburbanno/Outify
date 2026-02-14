@@ -35,11 +35,13 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.SwipeGesture
 import cc.tomko.outify.ui.components.SwipeableRowWithGestures
+import cc.tomko.outify.ui.components.SwipeableTrackRow
 import cc.tomko.outify.ui.components.TrackRow
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
@@ -111,57 +113,24 @@ fun SharedTransitionScope.LikedScreen(
             key = { it.uri },
             contentType = { "track" }
         ) { track ->
-            SwipeableRowWithGestures(
-                endGestures = listOf(
-                    SwipeGesture(
-                        thresholdFraction = 0.05f,
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.AddToPhotos,
-                                contentDescription = "Add to queue",
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        },
-                        onTrigger = {
-                            OutifyApplication.spirc.addToQueue(track.uri)
-                        },
-                        backgroundColor = Color(0xC43C8C52)
-                    ),
-                    SwipeGesture(
-                        thresholdFraction = 0.45f,
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.QueuePlayNext,
-                                contentDescription = "Play next",
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        },
-                        onTrigger = {  },
-                    )
-                )
-            ) {
-                TrackRow(
-                    title = track.name,
-                    artist = track.artists.joinToString { it.name },
-                    artworkUrl = (ALBUM_COVER_URL + track.album?.getCover(CoverSize.SMALL)?.uri),
-                    isPlaying = currentTrack?.uri.equals(track.uri),
-                    isSelected = false,
-//                trailingContent = TODO(),
-                    onRowClick = remember(track.uri) {
-                        {
-                            OutifyApplication.spirc.load(null,track.uri)
-                        }
-                    },
-//                onRowLongClick = TODO(),
-                    onArtworkClick = {
-                        backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
-                    },
-//                onTitleClick = TODO(),
-                    onArtistClick = {
-                        backStack.add(Route.ArtistScreen(track.artists.first().uri))
-                    },
-                )
-            }
+            SwipeableTrackRow(
+                track,
+                currentTrack = currentTrack,
+                onRowClick = remember(track.uri) {
+                    {
+                        Spirc.load(null,track.uri)
+                    }
+                },
+                onRowLongClick = {
+                    OutifyApplication.session.shutdown()
+                },
+                onArtworkClick = {
+                    backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
+                },
+                onArtistClick = {
+                    backStack.add(Route.ArtistScreen(track.artists.first().uri))
+                },
+            )
         }
     }
 }

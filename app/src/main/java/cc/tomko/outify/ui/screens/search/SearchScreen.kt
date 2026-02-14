@@ -39,6 +39,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.TrackRow
@@ -86,7 +87,7 @@ fun SharedTransitionScope.SearchScreen(
                                 isSelected = false,
                                 density = TrackRowDensity.Default,
                                 onRowClick = {
-                                    OutifyApplication.spirc.load(item.uri)
+                                    Spirc.load(item.uri)
                                 },
                                 onArtworkClick = {
                                     backStack.add(Route.AlbumScreenFromTrackUri(item.uri))

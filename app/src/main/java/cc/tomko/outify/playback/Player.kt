@@ -18,7 +18,6 @@ import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
@@ -39,7 +38,6 @@ import kotlin.time.toDuration
 class Player(
     application: Application,
     val stateHolder: PlaybackStateHolder = PlaybackStateHolder(),
-    private val spirc: SpircWrapper = OutifyApplication.spirc
 ): SimpleBasePlayer(application.mainLooper) {
     private val json = Json { ignoreUnknownKeys = true }
     private val playerJob = SupervisorJob()
@@ -125,9 +123,9 @@ class Player(
     override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
         // TODO: More robust handling?
         if (playWhenReady) {
-            spirc.playerPlay()
+            Spirc.playerPlay()
         } else {
-            spirc.playerPause()
+            Spirc.playerPause()
         }
         // return a completed future - if your controller needs async work, return a future that completes later
         return com.google.common.util.concurrent.Futures.immediateVoidFuture()
@@ -139,7 +137,7 @@ class Player(
     }
 
     override fun handleStop(): ListenableFuture<*> {
-        spirc.playerPause() //TODO: Implement playerStop
+        Spirc.playerPause() //TODO: Implement playerStop
         return com.google.common.util.concurrent.Futures.immediateVoidFuture()
     }
 

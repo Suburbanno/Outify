@@ -1,19 +1,31 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, sync::RwLock};
 
 use crate::{CACHE_DIR, FILES_DIR, TOKIO_RUNTIME};
-use jni::{objects::JClass, sys::JNIEnv};
-use librespot_core::{
-    Session, SessionConfig, cache::Cache, config::KEYMASTER_CLIENT_ID,
+use jni::{
+    objects::{GlobalRef, JClass, JObject},
+    sys::JNIEnv,
 };
+use librespot_core::{Session, SessionConfig, cache::Cache, config::KEYMASTER_CLIENT_ID};
 use once_cell::sync::OnceCell;
 
-pub static SESSION: OnceCell<Session> = OnceCell::new();
+pub static SESSION: OnceCell<RwLock<Option<Session>>> = OnceCell::new();
+pub static SESSION_CALLBACK: OnceCell<RwLock<Option<GlobalRef>>> = OnceCell::new();
+
+pub fn init_session_container() {
+    SESSION.get_or_init(|| RwLock::new(None));
+    SESSION_CALLBACK.get_or_init(|| RwLock::new(None));
+}
 
 // Initializes the session work further usage
 pub async fn initialize_session() {
-    if SESSION.get().is_some() {
-        warn!("Session is already initialized!");
-        return;
+    let container = SESSION.get().expect("Session container not initialized");
+
+    {
+        let guard = container.read().unwrap();
+        if guard.is_some() {
+            warn!("Session already exists!");
+            return;
+        }
     }
 
     let rt = match TOKIO_RUNTIME.get() {
@@ -33,13 +45,7 @@ pub async fn initialize_session() {
         .get()
         .expect("Failed to get Files Dir!")
         .to_path_buf();
-    let cache: Cache = Cache::new(
-        Some(&os_files_dir),
-        None,
-        Some(&os_cache_dir),
-        None,
-    )
-    .unwrap();
+    let cache: Cache = Cache::new(Some(&os_files_dir), None, Some(&os_cache_dir), None).unwrap();
     trace!("Initialized new cache!");
 
     let handle = rt.handle().clone();
@@ -48,22 +54,23 @@ pub async fn initialize_session() {
         ..Default::default()
     };
     let session = Session::with_handle(session_config, Some(cache), handle);
-    if SESSION.set(session).is_err() {
-        warn!("Session was concurrently set!");
-        return;
-    }
 
+    let mut guard = container.write().unwrap();
+    *guard = Some(session.clone());
+
+    start_shutdown_listener(session);
     debug!("Session initialized!");
 }
 
 // Connects the already initialized session
 pub async fn connect() -> Result<Session, librespot_core::Error> {
-    let session = SESSION.get().ok_or_else(|| {
-        warn!("Attempted to connect session, but session isn't initialized!'");
-        librespot_core::Error::internal(format!(
-            "Attempted to connect session, but session isn't initialized!'"
-        ))
-    })?;
+    let session = match with_session(|s| s.clone()) {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to get session: {}", e);
+            return Err(librespot_core::Error::internal("Failed to get session"));
+        }
+    };
 
     let credentials = session
         .cache()
@@ -78,24 +85,92 @@ pub async fn connect() -> Result<Session, librespot_core::Error> {
         e
     })?;
 
-    info!("Session connected!");
+    debug!("Session connected!");
     Ok(session.clone())
 }
 
-#[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_core_Session_initializeSession(
-    _env: JNIEnv,
-    _this: JClass,
-) {
+// Listens for session shutdowns
+fn start_shutdown_listener(session: Session) {
     let rt = match TOKIO_RUNTIME.get() {
         Some(r) => r,
         None => {
-            warn!("Failed to initialize session as Tokio Runtime is not initialized!");
+            warn!("Failed to start session shutdown listener as Tokio Runtime is not initialized!");
             return;
         }
     };
 
-    rt.block_on(async {
+    rt.handle().spawn(async move {
+        let mut shutdown_rx = session.subscribe_shutdown();
+        shutdown_rx.changed().await.ok();
+        notify_callback("onShutdown".to_string());
+        cleanup();
+
+        warn!("Session shutdown! Auto-restarting..");
+
         initialize_session().await;
+        crate::spirc::initialize_spirc().await;
     });
+}
+
+fn notify_callback(method: String) {
+    let jvm = match crate::JVM.get() {
+        Some(j) => j,
+        None => {
+            error!("Cannot call session callback: JVM not initialized");
+            return;
+        }
+    };
+
+    let mut env = match jvm.attach_current_thread() {
+        Ok(e) => e,
+        Err(e) => {
+            error!("Failed to attach current thread: {e}");
+            return;
+        }
+    };
+
+    if let Some(lock) = SESSION_CALLBACK.get() {
+        let guard = lock.read().unwrap();
+
+        if let Some(callback) = &*guard {
+            env.call_method(callback.as_obj(), method, "()V", &[]).ok();
+        }
+    }
+}
+
+// Sets the SessionCallback
+pub fn set_session_callback(global: GlobalRef) {
+    if let Some(lock) = SESSION_CALLBACK.get() {
+        let mut guard = lock.write().unwrap();
+        *guard = Some(global);
+    }
+}
+
+async fn cleanup() {
+    if let Some(lock) = SESSION.get() {
+        let mut guard = lock.write().unwrap();
+        *guard = None;
+    }
+
+    crate::spirc::with_spirc(|spirc| {
+        spirc.cleanup();
+    });
+}
+
+// Helper function to retrieve &Session
+pub fn with_session<F, R>(f: F) -> Result<R, librespot_core::Error>
+where
+    F: FnOnce(&Session) -> R,
+{
+    let container = SESSION
+        .get()
+        .ok_or_else(|| librespot_core::Error::internal("Session container not initialized"))?;
+
+    let guard = container.read().unwrap();
+
+    let session = guard
+        .as_ref()
+        .ok_or_else(|| librespot_core::Error::internal("Session not created"))?;
+
+    Ok(f(session))
 }

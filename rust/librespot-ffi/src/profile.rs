@@ -1,26 +1,32 @@
-use crate::{TOKIO_RUNTIME, session::SESSION};
+use crate::{
+    TOKIO_RUNTIME,
+    session::{SESSION, with_session},
+};
 use jni::{objects::JClass, sys::JNIEnv};
 
 pub async fn get_user_profile() {
     info!("Getting user profile..");
-    let session_ref = match SESSION.get() {
-        Some(sess) => sess,
-        None => {
-            error!("Cannot get user profile as session is undefined!");
+    let session = match with_session(|s| s.clone()) {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Session unavailable: {}", e);
             return;
         }
     };
 
-    let username = session_ref.username();
+    let username = session.username();
     let limit: u32 = 5000;
 
     info!("Requesting user profile");
-    let result = session_ref
+    let result = session
         .spclient()
         .get_user_profile(&username, Some(limit), Some(limit))
         .await
         .unwrap();
-    info!("User profile: {}", String::from_utf8(result.to_vec()).unwrap());
+    info!(
+        "User profile: {}",
+        String::from_utf8(result.to_vec()).unwrap()
+    );
 }
 
 #[unsafe(no_mangle)]

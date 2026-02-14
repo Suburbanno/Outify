@@ -62,6 +62,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.TrackRow
@@ -324,7 +325,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                                             onRowClick = remember(item.track.uri) {
                                                 {
                                                     coroutineScope.launch {
-                                                        OutifyApplication.spirc.load( item.track.uri)
+                                                        Spirc.load( item.track.uri)
                                                     }
                                                 }
                                             },

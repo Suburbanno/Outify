@@ -48,8 +48,6 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalAnimatedVisibilityScope
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
-import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.services.MusicService
 import cc.tomko.outify.ui.components.navigation.NavDestination
 import cc.tomko.outify.ui.components.navigation.NavigationRoot
@@ -201,12 +199,9 @@ class MainActivity : ComponentActivity() {
     // Starts the required services
     @androidx.annotation.OptIn(UnstableApi::class)
     fun startServices() {
-        // Starting Spirc
-        if(!OutifyApplication.spirc.spirc.initializeSpirc()){
-            // How do we handle this?
-            return;
-        }
-        // Spirc activation and transfer is handled in initializeSpirc -> callback to onSpircInitialize
+        // MediaSession
+        val intent = Intent(this, MusicService::class.java)
+        ContextCompat.startForegroundService(this, intent)
     }
 
     fun requestNotifications(){

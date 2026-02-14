@@ -43,6 +43,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.navigation.Route
@@ -181,7 +182,7 @@ fun SharedTransitionScope.MiniPlayer(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = {
-                            OutifyApplication.spirc.playerPrevious()
+                            Spirc.playerPrevious()
                         }) {
                             Icon(
                                 imageVector = Icons.Default.SkipPrevious,
@@ -191,7 +192,7 @@ fun SharedTransitionScope.MiniPlayer(
 
                         IconButton(onClick = {
                             OutifyApplication.playbackStateHolder.setTrack(currentTrack)
-                            OutifyApplication.spirc.playerPlayPause()
+                            Spirc.playerPlayPause()
                         }) {
                             if (isPlaying) {
                                 Icon(
@@ -207,7 +208,7 @@ fun SharedTransitionScope.MiniPlayer(
                         }
 
                         IconButton(onClick = {
-                            OutifyApplication.spirc.playerNext()
+                            Spirc.playerNext()
                         }) {
                             Icon(
                                 imageVector = Icons.Default.SkipNext,

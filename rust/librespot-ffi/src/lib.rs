@@ -23,7 +23,7 @@ use once_cell::sync::OnceCell;
 
 use jni::JNIEnv;
 use jni::JavaVM;
-use jni::objects::{JClass, JObject};
+use jni::objects::{GlobalRef, JClass, JObject};
 use jni::sys::jint;
 
 use tokio::runtime::Runtime;
@@ -76,4 +76,7 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(
     if CACHE_DIR.set(cache_dir).is_err() {
         error!("Failed to set cache dir concurrently!");
     }
+
+    session::init_session_container();
+    spirc::init_spirc_container();
 }

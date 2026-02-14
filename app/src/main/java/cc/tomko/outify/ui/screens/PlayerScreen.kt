@@ -57,6 +57,7 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.profile.UserProfile
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
 import cc.tomko.outify.ui.viewmodel.factory.PlayerViewModelFactory
@@ -71,6 +72,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun SharedTransitionScope.PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
     val context = LocalContext.current
+    val profile = UserProfile()
+    profile.getUserProfile()
 
     val vm: PlayerViewModel = viewModel(
         factory = PlayerViewModelFactory(playbackStateHolder)
