@@ -90,7 +90,7 @@ fun SharedTransitionScope.SearchScreen(
                                     Spirc.load(item.uri)
                                 },
                                 onArtworkClick = {
-                                    backStack.add(Route.AlbumScreen(item.uri))
+                                    backStack.add(Route.AlbumScreenFromTrackUri(item.uri))
                                 },
                             )
                         } else {

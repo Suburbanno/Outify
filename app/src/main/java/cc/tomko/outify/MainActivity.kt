@@ -1,8 +1,11 @@
 package cc.tomko.outify
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -30,19 +33,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.media3.common.util.UnstableApi
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalAnimatedVisibilityScope
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.services.MusicService
 import cc.tomko.outify.ui.components.navigation.NavDestination
 import cc.tomko.outify.ui.components.navigation.NavigationRoot
@@ -55,9 +62,11 @@ import cc.tomko.outify.ui.screens.auth.AuthActivity
 import cc.tomko.outify.ui.theme.OutifyTheme
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.MutableSharedFlow
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private val deepLinkFlow = MutableSharedFlow<Uri>(extraBufferCapacity = 1)
 
     data object MainActivity {
         var LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope> { error("No scope provided") }
@@ -66,6 +75,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        intent?.data?.let {
+            deepLinkFlow.tryEmit(it)
+        }
 
         setContent {
             OutifyTheme(
@@ -80,14 +93,29 @@ class MainActivity : ComponentActivity() {
         if(!handleAuth()){
             return;
         }
+    }
 
-        startServices()
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+
+        intent.data?.let {
+            deepLinkFlow.tryEmit(it)
+        }
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun App(){
         val backStack = rememberNavBackStack(Route.HomeScreen)
+
+        LaunchedEffect(Unit) {
+            deepLinkFlow.collect { uri ->
+                parseDeepLinkUriToNavKey(uri)?.let { navKey ->
+                    backStack.add(navKey)
+                }
+            }
+        }
 
         val routes = listOf(
             NavDestination("home", "Home", Route.HomeScreen) { Icon(Icons.Default.Home, contentDescription = null) },
@@ -164,6 +192,12 @@ class MainActivity : ComponentActivity() {
         return true;
     }
 
+    override fun onResume() {
+        super.onResume()
+        startServices()
+    }
+
+
     // Starts the required services
     @androidx.annotation.OptIn(UnstableApi::class)
     fun startServices() {
@@ -197,4 +231,54 @@ class MainActivity : ComponentActivity() {
                 Toast.makeText(this, "Notification permission denied.", Toast.LENGTH_SHORT).show()
             }
         }
+
+
+    fun parseDeepLinkUriToNavKey(uri: Uri): NavKey? {
+        // spotify:x:y (opaque)
+        if (uri.scheme == "spotify" && uri.host == null) {
+            val ssp = uri.schemeSpecificPart ?: return null
+            val parts = ssp.split(":")
+            if (parts.size == 2) {
+                val type = parts[0]
+
+                return when (type) {
+                    "album" -> Route.AlbumScreenFromAlbumUri(uri.toString())
+                    "artist" -> Route.ArtistScreen(uri.toString())
+                    "track" -> Route.AlbumScreenFromTrackUri(uri.toString())
+                    else -> null
+                }
+            }
+        }
+
+        // spotify://x/y
+        if (uri.scheme == "spotify" && uri.host != null) {
+            val id = uri.lastPathSegment ?: return null
+            val internalUri = "spotify:${uri.host}:$id"
+            return when (uri.host) {
+                "album" -> Route.AlbumScreenFromAlbumUri(internalUri)
+                "artist" -> Route.ArtistScreen(internalUri)
+                "track" -> Route.AlbumScreenFromTrackUri(internalUri)
+                else -> null
+            }
+        }
+
+        // https://open.spotify.com/x/y
+        if (uri.scheme == "https" && uri.host == "open.spotify.com") {
+            val segments = uri.pathSegments
+            if (segments.size >= 2) {
+                val type = segments[0]
+                val id = segments[1]
+                val internalUri = "spotify:$type:$id"
+
+                return when (type) {
+                    "album" -> Route.AlbumScreenFromAlbumUri(internalUri)
+                    "artist" -> Route.ArtistScreen(internalUri)
+                    "track" -> Route.AlbumScreenFromTrackUri(internalUri)
+                    else -> null
+                }
+            }
+        }
+
+        return null
+    }
 }

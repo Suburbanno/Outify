@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.data.Metadata
 import cc.tomko.outify.data.Track
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,7 @@ data class QueueEntry(val id: Long, val track: Track)
 
 class QueueViewModel(
     val application: Application,
+    val spirc: SpircWrapper = OutifyApplication.spirc,
     val metadata: Metadata = (application as OutifyApplication).metadata,
     val json: Json = Json { ignoreUnknownKeys = true }
 ) : ViewModel() {

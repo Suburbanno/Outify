@@ -7,10 +7,7 @@ import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.Session
 import cc.tomko.outify.core.SessionCallback
 import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.core.spirc.Spirc.activate
-import cc.tomko.outify.core.spirc.Spirc.transfer
-import cc.tomko.outify.core.spirc.SpircController
-import cc.tomko.outify.core.spirc.SpircInitializationCallback
+import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.data.Metadata
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.playback.AudioEngine
@@ -60,6 +57,7 @@ class OutifyApplication : Application() {
         spircController.start()
 
         authManager = AuthManager()
+        spirc = SpircWrapper(this)
 
         player = Player(this, stateHolder = playbackStateHolder)
 
@@ -95,6 +93,7 @@ class OutifyApplication : Application() {
 
     companion object {
         lateinit var authManager: AuthManager
+        lateinit var spirc: SpircWrapper
         var playbackStateHolder = PlaybackStateHolder()
         var session: Session = Session()
         var spircController = SpircController()
