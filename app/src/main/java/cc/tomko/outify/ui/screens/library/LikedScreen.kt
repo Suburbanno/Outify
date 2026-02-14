@@ -154,7 +154,7 @@ fun SharedTransitionScope.LikedScreen(
                     },
 //                onRowLongClick = TODO(),
                     onArtworkClick = {
-                        backStack.add(Route.AlbumScreenFromTrack(track))
+                        backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
                     },
 //                onTitleClick = TODO(),
                     onArtistClick = {

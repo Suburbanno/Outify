@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.navDeepLink
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -95,7 +96,7 @@ fun SharedTransitionScope.NavigationRoot(
                     }
                 }
 
-                is Route.AlbumScreen -> {
+                is Route.AlbumScreenFromTrackUri -> {
                     NavEntry(key) {
                         val context = LocalContext.current.applicationContext as OutifyApplication
                         val track by produceState<Track?>(initialValue = null, key1 = key.trackUri) {
@@ -125,10 +126,11 @@ fun SharedTransitionScope.NavigationRoot(
                     }
                 }
 
-                is Route.AlbumScreenFromTrack -> {
+                is Route.AlbumScreenFromAlbumUri -> {
                     NavEntry(key) {
                         val context = LocalContext.current.applicationContext as OutifyApplication
-                        val albumUri = key.track.album?.uri ?: ""
+
+                        val albumUri = key.albumUri
                         val factory = AlbumViewModelFactory(
                             application = context,
                             albumUri = albumUri
@@ -147,7 +149,6 @@ fun SharedTransitionScope.NavigationRoot(
                             artistClick = { uri ->
                                 backStack.add(Route.ArtistScreen(uri))
                             }
-//                            sourceTrack = key.track
                         )
                     }
                 }
@@ -162,7 +163,7 @@ fun SharedTransitionScope.NavigationRoot(
                         ArtistDetailScreen(
                             viewModel,
                             onArtworkClick = { track ->
-                                backStack.add(Route.AlbumScreenFromTrack(track))
+                                backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
                             },
                             onLikedTracksClick = {
                                 backStack.add(Route.ArtistLikedTracksScreen(key.artistUri))
@@ -181,7 +182,7 @@ fun SharedTransitionScope.NavigationRoot(
                         ArtistLikedTracksScreen(
                             viewModel,
                             onArtworkClick = { track ->
-                                backStack.add(Route.AlbumScreenFromTrack(track))
+                                backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
                             },
                         ) { }
                     }

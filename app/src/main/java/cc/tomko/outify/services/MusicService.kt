@@ -91,9 +91,6 @@ class MusicService : MediaSessionService() {
                 val cover = track?.album?.getCover(CoverSize.LARGE)
                 val artworkUri = cover?.uri
 
-                println("Cover Size: ${cover?.size}")
-                println("Cover url: ${artworkUri}")
-
                 if (artworkUri != null) {
                     val url = ALBUM_COVER_URL + artworkUri
                     loadArtworkFromUrl(url) {}

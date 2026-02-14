@@ -5,6 +5,7 @@ import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.Session
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.data.Metadata
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.playback.AudioEngine
@@ -54,7 +55,7 @@ class OutifyApplication : Application() {
         session.initializeSession()
 
         authManager = AuthManager()
-        spirc = Spirc()
+        spirc = SpircWrapper(this)
 
         player = Player(this, stateHolder = playbackStateHolder)
 
@@ -91,7 +92,7 @@ class OutifyApplication : Application() {
     companion object {
         lateinit var session: Session
         lateinit var authManager: AuthManager
-        lateinit var spirc: Spirc
+        lateinit var spirc: SpircWrapper
         var playbackStateHolder = PlaybackStateHolder()
     }
 }

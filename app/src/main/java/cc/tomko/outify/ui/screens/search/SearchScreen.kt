@@ -89,7 +89,7 @@ fun SharedTransitionScope.SearchScreen(
                                     OutifyApplication.spirc.load(item.uri)
                                 },
                                 onArtworkClick = {
-                                    backStack.add(Route.AlbumScreen(item.uri))
+                                    backStack.add(Route.AlbumScreenFromTrackUri(item.uri))
                                 },
                             )
                         } else {
