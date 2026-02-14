@@ -1,6 +1,6 @@
 use jni::{
     JNIEnv,
-    objects::{JClass, JString},
+    objects::{JClass, JObject, JString},
     sys::{jboolean, jstring},
 };
 use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, PlayingTrack};
@@ -15,7 +15,10 @@ use crate::{
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
     mut env: JNIEnv,
     _this: JClass,
+    callback: JObject,
 ) -> jboolean {
+    info!("Initializing spirc!");
+
     let rt = match crate::TOKIO_RUNTIME.get() {
         Some(rt) => rt,
         None => {
@@ -26,42 +29,39 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
 
     let handle = rt.handle().clone();
 
+    let global_callback = match env.new_global_ref(callback) {
+        Ok(g) => g,
+        Err(e) => {
+            error!("Failed to make global ref for callback: {e}");
+            return 0;
+        }
+    };
+    let jvm = crate::JVM.get().unwrap().clone();
+
     handle.spawn(async move {
-        match crate::spirc::initialize_spirc().await {
-            Ok(_) => {
-                debug!("Spirc initialized!");
-                notify_spirc_callback("onSpircInitialized");
-            }
+        let result = crate::spirc::initialize_spirc().await;
+
+        let mut env = match jvm.attach_current_thread() {
+            Ok(env) => env,
             Err(e) => {
-                error!("Failed to initialize spirc: {e}");
+                error!("Failed to attach thread: {e}");
+                return;
+            }
+        };
+
+        match result {
+            Ok(_) => {
+                env.call_method(global_callback.as_obj(), "initialized", "()V", &[])
+                    .ok();
+            }
+            Err(_) => {
+                env.call_method(global_callback.as_obj(), "failed", "()V", &[])
+                    .ok();
             }
         }
     });
 
     1
-}
-
-pub fn notify_spirc_callback(static_method: &str) {
-    let jvm = match crate::JVM.get() {
-        Some(j) => j,
-        None => {
-            error!("JVM is uninitialized!");
-            return;
-        }
-    };
-
-    let mut env = match jvm.attach_current_thread() {
-        Ok(e) => e,
-        Err(e) => {
-            error!("Failed to attach JNI Env: {e}");
-            return;
-        }
-    };
-
-    let class = env.find_class("cc/tomko/outify/core/spirc/Spirc").unwrap();
-    if let Err(e) = env.call_static_method(class, static_method, "()V", &[]) {
-        error!("Failed to call {static_method} callback: {e}");
-    }
 }
 
 // Loads a Spotify URI specified

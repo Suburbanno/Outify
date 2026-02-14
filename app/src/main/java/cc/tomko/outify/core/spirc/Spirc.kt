@@ -3,12 +3,24 @@ package cc.tomko.outify.core.spirc
 import android.util.Log
 import cc.tomko.outify.OutifyApplication
 
+interface SpircInitializationCallback {
+    /**
+     * Called when Spirc initializes
+     */
+    fun initialized()
+
+    /**
+     * Called when Spirc fails to initialize
+     */
+    fun failed()
+}
+
 object Spirc {
     /**
      * Initializes the SpircRuntime
      */
     @JvmStatic
-    external fun initializeSpirc(): Boolean
+    external fun initializeSpirc(callback: SpircInitializationCallback): Boolean
 
     /**
      * Loads a SpotifyURI
@@ -82,20 +94,4 @@ object Spirc {
      */
     @JvmStatic
     external fun nextTracks(): String
-
-    /**
-     * Called once Spirc session gets initialized.
-     * FFI calls this function
-     */
-    @JvmStatic
-    private fun onSpircInitialized() {
-        if (!activate()) {
-            Log.e("Spirc", "Failed to activate Spirc session!")
-            return
-        }
-        // TODO: Make auto transfer configurable?
-        if (!transfer()) {
-            Log.e("Spirc", "Failed to transfer Spirc session!")
-        }
-    }
 }

@@ -9,20 +9,19 @@ import cc.tomko.outify.core.spirc.Spirc
 class Session {
     val spClient: SpClient = SpClient()
 
-    external fun initializeSession(callback: Runnable)
+    external fun initializeSession(callback: SessionCallback)
 
     external fun shutdown(): Boolean
+}
 
-    companion object {
-        @JvmStatic
-        fun onSessionConnected(){
-            Log.w("Session", "onSessionConnected: a", )
-            Spirc.initializeSpirc()
-        }
+interface SessionCallback {
+    /**
+     * Called when the session gets initialized
+     */
+    fun onInitialized()
 
-        @JvmStatic
-        fun onSessionShutdown(){
-            Log.w("Session", "onSessionShutdown: a", )
-        }
-    }
+    /**
+     * Called when the session shutdowns
+     */
+    fun onShutdown()
 }

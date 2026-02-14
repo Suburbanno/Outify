@@ -20,6 +20,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import cc.tomko.outify.profile.UserProfile
 import cc.tomko.outify.ui.theme.OutifyTheme
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")

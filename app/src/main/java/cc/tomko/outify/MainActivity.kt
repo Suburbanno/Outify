@@ -167,14 +167,6 @@ class MainActivity : ComponentActivity() {
     // Starts the required services
     @androidx.annotation.OptIn(UnstableApi::class)
     fun startServices() {
-        // Starting Spirc
-//        println("Initializing spirc")
-//        if(!Spirc.initializeSpirc()){
-//            // How do we handle this?
-//            return;
-//        }
-        // Spirc activation and transfer is handled in initializeSpirc -> callback to onSpircInitialize
-
         // MediaSession
         val intent = Intent(this, MusicService::class.java)
         ContextCompat.startForegroundService(this, intent)

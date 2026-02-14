@@ -1,10 +1,16 @@
 package cc.tomko.outify
 
 import android.app.Application
+import android.util.Log
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.Session
+import cc.tomko.outify.core.SessionCallback
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.core.spirc.Spirc.activate
+import cc.tomko.outify.core.spirc.Spirc.transfer
+import cc.tomko.outify.core.spirc.SpircController
+import cc.tomko.outify.core.spirc.SpircInitializationCallback
 import cc.tomko.outify.data.Metadata
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.playback.AudioEngine
@@ -51,10 +57,7 @@ class OutifyApplication : Application() {
         System.loadLibrary("librespot_ffi")
         LibrespotFfi.libInit(applicationContext)
 
-        session = Session()
-        val callback = java.lang.Runnable {
-        }
-        session.initializeSession(callback)
+        spircController.start()
 
         authManager = AuthManager()
 
@@ -91,8 +94,9 @@ class OutifyApplication : Application() {
     }
 
     companion object {
-        lateinit var session: Session
         lateinit var authManager: AuthManager
         var playbackStateHolder = PlaybackStateHolder()
+        var session: Session = Session()
+        var spircController = SpircController()
     }
 }

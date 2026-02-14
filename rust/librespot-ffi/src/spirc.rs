@@ -139,7 +139,9 @@ impl SpircRuntime {
         self.spirc.transfer(Some(request))
     }
 
-    pub async fn shutdown(&self) {}
+    pub fn shutdown(&self) {
+        self.spirc.shutdown();
+    }
 
     pub async fn prev_tracks(
         &self,
@@ -157,6 +159,15 @@ impl SpircRuntime {
             .next_tracks()
             .await
             .ok_or_else(|| librespot_core::Error::internal("Spirc task not available"))
+    }
+
+    pub fn cleanup(&self) {
+        self.shutdown();
+
+        if let Some(lock) = SPIRC_RUNTIME.get() {
+            let mut guard = lock.write().unwrap();
+            *guard = None;
+        }
     }
 }
 
