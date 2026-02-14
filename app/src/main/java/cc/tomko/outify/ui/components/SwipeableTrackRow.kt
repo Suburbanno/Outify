@@ -26,11 +26,11 @@ fun SharedTransitionScope.SwipeableTrackRow(
     track: Track,
     modifier: Modifier = Modifier,
     currentTrack: Track? = null,
-    onRowClick: () -> Unit = {},
-    onRowLongClick: () -> Unit = {},
-    onTitleClick: () -> Unit = {},
-    onArtworkClick: () -> Unit = {},
-    onArtistClick: () -> Unit = {},
+    onRowClick: (() -> Unit)? = null,
+    onRowLongClick: (() -> Unit)? = null,
+    onArtworkClick: (() -> Unit)? = null,
+    onTitleClick: (() -> Unit)? = null,
+    onArtistClick: (() -> Unit)? = null,
 ) {
 
     SwipeableRowWithGestures(

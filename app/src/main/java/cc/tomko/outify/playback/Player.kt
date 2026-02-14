@@ -18,7 +18,6 @@ import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
@@ -39,7 +38,6 @@ import kotlin.time.toDuration
 class Player(
     application: Application,
     val stateHolder: PlaybackStateHolder = PlaybackStateHolder(),
-    private val spirc: SpircWrapper = OutifyApplication.spirc
 ): SimpleBasePlayer(application.mainLooper) {
     private val json = Json { ignoreUnknownKeys = true }
     private val playerJob = SupervisorJob()

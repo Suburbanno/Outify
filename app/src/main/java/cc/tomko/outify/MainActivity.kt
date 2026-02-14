@@ -48,8 +48,6 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalAnimatedVisibilityScope
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
-import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.services.MusicService
 import cc.tomko.outify.ui.components.navigation.NavDestination
 import cc.tomko.outify.ui.components.navigation.NavigationRoot

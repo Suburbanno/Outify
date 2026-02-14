@@ -6,8 +6,9 @@ import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.Session
 import cc.tomko.outify.core.SessionCallback
+import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.core.spirc.SpircWrapper
+import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.data.Metadata
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.playback.AudioEngine

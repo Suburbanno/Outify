@@ -115,6 +115,7 @@ fun SharedTransitionScope.LikedScreen(
         ) { track ->
             SwipeableTrackRow(
                 track,
+                currentTrack = currentTrack,
                 onRowClick = remember(track.uri) {
                     {
                         Spirc.load(null,track.uri)
@@ -124,7 +125,7 @@ fun SharedTransitionScope.LikedScreen(
                     OutifyApplication.session.shutdown()
                 },
                 onArtworkClick = {
-                    backStack.add(Route.AlbumScreenFromTrack(track))
+                    backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
                 },
                 onArtistClick = {
                     backStack.add(Route.ArtistScreen(track.artists.first().uri))
