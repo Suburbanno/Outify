@@ -127,8 +127,16 @@ class AlbumMetadataHelper @Inject constructor(
             val deferred = chunk.map { uri ->
                 async {
                     try {
-                        val raw = nativeMetadata.getNativeMetadata(uri)
-                        json.decodeFromString<Album>(raw)
+                        // Retry on rate limit
+                        val raw = nativeMetadata.retryOnRateLimit {
+                            nativeMetadata.fetchMetadata(uri)
+                        }
+
+                        // Decode into Album
+                        json.decodeFromString<Album>(raw.toString())
+                    } catch (e: RateLimitException) {
+                        Log.w("Metadata", "fetchAlbums: rate-limited for $uri, giving up", e)
+                        null
                     } catch (e: Exception) {
                         Log.e("Metadata", "fetchAlbums: failed for $uri", e)
                         null

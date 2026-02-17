@@ -7,10 +7,12 @@ import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.data.Track
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.random.Random
 
 @Singleton
 class Metadata @Inject constructor(
@@ -70,6 +72,12 @@ class Metadata @Inject constructor(
         } catch (e: Exception) {
             return emptyList()
         }
+    }
+
+    suspend fun getLikedUris(): List<String> {
+        val jsonUris = spClient.getUserCollection()
+        val parsed = json.decodeFromString<List<String>>(jsonUris)
+        return parsed
     }
 
     suspend fun getPlaylistMetadata(uri: String): Playlist? {

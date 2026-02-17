@@ -85,4 +85,9 @@ interface TrackDao {
         AND lastAccessed < :cutoff
     """)
     suspend fun evictOldCache(cutoff: Long)
+
+    @Query("""
+        SELECT EXISTS(SELECT trackUri FROM tracks WHERE trackUri = :uri)
+    """)
+    suspend fun containsTrackByUri(uri: String): Boolean
 }

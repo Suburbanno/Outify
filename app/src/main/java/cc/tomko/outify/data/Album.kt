@@ -1,5 +1,6 @@
 package cc.tomko.outify.data
 
+import cc.tomko.outify.data.database.AlbumEntity
 import kotlinx.serialization.Serializable
 
 /**

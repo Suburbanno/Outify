@@ -1,84 +1,101 @@
 package cc.tomko.outify.ui.viewmodel.library
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.Spirc.SpircWrapper
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.database.toDomain
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.repository.LibraryRepository
+import cc.tomko.outify.ui.repository.LikedRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+import kotlin.math.min
 
 @HiltViewModel
 class LikedViewModel @Inject constructor(
-    private val repo: LibraryRepository,
+    val spirc: SpircWrapper,
+    private val likedRepository: LikedRepository,
     private val playbackStateHolder: PlaybackStateHolder,
-    val spirc: SpircWrapper
 ) : ViewModel() {
-    private val _likedTracks = MutableStateFlow<List<Track>>(emptyList())
-    val likedTracks: StateFlow<List<Track>> = _likedTracks
 
-    private var offset = 0
-    private val pageSize = 50
-    private var isLoading = false
-    private var endReached = false
+    companion object {
+        private const val PAGE_SIZE = 30
+        private const val PREFETCH_THRESHOLD = 8
+    }
 
-    fun currentTrack(): Flow<Track?> =
-        playbackStateHolder.state.map { it.currentTrack }
+    /** Total liked count from liked_songs — available even before metadata loads */
+    val totalCount: StateFlow<Int> = likedRepository.observeCount()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    fun ensureLoaded(){
-        if(_likedTracks.value.isEmpty() && !isLoading && !endReached) {
-            loadNextPage()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val likedTracks: StateFlow<List<Track>> = likedRepository.observeLikedTracksWithDetails()
+        .mapLatest { rows ->
+            if (rows.isEmpty()) return@mapLatest emptyList()
+
+            val albums = likedRepository.getAlbumsForTracks(rows)
+
+            rows.mapNotNull { twa ->
+                runCatching {
+                    twa.toDomain(twa.track.albumId?.let { albums[it] })
+                }.getOrNull()
+            }
         }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Guards against duplicate concurrent fetches
+    private val fetchLock = Mutex()
+    private var lastFetchedOffset = -1
+
+    init {
+        viewModelScope.launch {
+            // Sync URI list first; the Flow will fire once liked_songs is updated
+            likedRepository.syncLikedUris()
+        }
+        // Kick off the first page
+        triggerLoad(offset = 0)
     }
 
     /**
-     * Load the next page of liked tracks from the repository.
-     * Safe to call multiple times; will coalesce using isLoading/endReached flags.
+     * Called from the screen as the visible index advances.
      */
-    fun loadNextPage() {
-        if (isLoading || endReached) return
+    fun onVisibleIndex(visibleIndex: Int) {
+        val loaded = likedTracks.value.size
+        if (visibleIndex >= loaded - PREFETCH_THRESHOLD) {
+            triggerLoad(offset = loaded)
+        }
+    }
 
-        isLoading = true
+    private fun triggerLoad(offset: Int) {
+        if (offset == lastFetchedOffset) return
         viewModelScope.launch {
-            try {
-                val page = repo.getLikedTracks(limit = pageSize, offset = offset)
-                if (page.isEmpty()) {
-                    endReached = true
-                } else {
-                    offset += page.size
-                    _likedTracks.value = _likedTracks.value + page
+            fetchLock.withLock {
+                if (offset == lastFetchedOffset) return@withLock
+                lastFetchedOffset = offset
+                runCatching {
+                    likedRepository.ensureWindowLoaded(offset, PAGE_SIZE)
+                }.onFailure {
+                    Log.w("LikedViewModel", "Failed to load window at $offset", it)
                 }
-            } finally {
-                isLoading = false
             }
         }
     }
 
-    /**
-     * Called by the UI when the current visible end index approaches the end of the list.
-     * Triggers loading the next page if needed.
-     */
-    fun onVisibleIndex(visibleIndex: Int) {
-        val threshold = 10
-        val size = _likedTracks.value.size
-        if (!endReached && visibleIndex + threshold >= size) {
-            loadNextPage()
-        }
-    }
-
-    fun refresh() {
-        offset = 0
-        endReached = false
-        _likedTracks.value = emptyList()
-        loadNextPage()
-    }
+    fun currentTrack(): Flow<Track?> =
+        playbackStateHolder.state.map { it.currentTrack }
 }

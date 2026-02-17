@@ -82,7 +82,7 @@ fun SharedTransitionScope.NavigationRoot(
 
                 is Route.LikedScreen -> {
                     NavEntry(key) {
-                        val viewModel: LikedViewModel = viewModel()
+                        val viewModel: LikedViewModel = hiltViewModel()
                         val listState = rememberLazyListState()
 
                         LikedScreen(

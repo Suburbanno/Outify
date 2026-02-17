@@ -50,95 +50,168 @@ pub extern "system" fn get_native_metadata(
         }
     };
 
-    let maybe_json: Option<String> = match with_session(|session| {
+    let result: Result<Option<String>, librespot_core::error::Error> = match with_session(|session| {
         rt.block_on(async move {
             match spotify_uri.item_type() {
                 SPOTIFY_ITEM_TYPE_TRACK => get_track_metadata(&session, &spotify_uri).await,
                 SPOTIFY_ITEM_TYPE_ALBUM => get_album_metadata(&session, &spotify_uri).await,
                 SPOTIFY_ITEM_TYPE_ARTIST => get_artist_metadata(&session, &spotify_uri).await,
                 SPOTIFY_ITEM_TYPE_PLAYLIST => get_playlist_metadata(&session, &spotify_uri).await,
-                &_ => {
-                    info!("Unknown item type!");
-                    None
-                }
+                &_ => Ok(None),
             }
         })
     }) {
-        Ok(val) => val,
+        Ok(r) => r,
         Err(e) => {
-            error!("Failed to get session: {}", e);
-            return std::ptr::null_mut(); // return null on error
-        }
-    };
-
-    let json = match maybe_json {
-        Some(j) => j,
-        None => {
-            error!("failed to get json from maybe_json");
+            error!("Internal error: {e}");
             return std::ptr::null_mut();
-        }
+        },
     };
 
-    match env.new_string(&json) {
-        Ok(jni_str) => jni_str.into_raw(),
+    match result {
+        Ok(Some(json)) => match env.new_string(&json) {
+            Ok(jni_str) => jni_str.into_raw(),
+            Err(e) => {
+                error!("failed to convert json into jstring: {}", e);
+                std::ptr::null_mut()
+            }
+        },
+        Ok(None) => {
+            // no metadata found
+            let error_json = r#"{"error": {"type": "not_found", "message": "no metadata"}}"#;
+            match env.new_string(error_json) {
+                Ok(s) => s.into_raw(),
+                Err(_) => std::ptr::null_mut(),
+            }
+        }
         Err(e) => {
-            error!("failed to convert json into json: {}", e);
-            std::ptr::null_mut()
+            // Inspect error kind for rate-limit
+            match e.kind {
+                librespot_core::error::ErrorKind::ResourceExhausted => {
+                    let err = serde_json::json!({
+                        "error": {
+                            "type": "rate_limit",
+                            "retry_after_seconds": null,
+                            "message": format!("Rate limited: {}", e)
+                        }
+                    });
+                    let err_str = err.to_string();
+                    match env.new_string(&err_str) {
+                        Ok(s) => s.into_raw(),
+                        Err(_) => std::ptr::null_mut(),
+                    }
+                }
+                _ => {
+                    let err = serde_json::json!({
+                        "error": {
+                            "type": "unknown",
+                            "message": format!("{}", e)
+                        }
+                    });
+                    let err_str = err.to_string();
+                    match env.new_string(&err_str) {
+                        Ok(s) => s.into_raw(),
+                        Err(_) => std::ptr::null_mut(),
+                    }
+                }
+            }
         }
     }
 }
 
 // Retrieves the album metadata as JSON
-async fn get_album_metadata(session: &Session, spotify_uri: &SpotifyUri) -> Option<String> {
+async fn get_album_metadata(
+    session: &Session,
+    spotify_uri: &SpotifyUri,
+) -> Result<Option<String>, librespot_core::error::Error> {
     match librespot_metadata::Album::get(session, &spotify_uri).await {
         Ok(metadata) => {
             let album = crate::jni_utils::native_metadata::AlbumJson::from(&metadata);
-            convert_to_string(&album)
+            Ok(convert_to_string(&album))
         }
-        Err(e) => {
-            error!("failed to fetch album metadata: {}", e);
-            None
-        }
+        Err(e) => Err(e),
     }
 }
 
 // Retrieves the album metadata as JSON
-async fn get_track_metadata(session: &Session, spotify_uri: &SpotifyUri) -> Option<String> {
+async fn get_track_metadata(
+    session: &Session,
+    spotify_uri: &SpotifyUri,
+) -> Result<Option<String>, librespot_core::error::Error> {
     match librespot_metadata::Track::get(session, &spotify_uri).await {
         Ok(metadata) => {
             let track = crate::jni_utils::native_metadata::TrackJson::from(&metadata);
-            convert_to_string(&track)
+            Ok(convert_to_string(&track))
         }
-        Err(e) => {
-            error!("failed to fetch album metadata: {}", e);
-            None
-        }
+        Err(e) => Err(e),
     }
 }
 
 // Retrieves the artist metadata as JSON
-async fn get_artist_metadata(session: &Session, spotify_uri: &SpotifyUri) -> Option<String> {
+async fn get_artist_metadata(
+    session: &Session,
+    spotify_uri: &SpotifyUri,
+) -> Result<Option<String>, librespot_core::error::Error> {
     match librespot_metadata::Artist::get(session, &spotify_uri).await {
         Ok(metadata) => {
             let artist = crate::jni_utils::native_metadata::ArtistJson::from(&metadata);
-            convert_to_string(&artist)
+            Ok(convert_to_string(&artist))
         }
-        Err(e) => {
-            error!("failed to fetch artist metadata: {}", e);
-            None
-        }
+        Err(e) => Err(e),
     }
 }
 
-async fn get_playlist_metadata(session: &Session, spotify_uri: &SpotifyUri) -> Option<String> {
+async fn get_playlist_metadata(
+    session: &Session,
+    spotify_uri: &SpotifyUri,
+) -> Result<Option<String>, librespot_core::error::Error> {
     match librespot_metadata::Playlist::get(session, &spotify_uri).await {
         Ok(metadata) => {
             let playlist = crate::metadata::playlist::PlaylistJson::from(&metadata);
-            convert_to_string(&playlist)
+            Ok(convert_to_string(&playlist))
         }
-        Err(e) => {
-            error!("failed to fetch playlist metadata: {}", e);
-            None
+        Err(e) => Err(e),
+    }
+}
+
+fn handle_error(e: librespot_core::error::Error) -> String {
+    match e.kind {
+        librespot_core::error::ErrorKind::PermissionDenied => {
+            let err = serde_json::json!({
+                "error": {
+                    "type": "permission_denied",
+                    "message": format!("Permission denied: {}", e)
+                }
+            });
+            err.to_string()
+        }
+        librespot_core::error::ErrorKind::Unauthenticated => {
+            let err = serde_json::json!({
+                "error": {
+                    "type": "unauthenticated",
+                    "message": format!("Unauthenticated: {}", e)
+                }
+            });
+            err.to_string()
+        }
+        librespot_core::error::ErrorKind::ResourceExhausted => {
+            let err = serde_json::json!({
+                "error": {
+                    "type": "rate_limit",
+                    "retry_after_seconds": null,
+                    "message": format!("Rate limited: {}", e)
+                }
+            });
+            err.to_string()
+        }
+        _ => {
+            let err = serde_json::json!({
+                "error": {
+                    "type": "unhandled_error",
+                    "message": format!("Unhandled error: {}", e)
+                }
+            });
+            err.to_string()
         }
     }
 }

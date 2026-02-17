@@ -60,9 +60,6 @@ fun SharedTransitionScope.LikedScreen(
 ) {
     val spirc = viewModel.spirc
     val tracks by viewModel.likedTracks.collectAsState()
-    LaunchedEffect(Unit) { viewModel.ensureLoaded() }
-
-    val itemCount = tracks.size
 
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -97,6 +94,7 @@ fun SharedTransitionScope.LikedScreen(
     }
 
     val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+    val totalCount by viewModel.totalCount.collectAsState()
 
     LazyColumn(state = listState) {
         item {
@@ -104,7 +102,7 @@ fun SharedTransitionScope.LikedScreen(
             Text("Liked Songs", style = MaterialTheme.typography.headlineLargeEmphasized, fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 24.dp, bottom = 4.dp))
 
-            Text("$itemCount songs", style = MaterialTheme.typography.bodyMedium,
+            Text("$totalCount songs", style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(start = 24.dp, bottom = 4.dp))
             Spacer(Modifier.height(12.dp))
         }

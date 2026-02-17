@@ -3,7 +3,10 @@ package cc.tomko.outify.data.database
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import cc.tomko.outify.data.Album
+import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.Track
+import kotlin.String
 
 /**
  * A database track entity.
