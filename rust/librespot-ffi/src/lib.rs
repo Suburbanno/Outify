@@ -3,6 +3,8 @@ extern crate log;
 
 pub mod jni_impl;
 pub mod jni_utils;
+pub mod metadata;
+
 pub mod oauth;
 pub mod session;
 pub mod spclient;

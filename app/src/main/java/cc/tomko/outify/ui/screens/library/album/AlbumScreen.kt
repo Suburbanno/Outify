@@ -73,6 +73,7 @@ import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.ui.components.SwipeableTrackRow
 import cc.tomko.outify.ui.components.TrackRow
 import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModel
 import cc.tomko.outify.utils.SharedElementKey
@@ -130,6 +131,7 @@ fun SharedTransitionScope.AlbumDetailScreen(
             val album = uiState.album!!
             val tracks = uiState.tracks
             val artworkUrl = ALBUM_COVER_URL + album.getCover(CoverSize.LARGE)?.uri
+            val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
 
             val lazyList = rememberLazyListState()
 
@@ -224,15 +226,11 @@ fun SharedTransitionScope.AlbumDetailScreen(
                         .fillMaxSize()
                 ) {
                     items(tracks, key = { track -> "album_song_${track.uri}" }) { track ->
-                        TrackRow(
-                            title = track.name,
-                            artist = track.artists.joinToString { it.name },
-                            artworkUrl = artworkUrl,
-//                            isPlaying = currentTrack?.uri.equals(track.uri),
-                            isSelected = false,
-                            onRowClick = remember(track.uri) { { Spirc.load(album.uri,track.uri) } },
+                        SwipeableTrackRow(
+                            track = track,
+                            currentTrack = currentTrack,
+                            onRowClick = remember(track.uri) { { OutifyApplication.spirc.load(album.uri,track.uri) } },
                             onArtistClick = { artistClick(track.artists.first().uri) }, // TODO: Make some popup where user chooses the artist, in case of multiple artists
-                            sharedTransitionKey = null
                         )
                     }
                 }

@@ -4,7 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.data.Metadata
+import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.ui.screens.library.album.AlbumUiState
 import kotlinx.coroutines.flow.MutableStateFlow

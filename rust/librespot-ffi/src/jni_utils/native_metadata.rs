@@ -3,7 +3,14 @@ use jni::{
     objects::{GlobalRef, JClass, JMethodID, JObject, JValue},
     sys::jboolean,
 };
-use librespot_metadata::{image::Image, Album, Artist, Track};
+use librespot_metadata::{
+    Album, Artist, Playlist, Track,
+    image::Image,
+    playlist::{
+        attribute::{PlaylistAttributes, PlaylistItemAttributes},
+        item::PlaylistItem,
+    },
+};
 use serde::Serialize;
 
 // Serializable Track object
@@ -12,7 +19,7 @@ pub struct TrackJson {
     id: String,
     uri: String,
     name: String,
-    album: AlbumJson,       
+    album: AlbumJson,
     artists: Vec<ArtistJson>,
     popularity: i32,
     duration: i32,
@@ -43,12 +50,15 @@ pub struct ArtistJson {
     popularity: i32,
     portraits: Vec<ImageJson>,
     tracks: Vec<String>, // Just raw SpotifyUris
-    covers: Vec<ImageJson>
+    covers: Vec<ImageJson>,
 }
 
 impl From<&Artist> for ArtistJson {
     fn from(artist: &Artist) -> Self {
-        let tracks = artist.top_tracks.0.iter()
+        let tracks = artist
+            .top_tracks
+            .0
+            .iter()
             .flat_map(|top| top.tracks.iter())
             .map(|track| track.to_uri())
             .collect();
@@ -82,7 +92,7 @@ pub struct AlbumJson {
     artists: Vec<ArtistJson>,
     popularity: i32,
     tracks: Vec<String>, // Just Spotify URI
-    covers: Vec<ImageJson>
+    covers: Vec<ImageJson>,
 }
 
 impl From<&Album> for AlbumJson {

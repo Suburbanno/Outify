@@ -1,11 +1,12 @@
 use jni::{
     JNIEnv,
-    objects::{JClass, JString},
-    sys::{jint, jstring},
+    objects::{JClass, JObject, JString},
+    sys::{jint, jobjectArray, jstring},
 };
 use librespot_core::{SpotifyUri, spclient::SpClient};
 use librespot_metadata::{Metadata, Track};
 use oauth2::reqwest;
+use regex::Regex;
 
 use crate::session::with_session;
 
@@ -155,4 +156,48 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_getUserCollection(
             std::ptr::null_mut()
         }
     }
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_core_SpClient_getRootlist(
+    mut env: JNIEnv,
+    _class: JClass,
+) -> jobjectArray {
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let uris: Vec<String> = rt.block_on(async {
+        match crate::spclient::get_rootlist().await {
+            Ok(bytes) => {
+                let mut uris = Vec::new();
+                let data = String::from_utf8_lossy(&bytes);
+                let pattern = Regex::new(r"spotify:playlist:[A-Za-z0-9]+").unwrap();
+
+                for mat in pattern.find_iter(&data) {
+                    uris.push(mat.as_str().to_string());
+                }
+
+                uris
+            }
+            Err(_) => Vec::new(),
+        }
+    });
+
+    let string_class = env.find_class("java/lang/String").unwrap();
+    let array = env
+        .new_object_array(uris.len() as i32, string_class, JObject::null())
+        .unwrap();
+
+    for (i, uri) in uris.iter().enumerate() {
+        let jstr = env.new_string(uri).unwrap();
+        env.set_object_array_element(&array, i as i32, jstr)
+            .unwrap();
+    }
+
+    array.into_raw()
 }

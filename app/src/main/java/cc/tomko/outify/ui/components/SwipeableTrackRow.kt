@@ -45,7 +45,7 @@ fun SharedTransitionScope.SwipeableTrackRow(
                     )
                 },
                 onTrigger = {
-                    Spirc.addToQueue(track.uri)
+                    OutifyApplication.spirc.addToQueue(track.uri)
                 },
                 backgroundColor = Color(0xC43C8C52)
             ),

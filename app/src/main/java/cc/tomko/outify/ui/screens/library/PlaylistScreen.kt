@@ -1,16 +1,14 @@
-package cc.tomko.outify.ui.screens.library.artist
+package cc.tomko.outify.ui.screens.library
+
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,26 +16,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.ContainedLoadingIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeExtendedFloatingActionButton
 import androidx.compose.material3.MaterialShapes
@@ -50,13 +40,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -79,210 +70,202 @@ import androidx.compose.ui.util.lerp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.SwipeableTrackRow
 import cc.tomko.outify.ui.components.TrackRow
-import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
-import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
+import cc.tomko.outify.ui.components.navigation.Route
+import cc.tomko.outify.ui.viewmodel.library.PlaylistUiState
+import cc.tomko.outify.ui.viewmodel.library.PlaylistViewModel
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
-/**
- * Shout out to PixelPlay.
- */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SharedTransitionScope.ArtistLikedTracksScreen(
-    viewModel: ArtistViewModel,
-    onArtworkClick: (Track) -> Unit,
+fun SharedTransitionScope.PlaylistScreen(
+    playlistUri: String,
+    viewModel: PlaylistViewModel,
+    onArtworkClick: (track: Track) -> Unit,
+    artistClick: (uri: String) -> Unit,
     onBack: () -> Unit,
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    // Observe playlist from DB (helper triggers background refresh)
+    val playlist by viewModel.observePlaylist(playlistUri).collectAsState(initial = null)
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshPlaylist(playlistUri)
+    }
 
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
 
-    when (uiState) {
-        ArtistUiState.Loading -> {
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-                contentAlignment = Alignment.Center) {
-                ContainedLoadingIndicator()
-            }
+    if (playlist == null) {
+        // Loading / empty state
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            ContainedLoadingIndicator()
         }
+        return
+    }
 
-        is ArtistUiState.Error -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = (uiState as ArtistUiState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-        }
+    // Non-null from here on
+    val playlistVal = playlist!!
+    val tracks = playlistVal.contents
 
-        is ArtistUiState.Success -> {
-            val artist = (uiState as ArtistUiState.Success).artist
-            val artworkUrl = ALBUM_COVER_URL + artist.getCover(CoverSize.LARGE)?.uri
+    // Artwork helper (optional)
+    val artworkUrl by produceState<String?>(
+        initialValue = null,
+        key1 = playlistVal.uri
+    ) {
+        value = viewModel.getArtworkUrl(playlistVal)
+    }
 
-            val likedTracks by viewModel.likedTracks.collectAsState()
-            val likedTrackCount = likedTracks.size
+    val lazyList = rememberLazyListState()
 
-            val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
+    // Prefetch visible + ahead items (batch)
+    LaunchedEffect(lazyList, tracks) {
+        snapshotFlow { lazyList.layoutInfo.visibleItemsInfo }
+            .collect { visibleItems ->
+                if (visibleItems.isEmpty()) return@collect
 
-            val lazyList = rememberLazyListState()
+                val firstVisible = visibleItems.first().index
+                val lastVisible = visibleItems.last().index
 
-            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-            val minTopBarHeight = 64.dp + statusBarHeight
-            val maxTopBarHeight = 300.dp
+                val prefetchUntil = (lastVisible + 10).coerceAtMost(tracks.lastIndex)
+                val urisToLoad = (firstVisible..prefetchUntil).mapNotNull { idx ->
+                    tracks.getOrNull(idx)?.uri
+                }
 
-            val minTopBarHeightPx = with(density) { minTopBarHeight.toPx() }
-            val maxTopBarHeightPx = with(density) { maxTopBarHeight.toPx() }
-
-            val topBarHeight = remember { Animatable(maxTopBarHeightPx) }
-            var collapseFraction by remember { mutableFloatStateOf(0f) }
-
-            LaunchedEffect(topBarHeight.value) {
-                collapseFraction = 1f - ((topBarHeight.value - minTopBarHeightPx) / (maxTopBarHeightPx - minTopBarHeightPx)).coerceIn(0f, 1f)
-            }
-
-            val nestedScroll = remember {
-                object : NestedScrollConnection {
-                    override fun onPreScroll(
-                        available: Offset,
-                        source: NestedScrollSource
-                    ): Offset {
-                        val delta = available.y
-                        val isScrollingDown = delta < 0
-
-                        if(!isScrollingDown && (lazyList.firstVisibleItemIndex > 0 || lazyList.firstVisibleItemScrollOffset > 0)) {
-                            return Offset.Zero
-                        }
-
-                        val previousHeight = topBarHeight.value
-                        val height = (previousHeight + delta).coerceIn(minTopBarHeightPx, maxTopBarHeightPx)
-                        val consumed = height - previousHeight
-
-                        if(consumed.roundToInt() != 0){
-                            coroutineScope.launch {
-                                topBarHeight.snapTo(height)
-                            }
-                        }
-
-                        val canConsumeScroll = !(isScrollingDown && height == minTopBarHeightPx)
-                        return if (canConsumeScroll) Offset(0f, consumed) else Offset.Zero
-                    }
-
-                    override suspend fun onPostFling(
-                        consumed: Velocity,
-                        available: Velocity
-                    ): Velocity {
-                        return super.onPostFling(consumed, available)
-                    }
+                if (urisToLoad.isNotEmpty()) {
+                    viewModel.loadMetadataIfNeeded(urisToLoad)
                 }
             }
+    }
 
-            LaunchedEffect(lazyList.isScrollInProgress) {
-                if(!lazyList.isScrollInProgress) {
-                    val shouldExpand = topBarHeight.value > (minTopBarHeightPx + maxTopBarHeightPx) / 2
-                    val canExpand = lazyList.firstVisibleItemIndex == 0 && lazyList.firstVisibleItemScrollOffset == 0
+    val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
 
-                    val targetValue = if (shouldExpand && canExpand) {
-                        maxTopBarHeightPx
-                    } else {
-                        minTopBarHeightPx
-                    }
+    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val minTopBarHeight = 64.dp + statusBarHeight
+    val maxTopBarHeight = 300.dp
 
-                    if (topBarHeight.value != targetValue) {
-                        coroutineScope.launch {
-                            topBarHeight.animateTo(
-                                targetValue,
-                                spring(stiffness = Spring.StiffnessMedium)
-                            )
-                        }
-                    }
+    val minTopBarHeightPx = with(density) { minTopBarHeight.toPx() }
+    val maxTopBarHeightPx = with(density) { maxTopBarHeight.toPx() }
+
+    val topBarHeight = remember { Animatable(maxTopBarHeightPx) }
+    var collapseFraction by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(topBarHeight.value) {
+        collapseFraction = 1f - ((topBarHeight.value - minTopBarHeightPx) / (maxTopBarHeightPx - minTopBarHeightPx)).coerceIn(0f, 1f)
+    }
+
+    val nestedScroll = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y
+                val isScrollingDown = delta < 0
+
+                if(!isScrollingDown && (lazyList.firstVisibleItemIndex > 0 || lazyList.firstVisibleItemScrollOffset > 0)) {
+                    return Offset.Zero
                 }
-            }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = MaterialTheme.colorScheme.surface)
-                    .nestedScroll(nestedScroll)
-            ) {
-                val currentTopBarHeightDp = with(density) { topBarHeight.value.toDp() }
+                val previousHeight = topBarHeight.value
+                val height = (previousHeight + delta).coerceIn(minTopBarHeightPx, maxTopBarHeightPx)
+                val consumed = height - previousHeight
 
-                val topPadding = currentTopBarHeightDp + if(likedTrackCount > 0) 8.dp else 0.dp
-                LazyColumn(
-                    state = lazyList,
-                    contentPadding = PaddingValues(
-                        top = topPadding,
-                        start = 16.dp,
-                        end = if ((lazyList.canScrollForward || lazyList.canScrollBackward) && collapseFraction > 0.95f) 24.dp else 16.dp,
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier
-                        .fillMaxSize()
-                ) {
-                    items(likedTracks, key = { track -> "artist_song_${track.uri}" }) { track ->
-                        SwipeableTrackRow(
-                            track = track,
-                            currentTrack = currentTrack,
-                            onRowClick = remember(track.uri) { { OutifyApplication.spirc.load(track.uri) } },
-                            onArtworkClick = {onArtworkClick(track)},
-                        )
+                if(consumed.roundToInt() != 0){
+                    coroutineScope.launch {
+                        topBarHeight.snapTo(height)
                     }
                 }
 
-//                if (collapseFraction > 0.95f) {
-//                    ExpressiveScrollBar(
-//                        listState = lazyListState,
-//                        modifier = Modifier
-//                            .align(Alignment.CenterEnd)
-//                            .padding(
-//                                top = currentTopBarHeightDp + 12.dp,
-//                                bottom = fabBottomPadding + 80.dp
-//                            )
-//                    )
-//                }
-
-                CollapsingArtistTopBar(
-                    artist = artist,
-                    likedSongs = likedTrackCount,
-                    collapseFraction = collapseFraction,
-                    headerHeight = currentTopBarHeightDp,
-                    onBackPressed = onBack,
-                    artworkUrl = artworkUrl,
-                    onPlayClick = {
-                    },
-                )
+                val canConsumeScroll = !(isScrollingDown && height == minTopBarHeightPx)
+                return if (canConsumeScroll) Offset(0f, consumed) else Offset.Zero
             }
         }
     }
+
+    LaunchedEffect(lazyList.isScrollInProgress) {
+        if(!lazyList.isScrollInProgress) {
+            val shouldExpand = topBarHeight.value > (minTopBarHeightPx + maxTopBarHeightPx) / 2
+            val canExpand = lazyList.firstVisibleItemIndex == 0 && lazyList.firstVisibleItemScrollOffset == 0
+
+            val targetValue = if (shouldExpand && canExpand) maxTopBarHeightPx else minTopBarHeightPx
+
+            if (topBarHeight.value != targetValue) {
+                coroutineScope.launch {
+                    topBarHeight.animateTo(
+                        targetValue,
+                        spring(stiffness = Spring.StiffnessMedium)
+                    )
+                }
+            }
+        }
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.surface)
+            .nestedScroll(nestedScroll)
+    ) {
+        val currentTopBarHeightDp = with(density) { topBarHeight.value.toDp() }
+
+        LazyColumn(
+            state = lazyList,
+            contentPadding = PaddingValues(
+                top = currentTopBarHeightDp,
+                start = 16.dp,
+                end = if ((lazyList.canScrollForward || lazyList.canScrollBackward) && collapseFraction > 0.95f) 24.dp else 16.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(tracks, key = { track -> "playlist_song_${track.uri}" }) { playlistItem ->
+                val metadataMap by viewModel.trackMetadata.collectAsState()
+                val track = metadataMap[playlistItem.uri]
+
+                if (track != null) {
+                    SwipeableTrackRow(
+                        track = track,
+                        currentTrack = currentTrack,
+                        onRowClick = {
+                            OutifyApplication.spirc.load(playlist!!.uri, playlistItem.uri)
+                        }
+                    )
+                } else {
+                }
+            }
+        }
+
+        CollapsingAlbumTopBar(
+            playlist = playlistVal,
+            songsCount = tracks.size,
+            collapseFraction = collapseFraction,
+            headerHeight = currentTopBarHeightDp,
+            onBackPressed = onBack,
+            onPlayClick = { /* implement play */ }
+        )
+    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun SharedTransitionScope.CollapsingArtistTopBar(
-    artist: Artist,
-    likedSongs: Int,
+private fun SharedTransitionScope.CollapsingAlbumTopBar(
+    playlist: Playlist,
+    songsCount: Int,
     collapseFraction: Float,
     headerHeight: Dp,
-    artworkUrl: String,
     onBackPressed: () -> Unit,
     onPlayClick: () -> Unit
 ) {
@@ -309,6 +292,7 @@ private fun SharedTransitionScope.CollapsingArtistTopBar(
     val titleContainerHeight = lerp(88.dp, 56.dp, collapseFraction)
     val yOffsetCorrection = lerp((titleContainerHeight / 2) - 64.dp, 0.dp, collapseFraction)
 
+    val artworkUrl = ALBUM_COVER_URL + playlist.attributes.pictureId
     val imageRequest = ImageRequest.Builder(context)
         .data(artworkUrl)
         .allowHardware(true)
@@ -330,10 +314,6 @@ private fun SharedTransitionScope.CollapsingArtistTopBar(
             Surface(
                 modifier = Modifier
                     .fillMaxSize()
-                    .sharedBounds(
-                        rememberSharedContentState(SharedElementKey.ARTIST_DETAILS_TOPBAR_IMAGE),
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                    )
             ) {
                 AsyncImage(
                     model = imageRequest,
@@ -407,15 +387,11 @@ private fun SharedTransitionScope.CollapsingArtistTopBar(
                         .graphicsLayer {
                             scaleX = titleScale
                             scaleY = titleScale
-                        }
-                        .sharedBounds(
-                            rememberSharedContentState(SharedElementKey.ARTIST_DETAILS_TOPBAR_TEXT),
-                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                        ),
+                        },
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Your liked ${artist.name} songs",
+                        text = playlist.attributes.name,
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontSize = 26.sp,
                             textGeometricTransform = TextGeometricTransform(scaleX = 1.2f),
@@ -426,7 +402,7 @@ private fun SharedTransitionScope.CollapsingArtistTopBar(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "$likedSongs liked songs",
+                        text = "• $songsCount songs",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

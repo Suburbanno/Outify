@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -119,10 +120,11 @@ class MainActivity : ComponentActivity() {
             NavDestination("home", "Home", Route.HomeScreen) { Icon(Icons.Default.Home, contentDescription = null) },
             NavDestination("search", "Search", Route.SearchScreen) { Icon(Icons.Default.Search, contentDescription = null) },
             NavDestination("liked", "Liked", Route.LikedScreen) { Icon(Icons.Default.Favorite, contentDescription = null) },
+            NavDestination("library", "Library", Route.LibraryScreen) { Icon(Icons.Default.LibraryMusic, contentDescription = null) },
         )
 
         val sheetState = rememberQueueBottomSheetState()
-//        val currentTrack by OutifyApplication.playbackManager.playbackStateHolder.currentTrack.collectAsState()
+        val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
         val queueViewModel = remember { QueueViewModel(application) }
 
         SharedTransitionLayout {
@@ -133,8 +135,8 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
                         Column {
                             AnimatedVisibility(
-//                                visible = currentTrack != null,
-                                visible = true,
+                                visible = currentTrack != null,
+//                                visible = true,
                                 enter = slideInVertically(
                                     initialOffsetY = { fullHeight -> fullHeight }
                                 ) + fadeIn(),
@@ -188,20 +190,6 @@ class MainActivity : ComponentActivity() {
             return false;
         }
         return true;
-    }
-
-    override fun onResume() {
-        super.onResume()
-        startServices()
-    }
-
-
-    // Starts the required services
-    @androidx.annotation.OptIn(UnstableApi::class)
-    fun startServices() {
-        // MediaSession
-        val intent = Intent(this, MusicService::class.java)
-        ContextCompat.startForegroundService(this, intent)
     }
 
     fun requestNotifications(){

@@ -1,5 +1,5 @@
 use bytes::Bytes;
-use librespot_core::{SpotifyUri, spclient::SpClient};
+use librespot_core::{spclient::{SpClient, SpClientResult}, SpotifyUri};
 use librespot_protocol::context::Context;
 
 use crate::session::with_session;
@@ -15,4 +15,16 @@ pub async fn get_context(uri: &str) -> Result<Context, librespot_core::error::Er
     };
     let spclient = session.spclient();
     spclient.get_context(uri).await
+}
+
+pub async fn get_rootlist() -> SpClientResult {
+    let session = match with_session(|s| s.clone()) {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to get session: {}", e);
+            return Err(librespot_core::Error::internal("Failed to get session"));
+        }
+    };
+    let spclient = session.spclient();
+    spclient.get_rootlist(0, None).await
 }

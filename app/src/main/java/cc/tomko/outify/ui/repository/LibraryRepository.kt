@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.room.withTransaction
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.SpClient
-import cc.tomko.outify.data.Metadata
+import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.database.*
 import cc.tomko.outify.data.database.dao.*

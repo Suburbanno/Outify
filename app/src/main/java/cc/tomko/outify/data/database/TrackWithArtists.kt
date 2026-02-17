@@ -4,8 +4,9 @@ import androidx.room.Embedded
 import androidx.room.Junction
 import androidx.room.Relation
 import cc.tomko.outify.data.Album
-import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.database.album.AlbumWithArtists
+import cc.tomko.outify.data.database.album.toDomain
 
 data class TrackWithArtists(
     @Embedded val track: TrackEntity,

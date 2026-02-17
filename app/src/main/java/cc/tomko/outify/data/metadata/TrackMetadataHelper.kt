@@ -1,13 +1,12 @@
-package cc.tomko.outify.data
+package cc.tomko.outify.data.metadata
 
 import android.util.Log
 import androidx.room.withTransaction
-import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.core.SpClient
-import cc.tomko.outify.data.database.AlbumArtistEntity
+import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.database.album.AlbumArtistEntity
 import cc.tomko.outify.data.database.AlbumEntity
-import cc.tomko.outify.data.database.AlbumTrackCrossRef
-import cc.tomko.outify.data.database.AlbumWithArtists
+import cc.tomko.outify.data.database.album.AlbumTrackCrossRef
+import cc.tomko.outify.data.database.album.AlbumWithArtists
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.data.database.ArtistEntity
 import cc.tomko.outify.data.database.TrackArtistEntity
@@ -15,11 +14,12 @@ import cc.tomko.outify.data.database.TrackEntity
 import cc.tomko.outify.data.database.TrackWithArtists
 import cc.tomko.outify.data.database.dao.AlbumArtistDao
 import cc.tomko.outify.data.database.dao.AlbumDao
-import cc.tomko.outify.data.database.dao.AlbumTrackDao
 import cc.tomko.outify.data.database.dao.ArtistDao
 import cc.tomko.outify.data.database.dao.TrackArtistDao
 import cc.tomko.outify.data.database.dao.TrackDao
+import cc.tomko.outify.data.database.album.toDomain
 import cc.tomko.outify.data.database.toDomain
+import cc.tomko.outify.data.toEntities
 import cc.tomko.outify.ui.repository.TrackRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -34,7 +34,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.serialization.json.Json
 
-class Metadata(
+/**
+ * Helper class for track metadata
+ */
+internal class TrackMetadataHelper(
     private val db: AppDatabase,
     private val trackRepo: TrackRepository,
     private val trackDao: TrackDao,
@@ -42,11 +45,10 @@ class Metadata(
     private val trackArtistDao: TrackArtistDao,
     private val albumDao: AlbumDao,
     private val albumArtistDao: AlbumArtistDao,
-    private val albumTrackDao: AlbumTrackDao,
-    private val spClient: SpClient = OutifyApplication.session.spClient,
-    private val concurrency: Int = 10
+    private val concurrency: Int = 10,
+    private val metadata: Metadata,
+    private val json: Json
 ) {
-    private val json = Json { ignoreUnknownKeys = true }
 
     /**
      * Returns list of Tracks with their metadata
@@ -119,101 +121,6 @@ class Metadata(
         return result
     }
 
-    /**
-     * Returns the cached album with its tracks (ordered URIs).
-     *
-     * If album missing in DB -> fetch remote, persist, return fetched.
-     * If album exists but album_tracks missing -> fetch remote, persist cross-refs, return fetched.
-     * If album + album_tracks exist -> fetch remote, compare track lists:
-     *      - if different -> persist remote and return it
-     *      - if identical  -> return cached immediately
-     */
-    suspend fun getAlbumMetadata(uri: String): Album? {
-        if (uri.isBlank()) return null
-
-        val cleanedId = uri.removePrefix("spotify:album:")
-
-        val albumMap = loadCachedAlbumsByUri(listOf(uri))
-        val albumWithArtists = albumMap[uri]
-
-        if (albumWithArtists == null) {
-            val fetched = try {
-                fetchAlbums(listOf(uri))
-            } catch (e: Exception) {
-                Log.w("Metadata", "Failed to fetch album $uri", e)
-                emptyList()
-            }
-
-            if (fetched.isNotEmpty()) {
-                persistAlbumMetadata(fetched)
-                return fetched.first()
-            }
-
-            return null
-        }
-
-        val cachedTrackUris = getCachedAlbumTracks(cleanedId)
-
-        if (cachedTrackUris.isEmpty()) {
-            val fetched = try {
-                fetchAlbums(listOf(uri))
-            } catch (e: Exception) {
-                Log.w("Metadata", "Failed to fetch album tracks for $uri", e)
-                emptyList()
-            }
-
-            if (fetched.isNotEmpty()) {
-                persistAlbumMetadata(fetched)
-                return fetched.first()
-            }
-
-            // fallback: cached album without tracks
-            val cachedDomain = albumWithArtists.toDomain()
-            return cachedDomain.copy(tracks = emptyList())
-        }
-
-        // Fetch remote album and compare track lists.
-        val remoteAlbums = try {
-            fetchAlbums(listOf(uri))
-        } catch (e: Exception) {
-            Log.w("Metadata", "Failed to fetch album (verification) for $uri", e)
-            null
-        }
-
-        if (remoteAlbums == null || remoteAlbums.isEmpty()) {
-            // Remote unavailable
-            val cachedDomain = albumWithArtists.toDomain()
-            return cachedDomain.copy(tracks = cachedTrackUris)
-        }
-
-        val remoteAlbum = remoteAlbums.first()
-
-        val remoteTrackUris = remoteAlbum.tracks
-
-        val unchanged = remoteTrackUris.size == cachedTrackUris.size &&
-                remoteTrackUris.zip(cachedTrackUris).all { (r, c) -> r == c }
-
-        return if (unchanged) {
-            val cachedDomain = albumWithArtists.toDomain()
-            cachedDomain.copy(tracks = cachedTrackUris)
-        } else {
-            persistAlbumMetadata(listOf(remoteAlbum))
-            remoteAlbum
-        }
-    }
-
-    suspend fun getArtistMetadata(uri: String): Artist? {
-        try {
-            val raw = getNativeMetadata(uri)
-            println(raw)
-            return json.decodeFromString<Artist>(raw)
-        } catch (e: Exception) {
-            Log.e("Metadata", "fetchAlbums: failed for $uri", e)
-            return null
-        }
-    }
-
-    //region Tracks
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observeTracks(uris: List<String>): Flow<List<Track>> {
         if (uris.isEmpty()) return flowOf(emptyList())
@@ -268,28 +175,29 @@ class Metadata(
     /**
      * Fetches tracks metadata, that aren't cached.
      */
-    private suspend fun fetchTracks(uris: List<String>): List<Pair<String, Track>> = supervisorScope{
-        if(uris.isEmpty()) return@supervisorScope emptyList()
+    private suspend fun fetchTracks(uris: List<String>): List<Pair<String, Track>> =
+        supervisorScope {
+            if (uris.isEmpty()) return@supervisorScope emptyList()
 
-        val results = mutableListOf<Pair<String, Track>>()
-        uris.chunked(concurrency).forEach { chunk ->
-            val deferred = chunk.map { uri ->
-                async {
-                    try {
-                        val raw = getNativeMetadata(uri)
-                        val t = json.decodeFromString<Track>(raw)
-                        println(raw)
-                        uri to t
-                    } catch (e: Exception) {
-                        Log.e("Metadata", "fetchMissingTracks: failed to fetch: " + uri, e)
-                        null
+            val results = mutableListOf<Pair<String, Track>>()
+            uris.chunked(concurrency).forEach { chunk ->
+                val deferred = chunk.map { uri ->
+                    async {
+                        try {
+                            val raw = metadata.getNativeMetadata(uri)
+                            val t = json.decodeFromString<Track>(raw)
+                            println(raw)
+                            uri to t
+                        } catch (e: Exception) {
+                            Log.e("Metadata", "fetchMissingTracks: failed to fetch: " + uri, e)
+                            null
+                        }
                     }
                 }
+                results += deferred.awaitAll().filterNotNull()
             }
-            results += deferred.awaitAll().filterNotNull()
+            results
         }
-        results
-    }
 
     /**
      * Loads tracks by given URI
@@ -394,137 +302,4 @@ class Metadata(
             uris.forEach { id -> try { trackRepo.touchTrack(id) } catch (_: Exception) {} }
         }
     }
-    //endregion Tracks
-
-    //region Albums
-
-    /**
-     * Fetches albums from native source.
-     */
-    private suspend fun fetchAlbums(uris: List<String>): List<Album> = supervisorScope {
-        if (uris.isEmpty()) return@supervisorScope emptyList()
-
-        val results = mutableListOf<Album>()
-
-        uris.chunked(concurrency).forEach { chunk ->
-            val deferred = chunk.map { uri ->
-                async {
-                    try {
-                        val raw = getNativeMetadata(uri)
-                        json.decodeFromString<Album>(raw)
-                    } catch (e: Exception) {
-                        Log.e("Metadata", "fetchAlbums: failed for $uri", e)
-                        null
-                    }
-                }
-            }
-            results += deferred.awaitAll().filterNotNull()
-        }
-
-        results
-    }
-
-    /**
-     * Loads album entities for given spotify album URIs.
-     */
-    private suspend fun loadCachedAlbumsByUri(
-        uris: List<String>
-    ): Map<String, AlbumWithArtists> {
-        if (uris.isEmpty()) return emptyMap()
-
-        val cleanedIds = uris.map { it.removePrefix("spotify:album:") }
-        val entities = albumDao.getAlbumsWithArtists(cleanedIds)
-
-        val byUri: Map<String, AlbumWithArtists> = entities
-            .associateBy { it.album.uri }
-            .mapValues { (_, v) ->
-                AlbumWithArtists(album = v.album, artists = v.artists)
-            }
-
-        return uris.mapNotNull { uri ->
-            byUri[uri]?.let { uri to it }
-        }.toMap()
-    }
-
-    /**
-     * Persist album metadata and album-track joins
-     */
-    private suspend fun persistAlbumMetadata(albums: List<Album>) {
-        if (albums.isEmpty()) return
-
-        val now = System.currentTimeMillis()
-
-        val albumEntities = mutableListOf<AlbumEntity>()
-        val albumArtistJoins = mutableListOf<AlbumArtistEntity>()
-        val albumTrackJoins = mutableListOf<AlbumTrackCrossRef>()
-
-        albums.forEach { album ->
-            val sortedByArea = album.covers
-                .sortedBy { it.width * it.height }
-
-            val small = sortedByArea.firstOrNull()
-            val large = sortedByArea.lastOrNull()
-            val medium = sortedByArea.getOrNull(sortedByArea.size / 2)
-
-            albumEntities += AlbumEntity(
-                albumId = album.id,
-                uri = album.uri,
-                name = album.name,
-                artistNames = album.artists.joinToString(", ") { it.name },
-                popularity = album.popularity,
-                lastUpdated = now,
-
-                smallCoverUri = small?.uri,
-                mediumCoverUri = medium?.uri,
-                largeCoverUri = large?.uri
-            )
-
-            album.artists.forEachIndexed { idx, artist ->
-                albumArtistJoins += AlbumArtistEntity(
-                    albumId = album.id,
-                    artistId = artist.id,
-                    position = idx
-                )
-            }
-
-            album.tracks.forEachIndexed { index, trackUri ->
-                albumTrackJoins += AlbumTrackCrossRef(
-                    albumId = album.id,
-                    trackId = trackUri,
-                    position = index
-                )
-            }
-        }
-
-        db.withTransaction {
-            val albumIds = albums.map { it.id }
-
-            albumDao.insertAll(albumEntities)
-
-            if (albumArtistJoins.isNotEmpty()) {
-                albumArtistDao.insertAll(albumArtistJoins)
-            }
-
-            // Replace joins atomically for the affected albums
-            albumTrackDao.deleteByAlbumIds(albumIds)
-            if (albumTrackJoins.isNotEmpty()) {
-                albumTrackDao.insertAll(albumTrackJoins)
-            }
-        }
-    }
-
-    /**
-     * Returns cached track URIs for the given album ID (ordered by position).
-     */
-    private suspend fun getCachedAlbumTracks(albumId: String): List<String> {
-        if (albumId.isBlank()) return emptyList()
-        return albumTrackDao.getTrackIdsForAlbum(albumId)
-    }
-
-//endregion Albums
-
-    /**
-     * Native method to get JSON Metadata using URI
-     */
-    external fun getNativeMetadata(uri: String): String
 }

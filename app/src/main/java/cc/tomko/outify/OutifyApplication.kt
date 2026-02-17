@@ -9,7 +9,7 @@ import cc.tomko.outify.core.SessionCallback
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.core.spirc.SpircController
-import cc.tomko.outify.data.Metadata
+import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.playback.AudioEngine
 import cc.tomko.outify.playback.PlaybackStateHolder
@@ -86,6 +86,7 @@ class OutifyApplication : Application() {
             albumDao = database.albumDao(),
             albumArtistDao = database.albumArtistDao(),
             albumTrackDao = database.albumTrackDao(),
+            playlistDao = database.playlistDao()
         )
 
         libraryRepository = LibraryRepository(metadata)

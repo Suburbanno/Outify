@@ -1,7 +1,7 @@
 package cc.tomko.outify
 
 import android.content.Context
-import cc.tomko.outify.data.Metadata
+import cc.tomko.outify.data.metadata.Metadata
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

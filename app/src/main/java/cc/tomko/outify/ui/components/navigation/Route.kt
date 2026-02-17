@@ -19,6 +19,12 @@ sealed interface Route: NavKey {
     @Serializable
     data object LikedScreen: Route, NavKey
 
+    @Serializable
+    data object LibraryScreen: Route, NavKey
+
+    @Serializable
+    data class PlaylistScreen(val playlistUri: String): Route, NavKey
+
     /**
      * When we know only the Track uri and want to open the Album Screen
      */

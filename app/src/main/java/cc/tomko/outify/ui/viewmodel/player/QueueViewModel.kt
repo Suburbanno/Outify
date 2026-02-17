@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.data.Metadata
+import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.Track
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -374,7 +374,7 @@ class QueueViewModel(
 
     private suspend fun loadPreviousUris(): List<String> = withContext(Dispatchers.IO) {
         try {
-            val previousUrisRaw = Spirc.previousTracks()
+            val previousUrisRaw = OutifyApplication.spirc.previousTracks()
             json.decodeFromString<List<String>>(previousUrisRaw)
         } catch (e: Exception) {
             emptyList()
@@ -383,7 +383,7 @@ class QueueViewModel(
 
     private suspend fun loadNextUris(): List<String> = withContext(Dispatchers.IO) {
         try {
-            val nextUrisRaw = Spirc.nextTracks()
+            val nextUrisRaw = OutifyApplication.spirc.nextTracks()
             json.decodeFromString<List<String>>(nextUrisRaw)
         } catch (e: Exception) {
             emptyList()

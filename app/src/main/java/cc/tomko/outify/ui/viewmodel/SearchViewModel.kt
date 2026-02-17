@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.util.query
 import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.data.Metadata
+import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.ui.model.search.SearchResult
 import cc.tomko.outify.ui.repository.SearchRepository

@@ -35,12 +35,12 @@ class SpircController {
     }
 
     private fun activateAndTransfer(){
-        if (!Spirc.activate()) {
+        if (!OutifyApplication.spirc.activate()) {
             Log.e("SpircController", "Failed to activate Spirc session!")
             return
         }
 
-        if (!Spirc.transfer()) {
+        if (!OutifyApplication.spirc.transfer()) {
             Log.e("SpircController", "Failed to transfer Spirc session!")
         }
     }

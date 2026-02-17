@@ -9,4 +9,6 @@ class SpClient {
      * Retrieves the metadata for singular track by its ID
      */
     external fun getTrackData(id: String): String
+
+    external fun getRootlist(): Array<String>
 }

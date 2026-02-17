@@ -23,11 +23,13 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.data.Metadata
+import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.ui.screens.HomeScreen
 import cc.tomko.outify.ui.screens.PlayerScreen
+import cc.tomko.outify.ui.screens.library.LibraryScreen
 import cc.tomko.outify.ui.screens.library.LikedScreen
+import cc.tomko.outify.ui.screens.library.PlaylistScreen
 import cc.tomko.outify.ui.screens.library.album.AlbumDetailScreen
 import cc.tomko.outify.ui.screens.library.artist.ArtistDetailScreen
 import cc.tomko.outify.ui.screens.library.artist.ArtistLikedTracksScreen
@@ -35,6 +37,8 @@ import cc.tomko.outify.ui.screens.search.SearchScreen
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
 import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
+import cc.tomko.outify.ui.viewmodel.library.LibraryViewModel
+import cc.tomko.outify.ui.viewmodel.library.PlaylistViewModel
 import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModel
 import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModelFactory
 
@@ -86,6 +90,14 @@ fun SharedTransitionScope.NavigationRoot(
                             listState = listState,
                             backStack = backStack,
                         )
+                    }
+                }
+
+                is Route.LibraryScreen -> {
+                    NavEntry(key) {
+                        val viewModel: LibraryViewModel = hiltViewModel()
+
+                        LibraryScreen(viewModel, backStack)
                     }
                 }
 
@@ -185,6 +197,26 @@ fun SharedTransitionScope.NavigationRoot(
                                 backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
                             },
                         ) { }
+                    }
+                }
+
+                is Route.PlaylistScreen -> {
+                    NavEntry(key) {
+                        val viewModel: PlaylistViewModel = hiltViewModel()
+
+                        PlaylistScreen(
+                            key.playlistUri,
+                            viewModel = viewModel,
+                            onBack = {
+                                backStack.removeAt(backStack.lastIndex)
+                            },
+                            onArtworkClick = { track ->
+                                backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
+                            },
+                            artistClick = { artistUri ->
+                                backStack.add(Route.ArtistScreen(artistUri))
+                            }
+                        )
                     }
                 }
 

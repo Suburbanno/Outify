@@ -182,7 +182,7 @@ fun SharedTransitionScope.MiniPlayer(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = {
-                            Spirc.playerPrevious()
+                            OutifyApplication.spirc.playerPrevious()
                         }) {
                             Icon(
                                 imageVector = Icons.Default.SkipPrevious,
@@ -192,7 +192,7 @@ fun SharedTransitionScope.MiniPlayer(
 
                         IconButton(onClick = {
                             OutifyApplication.playbackStateHolder.setTrack(currentTrack)
-                            Spirc.playerPlayPause()
+                            OutifyApplication.spirc.playerPlayPause()
                         }) {
                             if (isPlaying) {
                                 Icon(
@@ -208,7 +208,7 @@ fun SharedTransitionScope.MiniPlayer(
                         }
 
                         IconButton(onClick = {
-                            Spirc.playerNext()
+                            OutifyApplication.spirc.playerNext()
                         }) {
                             Icon(
                                 imageVector = Icons.Default.SkipNext,

@@ -4,8 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Transaction
-import cc.tomko.outify.data.database.AlbumTrackCrossRef
+import cc.tomko.outify.data.database.album.AlbumTrackCrossRef
 import cc.tomko.outify.data.database.TrackEntity
 
 @Dao

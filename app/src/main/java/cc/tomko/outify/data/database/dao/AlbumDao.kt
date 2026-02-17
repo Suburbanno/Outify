@@ -6,9 +6,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import cc.tomko.outify.data.database.AlbumEntity
-import cc.tomko.outify.data.database.AlbumWithArtists
-import cc.tomko.outify.data.database.AlbumWithTracks
-import cc.tomko.outify.data.database.TrackWithArtists
+import cc.tomko.outify.data.database.album.AlbumWithArtists
+import cc.tomko.outify.data.database.album.AlbumWithTracks
 
 @Dao
 interface AlbumDao {

@@ -5,12 +5,14 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "playlists")
 data class PlaylistEntity(
-    @PrimaryKey val playlistId: String,
+    @PrimaryKey
+    val id: String,
     val uri: String,
+    val revision: String,
     val name: String,
-    val ownerName: String,
-    val trackCount: Int,
-    val imageUrl: String?,
-
-    val lastUpdated: Long,
+    val description: String,
+    val pictureId: String,
+    val isCollaborative: Boolean,
+    val isDeletedByOwner: Boolean,
+    val timestamp: Long,
 )

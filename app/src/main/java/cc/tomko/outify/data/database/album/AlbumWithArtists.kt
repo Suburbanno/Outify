@@ -1,4 +1,4 @@
-package cc.tomko.outify.data.database
+package cc.tomko.outify.data.database.album
 
 import androidx.room.Embedded
 import androidx.room.Junction
@@ -7,6 +7,9 @@ import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Cover
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.asInt
+import cc.tomko.outify.data.database.AlbumEntity
+import cc.tomko.outify.data.database.ArtistEntity
+import cc.tomko.outify.data.database.toDomain
 
 data class AlbumWithArtists (
     @Embedded val album: AlbumEntity,

@@ -85,6 +85,7 @@ import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.ui.components.SwipeableTrackRow
 import cc.tomko.outify.ui.components.TrackRow
 import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
 import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
@@ -259,17 +260,13 @@ fun SharedTransitionScope.ArtistDetailScreen(
                             track.album?.getCover(CoverSize.MEDIUM)?.uri.let { ALBUM_COVER_URL + it }
                         }
 
-                        TrackRow(
-                            title = track.name,
-                            artist = track.artists.joinToString { it.name },
-                            artworkUrl = trackArtworkUrl,
-                            isPlaying = currentTrack?.uri.equals(track.uri),
-                            isSelected = false,
+                        SwipeableTrackRow(
+                            track = track,
+                            currentTrack = currentTrack,
                             onRowClick = remember(track.uri) { {
-                                Spirc.load(artist.uri, track.uri)
+                                OutifyApplication.spirc.load(artist.uri, track.uri)
                             } },
                             onArtworkClick = {onArtworkClick(track)},
-                            sharedTransitionKey = null
                         )
                     }
                 }

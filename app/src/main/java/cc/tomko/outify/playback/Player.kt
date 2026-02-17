@@ -123,9 +123,9 @@ class Player(
     override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
         // TODO: More robust handling?
         if (playWhenReady) {
-            Spirc.playerPlay()
+            OutifyApplication.spirc.playerPlay()
         } else {
-            Spirc.playerPause()
+            OutifyApplication.spirc.playerPause()
         }
         // return a completed future - if your controller needs async work, return a future that completes later
         return com.google.common.util.concurrent.Futures.immediateVoidFuture()
@@ -137,7 +137,7 @@ class Player(
     }
 
     override fun handleStop(): ListenableFuture<*> {
-        Spirc.playerPause() //TODO: Implement playerStop
+        OutifyApplication.spirc.playerPause() //TODO: Implement playerStop
         return com.google.common.util.concurrent.Futures.immediateVoidFuture()
     }
 

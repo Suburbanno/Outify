@@ -325,7 +325,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                                             onRowClick = remember(item.track.uri) {
                                                 {
                                                     coroutineScope.launch {
-                                                        Spirc.load( item.track.uri)
+                                                        OutifyApplication.spirc.load( item.track.uri)
                                                     }
                                                 }
                                             },

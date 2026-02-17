@@ -2,15 +2,22 @@ package cc.tomko.outify.data.database
 
 import android.content.Context
 import androidx.room.Database
-import androidx.room.InvalidationTracker
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import cc.tomko.outify.data.PlaylistOperation
+import cc.tomko.outify.data.database.album.AlbumArtistEntity
+import cc.tomko.outify.data.database.album.AlbumTrackCrossRef
 import cc.tomko.outify.data.database.dao.AlbumArtistDao
 import cc.tomko.outify.data.database.dao.AlbumDao
 import cc.tomko.outify.data.database.dao.AlbumTrackDao
 import cc.tomko.outify.data.database.dao.ArtistDao
+import cc.tomko.outify.data.database.dao.PlaylistDao
 import cc.tomko.outify.data.database.dao.TrackArtistDao
 import cc.tomko.outify.data.database.dao.TrackDao
+import cc.tomko.outify.data.database.impl.PlaylistTrackEntity
+import cc.tomko.outify.data.database.playlist.PlaylistDiffEntity
+import cc.tomko.outify.data.database.playlist.PlaylistItemEntity
+import cc.tomko.outify.data.database.playlist.PlaylistWithItems
 
 @Database(
     entities = [
@@ -20,8 +27,12 @@ import cc.tomko.outify.data.database.dao.TrackDao
         AlbumEntity::class,
         AlbumTrackCrossRef::class,
         AlbumArtistEntity::class,
+        PlaylistEntity::class,
+        PlaylistItemEntity::class,
+        PlaylistDiffEntity::class,
+        PlaylistTrackEntity::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase() {
@@ -31,6 +42,7 @@ abstract class AppDatabase: RoomDatabase() {
     abstract fun albumDao(): AlbumDao
     abstract fun albumArtistDao(): AlbumArtistDao
     abstract fun albumTrackDao(): AlbumTrackDao
+    abstract fun playlistDao(): PlaylistDao
 
     companion object {
         @Volatile

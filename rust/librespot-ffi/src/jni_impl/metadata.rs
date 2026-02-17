@@ -18,7 +18,8 @@ const SPOTIFY_ITEM_TYPE_LOCAL: &str = "local";
 const SPOTIFY_ITEM_TYPE_UNKNOWN: &str = "unknown";
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_data_Metadata_getNativeMetadata(
+#[export_name = "Java_cc_tomko_outify_data_metadata_Metadata_getNativeMetadata"]
+pub extern "system" fn get_native_metadata(
     mut env: jni::JNIEnv,
     _this: JClass,
     juri: JString,
@@ -34,7 +35,10 @@ pub extern "system" fn Java_cc_tomko_outify_data_Metadata_getNativeMetadata(
     let spotify_uri = match SpotifyUri::from_uri(uri.as_str()) {
         Ok(u) => u,
         Err(e) => {
-            error!("failed to parse SpotifyURI: {}", e);
+            let _ = env.throw_new(
+                "java/lang/IllegalArgumentException",
+                format!("Invalid Spotify URI: {}", e),
+            );
             return std::ptr::null_mut();
         }
     };
@@ -53,6 +57,7 @@ pub extern "system" fn Java_cc_tomko_outify_data_Metadata_getNativeMetadata(
                 SPOTIFY_ITEM_TYPE_TRACK => get_track_metadata(&session, &spotify_uri).await,
                 SPOTIFY_ITEM_TYPE_ALBUM => get_album_metadata(&session, &spotify_uri).await,
                 SPOTIFY_ITEM_TYPE_ARTIST => get_artist_metadata(&session, &spotify_uri).await,
+                SPOTIFY_ITEM_TYPE_PLAYLIST => get_playlist_metadata(&session, &spotify_uri).await,
                 &_ => {
                     info!("Unknown item type!");
                     None
@@ -121,6 +126,19 @@ async fn get_artist_metadata(session: &Session, spotify_uri: &SpotifyUri) -> Opt
         }
         Err(e) => {
             error!("failed to fetch artist metadata: {}", e);
+            None
+        }
+    }
+}
+
+async fn get_playlist_metadata(session: &Session, spotify_uri: &SpotifyUri) -> Option<String> {
+    match librespot_metadata::Playlist::get(session, &spotify_uri).await {
+        Ok(metadata) => {
+            let playlist = crate::metadata::playlist::PlaylistJson::from(&metadata);
+            convert_to_string(&playlist)
+        }
+        Err(e) => {
+            error!("failed to fetch playlist metadata: {}", e);
             None
         }
     }

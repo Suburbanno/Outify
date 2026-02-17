@@ -51,9 +51,9 @@ class PlayerViewModel(
      */
     fun onAction(action: PlayerAction) {
         when (action) {
-            PlayerAction.PlayPause -> Spirc.playerPlayPause()
-            PlayerAction.Next -> Spirc.playerNext()
-            PlayerAction.Previous -> Spirc.playerPrevious()
+            PlayerAction.PlayPause -> OutifyApplication.spirc.playerPlayPause()
+            PlayerAction.Next -> OutifyApplication.spirc.playerNext()
+            PlayerAction.Previous -> OutifyApplication.spirc.playerPrevious()
         }
     }
 }

@@ -1,4 +1,4 @@
-package cc.tomko.outify.data.database
+package cc.tomko.outify.data.database.album
 
 import androidx.room.Entity
 import androidx.room.Index

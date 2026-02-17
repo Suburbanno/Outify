@@ -118,7 +118,7 @@ fun SharedTransitionScope.LikedScreen(
                 currentTrack = currentTrack,
                 onRowClick = remember(track.uri) {
                     {
-                        Spirc.load(null,track.uri)
+                        OutifyApplication.spirc.load(null,track.uri)
                     }
                 },
                 onRowLongClick = {

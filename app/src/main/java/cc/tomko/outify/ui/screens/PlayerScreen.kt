@@ -55,6 +55,7 @@ import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.profile.UserProfile
@@ -72,8 +73,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun SharedTransitionScope.PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
     val context = LocalContext.current
-    val profile = UserProfile()
-    profile.getUserProfile()
+    val json = (context.applicationContext as OutifyApplication).metadata.getNativeMetadata("spotify:playlist:2FsQ4d0Ot4gA21TVVZC7oe")
+    println("playlist jso: $json")
 
     val vm: PlayerViewModel = viewModel(
         factory = PlayerViewModelFactory(playbackStateHolder)

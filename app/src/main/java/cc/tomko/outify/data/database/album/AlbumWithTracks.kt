@@ -1,8 +1,10 @@
-package cc.tomko.outify.data.database
+package cc.tomko.outify.data.database.album
 
 import androidx.room.Embedded
 import androidx.room.Junction
 import androidx.room.Relation
+import cc.tomko.outify.data.database.AlbumEntity
+import cc.tomko.outify.data.database.TrackEntity
 
 data class AlbumWithTracks(
     @Embedded val album: AlbumEntity,
