@@ -8,8 +8,10 @@ import androidx.room.Transaction
 import cc.tomko.outify.data.database.AlbumEntity
 import cc.tomko.outify.data.database.album.AlbumWithArtists
 import cc.tomko.outify.data.database.album.AlbumWithTracks
+import javax.inject.Singleton
 
 @Dao
+@Singleton
 interface AlbumDao {
     @Transaction
     @Query("SELECT * FROM albums WHERE albumId = :albumId")

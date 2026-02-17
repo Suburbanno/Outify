@@ -58,6 +58,7 @@ fun SharedTransitionScope.LikedScreen(
     listState: LazyListState,
     backStack: NavBackStack<NavKey>,
 ) {
+    val spirc = viewModel.spirc
     val tracks by viewModel.likedTracks.collectAsState()
     LaunchedEffect(Unit) { viewModel.ensureLoaded() }
 
@@ -95,7 +96,7 @@ fun SharedTransitionScope.LikedScreen(
             }
     }
 
-    val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
+    val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
 
     LazyColumn(state = listState) {
         item {
@@ -118,11 +119,10 @@ fun SharedTransitionScope.LikedScreen(
                 currentTrack = currentTrack,
                 onRowClick = remember(track.uri) {
                     {
-                        OutifyApplication.spirc.load(null,track.uri)
+                        spirc.load(null,track.uri)
                     }
                 },
                 onRowLongClick = {
-                    OutifyApplication.session.shutdown()
                 },
                 onArtworkClick = {
                     backStack.add(Route.AlbumScreenFromTrackUri(track.uri))

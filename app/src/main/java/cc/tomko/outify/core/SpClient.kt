@@ -1,6 +1,10 @@
 package cc.tomko.outify.core
 
-class SpClient {
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class SpClient @Inject constructor() {
     external fun search(query: String, pageOffset: Int, pages: Int): String
 
     external fun getUserCollection(query: String? = null): String

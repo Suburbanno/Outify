@@ -5,11 +5,14 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import cc.tomko.outify.data.database.LikedTrackWithTrack
 import cc.tomko.outify.data.database.TrackEntity
 import cc.tomko.outify.data.database.TrackWithArtists
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Singleton
 
 @Dao
+@Singleton
 interface TrackDao {
     /**
      * Inserts singular TrackEntity
@@ -31,6 +34,12 @@ interface TrackDao {
     )
     suspend fun getTracksByUris(uris: List<String>): List<TrackEntity>
 
+    @Query("""
+        SELECT albumId FROM tracks
+        WHERE trackUri = :uri
+    """)
+    suspend fun getAlbumIdForTrack(uri: String): String?
+
     @Transaction
     @Query("SELECT * FROM tracks WHERE trackUri = :trackUri")
     suspend fun getTrackWithArtists(trackUri: String): TrackWithArtists?
@@ -39,6 +48,7 @@ interface TrackDao {
     @Query("SELECT * FROM tracks WHERE trackUri IN (:trackUris)")
     suspend fun getTracksWithArtists(trackUris: List<String>): List<TrackWithArtists>
 
+    @Transaction
     @Query("SELECT * FROM tracks WHERE trackUri IN (:uris)")
     fun getTracksWithArtistsFlow(uris: List<String>): Flow<List<TrackWithArtists>>
 

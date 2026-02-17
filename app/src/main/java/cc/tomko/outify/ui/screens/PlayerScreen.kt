@@ -42,45 +42,31 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.metadata.Metadata
-import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.PlaybackStateHolder
-import cc.tomko.outify.profile.UserProfile
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
-import cc.tomko.outify.ui.viewmodel.factory.PlayerViewModelFactory
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
-import coil3.request.crossfade
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SharedTransitionScope.PlayerScreen(playbackStateHolder: PlaybackStateHolder) {
+fun SharedTransitionScope.PlayerScreen(
+    viewModel: PlayerViewModel,
+) {
     val context = LocalContext.current
-    val json = (context.applicationContext as OutifyApplication).metadata.getNativeMetadata("spotify:playlist:2FsQ4d0Ot4gA21TVVZC7oe")
-    println("playlist jso: $json")
 
-    val vm: PlayerViewModel = viewModel(
-        factory = PlayerViewModelFactory(playbackStateHolder)
-    )
-
-    val uiState by vm.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val artworkUrl = uiState.albumArt?.let { ALBUM_COVER_URL + it }
     println(artworkUrl)
 
@@ -170,9 +156,9 @@ fun SharedTransitionScope.PlayerScreen(playbackStateHolder: PlaybackStateHolder)
 
             PlaybackControls(
                 isPlaying = uiState.isPlaying,
-                onPlayPause = { vm.onAction(PlayerAction.PlayPause) },
-                onNextTrack = { vm.onAction(PlayerAction.Next) },
-                onPreviousTrack = { vm.onAction(PlayerAction.Previous) },
+                onPlayPause = { viewModel.onAction(PlayerAction.PlayPause) },
+                onNextTrack = { viewModel.onAction(PlayerAction.Next) },
+                onPreviousTrack = { viewModel.onAction(PlayerAction.Previous) },
             )
         }
     }

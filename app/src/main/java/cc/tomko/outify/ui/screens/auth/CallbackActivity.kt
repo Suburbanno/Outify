@@ -9,12 +9,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.ui.theme.OutifyTheme
+import dagger.hilt.android.AndroidEntryPoint
+import jakarta.inject.Inject
 
 /**
  * Used for OAuth flow code retrieval
  */
+@AndroidEntryPoint
 class CallbackActivity : ComponentActivity() {
+    @Inject lateinit var authManager: AuthManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,7 +51,7 @@ class CallbackActivity : ComponentActivity() {
         val state = uri.getQueryParameter("state")
         if (code == null || state == null) return StringArrayResult.Error("Invalid OAuth callback")
 
-        val codeSuccess = OutifyApplication.authManager.handleOAuthCode(code, state);
+        val codeSuccess = authManager.handleOAuthCode(code, state);
         // TODO: Handle more appropriately
         if (codeSuccess) {
             return StringArrayResult.Success("Credentials saved!")

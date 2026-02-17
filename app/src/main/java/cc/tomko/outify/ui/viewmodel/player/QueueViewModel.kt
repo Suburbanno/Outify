@@ -5,37 +5,47 @@ import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.playback.PlaybackStateHolder
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.util.concurrent.atomic.AtomicLong
+import javax.inject.Inject
 import kotlin.math.max
 import kotlin.math.min
 
 // ---- UI model: a unique queue entry (one id per occurrence) ----
 data class QueueEntry(val id: Long, val track: Track)
 
-class QueueViewModel(
-    val application: Application,
-    val metadata: Metadata = (application as OutifyApplication).metadata,
-    val json: Json = Json { ignoreUnknownKeys = true }
+@HiltViewModel
+class QueueViewModel @Inject constructor(
+    val metadata: Metadata,
+    val json: Json,
+    private val playbackStateHolder: PlaybackStateHolder,
+    val spirc: SpircWrapper,
 ) : ViewModel() {
+
+    fun currentTrack(): Flow<Track?> =
+        playbackStateHolder.state.map { it.currentTrack }
 
     companion object {
         private const val INITIAL_LOAD_SIZE = 20 // Load 20 items initially
         private const val PAGE_SIZE = 15 // Load 15 items per page when scrolling
         private const val PREFETCH_THRESHOLD = 5 // Start loading when 5 items from edge
 
-        // Simple atomic counter for stable per-occurrence IDs
         private val uidCounter = AtomicLong(0L)
         private fun nextId(): Long = uidCounter.incrementAndGet()
     }
@@ -374,7 +384,7 @@ class QueueViewModel(
 
     private suspend fun loadPreviousUris(): List<String> = withContext(Dispatchers.IO) {
         try {
-            val previousUrisRaw = OutifyApplication.spirc.previousTracks()
+            val previousUrisRaw = spirc.previousTracks()
             json.decodeFromString<List<String>>(previousUrisRaw)
         } catch (e: Exception) {
             emptyList()
@@ -383,7 +393,7 @@ class QueueViewModel(
 
     private suspend fun loadNextUris(): List<String> = withContext(Dispatchers.IO) {
         try {
-            val nextUrisRaw = OutifyApplication.spirc.nextTracks()
+            val nextUrisRaw = spirc.nextTracks()
             json.decodeFromString<List<String>>(nextUrisRaw)
         } catch (e: Exception) {
             emptyList()

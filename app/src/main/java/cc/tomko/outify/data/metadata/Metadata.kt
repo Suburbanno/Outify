@@ -1,43 +1,26 @@
 package cc.tomko.outify.data.metadata
 
 import android.util.Log
-import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.data.Track
-import cc.tomko.outify.data.database.AppDatabase
-import cc.tomko.outify.data.database.dao.AlbumArtistDao
-import cc.tomko.outify.data.database.dao.AlbumDao
-import cc.tomko.outify.data.database.dao.AlbumTrackDao
-import cc.tomko.outify.data.database.dao.ArtistDao
-import cc.tomko.outify.data.database.dao.PlaylistDao
-import cc.tomko.outify.data.database.dao.TrackArtistDao
-import cc.tomko.outify.data.database.dao.TrackDao
-import cc.tomko.outify.ui.repository.TrackRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.Json
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class Metadata(
-    db: AppDatabase,
-    trackRepo: TrackRepository,
-    trackDao: TrackDao,
-    artistDao: ArtistDao,
-    playlistDao: PlaylistDao,
-    trackArtistDao: TrackArtistDao,
-    albumDao: AlbumDao,
-    albumArtistDao: AlbumArtistDao,
-    albumTrackDao: AlbumTrackDao,
-    concurrency: Int = 10
+@Singleton
+class Metadata @Inject constructor(
+    private val trackMetadataHelper: TrackMetadataHelper,
+    private val albumMetadataHelper: AlbumMetadataHelper,
+    private val playlistMetadataHelper: PlaylistMetadataHelper,
+    private val nativeMetadata: NativeMetadata,
+    private val spClient: SpClient,
+    private val json: Json,
 ) {
-    private val json = Json { ignoreUnknownKeys = true }
-
-    private val trackMetadataHelper = TrackMetadataHelper(db, trackRepo, trackDao, artistDao, trackArtistDao, albumDao, albumArtistDao, concurrency, this, json)
-    private val albumMetadataHelper = AlbumMetadataHelper(db, albumDao, albumArtistDao, albumTrackDao, concurrency, this, json)
-    val playlistMetadataHelper = PlaylistMetadataHelper(db, playlistDao, concurrency, this, json)
-
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observeTracks(uris: List<String>): Flow<List<Track>> {
         return trackMetadataHelper.observeTracks(uris)
@@ -48,6 +31,13 @@ class Metadata(
      */
     suspend fun getTrackMetadata(uris: List<String>): List<Track> {
         return trackMetadataHelper.getTrackMetadata(uris)
+    }
+
+    /**
+     * Returns the Track's album URI
+     */
+    suspend fun getTrackAlbumId(trackUri: String): String? {
+        return trackMetadataHelper.getTrackAlbumId(trackUri)
     }
 
     /**
@@ -65,7 +55,7 @@ class Metadata(
 
     suspend fun getArtistMetadata(uri: String): Artist? {
         try {
-            val raw = getNativeMetadata(uri)
+            val raw = nativeMetadata.getNativeMetadata(uri)
             return json.decodeFromString<Artist>(raw)
         } catch (e: Exception) {
             Log.e("Metadata", "fetchAlbums: failed for $uri", e)
@@ -75,7 +65,7 @@ class Metadata(
 
     suspend fun getPlaylistUris(): List<String> {
         try {
-            val uris = OutifyApplication.session.spClient.getRootlist()
+            val uris = spClient.getRootlist()
             return uris.toList()
         } catch (e: Exception) {
             return emptyList()
@@ -90,9 +80,4 @@ class Metadata(
         playlistMetadataHelper.observePlaylist(uri)
     fun observePlaylists(uris: List<String>) =
         playlistMetadataHelper.observePlaylists(uris)
-
-    /**
-     * Native method to get JSON Metadata using URI
-     */
-    external fun getNativeMetadata(uri: String): String
 }

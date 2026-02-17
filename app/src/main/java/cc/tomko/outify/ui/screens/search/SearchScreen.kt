@@ -58,9 +58,10 @@ fun SharedTransitionScope.SearchScreen(
     val results by viewModel.results.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val trackMap by viewModel.trackMap.collectAsState()
+    val spirc = viewModel.spirc
 
     val listState = rememberLazyListState()
-    val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
+    val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
 
     Column(modifier = modifier.fillMaxSize()) {
         MaterialSearchBar(
@@ -84,7 +85,7 @@ fun SharedTransitionScope.SearchScreen(
                                 track = domainTrack,
                                 currentTrack = currentTrack,
                                 onRowClick = {
-                                    OutifyApplication.spirc.load(item.uri)
+                                    spirc.load(item.uri)
                                 },
                                 onArtworkClick = {
                                     backStack.add(Route.AlbumScreenFromTrackUri(item.uri))

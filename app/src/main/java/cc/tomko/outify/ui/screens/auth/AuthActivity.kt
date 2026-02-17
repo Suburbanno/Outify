@@ -35,12 +35,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.ui.theme.OutifyTheme
+import jakarta.inject.Inject
 
 /**
  * The first page the user sees if not logged in
  */
 class AuthActivity : ComponentActivity() {
+    @Inject lateinit var authManager: AuthManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -52,62 +56,64 @@ class AuthActivity : ComponentActivity() {
             }
         }
     }
-}
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-fun InformationText(padding: PaddingValues){
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(padding),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Login", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Welcome to Outify!", fontSize = 16.sp)
-        Text(text = "To use this application, you have to login first.", fontSize = 16.sp)
-        Text(text = "Click the following button and authorize the Spotify Application", fontSize = 16.sp)
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    @Composable
+    fun InformationText(padding: PaddingValues) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = "Login", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(text = "Welcome to Outify!", fontSize = 16.sp)
+            Text(text = "To use this application, you have to login first.", fontSize = 16.sp)
+            Text(
+                text = "Click the following button and authorize the Spotify Application",
+                fontSize = 16.sp
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        val auth = OutifyApplication.authManager
-        val context = LocalContext.current
+            val context = LocalContext.current
 
-        LoginButton {
-            val url: String? = auth.getAuthorizationURL()
-            val intent = Intent(Intent.ACTION_VIEW, url?.toUri())
-            context.startActivity(intent)
+            LoginButton {
+                val url: String? = authManager.getAuthorizationURL()
+                val intent = Intent(Intent.ACTION_VIEW, url?.toUri())
+                context.startActivity(intent)
+            }
         }
     }
-}
 
-@Composable
-fun LoginButton(
-    onClick: () -> Unit
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.96f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "scale"
-    )
-
-    Button(
-        onClick = onClick,
-        interactionSource = interactionSource,
-        modifier = Modifier.scale(scale),
-        shape = RoundedCornerShape(28.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary
-        )
+    @Composable
+    fun LoginButton(
+        onClick: () -> Unit
     ) {
-        Text("Login")
+        val interactionSource = remember { MutableInteractionSource() }
+        val pressed by interactionSource.collectIsPressedAsState()
+
+        val scale by animateFloatAsState(
+            targetValue = if (pressed) 0.96f else 1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMedium
+            ),
+            label = "scale"
+        )
+
+        Button(
+            onClick = onClick,
+            interactionSource = interactionSource,
+            modifier = Modifier.scale(scale),
+            shape = RoundedCornerShape(28.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Text("Login")
+        }
     }
 }

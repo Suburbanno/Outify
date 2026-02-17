@@ -16,16 +16,20 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.supervisorScope
 import kotlinx.serialization.json.Json
+import javax.inject.Inject
+import javax.inject.Named
+import javax.inject.Singleton
 import kotlin.collections.forEach
 
-internal class AlbumMetadataHelper(
+@Singleton
+class AlbumMetadataHelper @Inject constructor(
     private val db: AppDatabase,
     private val albumDao: AlbumDao,
     private val albumArtistDao: AlbumArtistDao,
     private val albumTrackDao: AlbumTrackDao,
-    private val concurrency: Int = 10,
-    private val metadata: Metadata,
-    private val json: Json
+    private val nativeMetadata: NativeMetadata,
+    private val json: Json,
+    @Named("metadataConcurrency") private val concurrency: Int,
 ) {
 
     /**
@@ -123,7 +127,7 @@ internal class AlbumMetadataHelper(
             val deferred = chunk.map { uri ->
                 async {
                     try {
-                        val raw = metadata.getNativeMetadata(uri)
+                        val raw = nativeMetadata.getNativeMetadata(uri)
                         json.decodeFromString<Album>(raw)
                     } catch (e: Exception) {
                         Log.e("Metadata", "fetchAlbums: failed for $uri", e)

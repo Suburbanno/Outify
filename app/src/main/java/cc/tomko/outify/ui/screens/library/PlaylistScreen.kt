@@ -122,17 +122,9 @@ fun SharedTransitionScope.PlaylistScreen(
     val playlistVal = playlist!!
     val tracks = playlistVal.contents
 
-    // Artwork helper (optional)
-    val artworkUrl by produceState<String?>(
-        initialValue = null,
-        key1 = playlistVal.uri
-    ) {
-        value = viewModel.getArtworkUrl(playlistVal)
-    }
-
     val lazyList = rememberLazyListState()
 
-    // Prefetch visible + ahead items (batch)
+    // Prefetch visible + ahead items
     LaunchedEffect(lazyList, tracks) {
         snapshotFlow { lazyList.layoutInfo.visibleItemsInfo }
             .collect { visibleItems ->
@@ -152,7 +144,8 @@ fun SharedTransitionScope.PlaylistScreen(
             }
     }
 
-    val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
+    val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+    val spirc = viewModel.spirc
 
     val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val minTopBarHeight = 64.dp + statusBarHeight
@@ -239,7 +232,7 @@ fun SharedTransitionScope.PlaylistScreen(
                         track = track,
                         currentTrack = currentTrack,
                         onRowClick = {
-                            OutifyApplication.spirc.load(playlist!!.uri, playlistItem.uri)
+                            spirc.load(playlist!!.uri, playlistItem.uri)
                         }
                     )
                 } else {

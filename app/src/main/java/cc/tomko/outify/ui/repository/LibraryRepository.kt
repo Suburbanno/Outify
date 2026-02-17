@@ -14,15 +14,15 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.supervisorScope
 import kotlinx.serialization.json.Json
+import javax.inject.Inject
 
-class LibraryRepository(
+class LibraryRepository @Inject constructor(
     private val metadata: Metadata,
-    private val spClient: SpClient = OutifyApplication.session.spClient,
+    private val spClient: SpClient,
 ) {
 
     private val json = Json { ignoreUnknownKeys = true }
     private var cachedLikedUris: List<String>? = null
-
 
     suspend fun getLikedTracks(limit: Int, offset: Int): List<Track> =
         withContext(Dispatchers.IO) {

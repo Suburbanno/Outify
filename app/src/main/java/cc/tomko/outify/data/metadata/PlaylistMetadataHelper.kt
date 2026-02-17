@@ -20,13 +20,15 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class PlaylistMetadataHelper(
+@Singleton
+class PlaylistMetadataHelper @Inject constructor(
     private val db: AppDatabase,
     private val playlistDao: PlaylistDao,
-    private val concurrency: Int = 4,
-    private val metadata: Metadata,
-    private val json: Json
+    private val json: Json,
+    private val nativeMetadata: NativeMetadata
 ) {
     /**
      * Retrieves a playlist by URI. If not present locally, fetches and persists.
@@ -41,7 +43,7 @@ class PlaylistMetadataHelper(
         val cached = playlistDao.getPlaylistWithItems(playlistId)
 
         val remotePlaylist = runCatching {
-            val raw = metadata.getNativeMetadata(uri)
+            val raw = nativeMetadata.getNativeMetadata(uri)
             json.decodeFromString<Playlist>(raw)
         }.getOrNull()
 

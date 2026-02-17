@@ -23,29 +23,20 @@ import coil3.disk.directory
 import coil3.request.crossfade
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.Runnable
+import javax.inject.Inject
 
 const val ALBUM_COVER_URL: String = "https://i.scdn.co/image/"
 
 @HiltAndroidApp
 class OutifyApplication : Application() {
-
-    @UnstableApi
-    lateinit var player: Player
-        private set
-
     lateinit var database: AppDatabase
-        private set
-    lateinit var trackRepository: TrackRepository
-        private set
-    lateinit var libraryRepository: LibraryRepository
-        private set
-    lateinit var searchRepository: SearchRepository
         private set
 
     lateinit var imageLoader: ImageLoader
         private set
-    lateinit var metadata: Metadata
-        private set
+
+    @Inject
+    lateinit var spircController: SpircController
 
     @UnstableApi
     override fun onCreate() {
@@ -57,13 +48,7 @@ class OutifyApplication : Application() {
 
         spircController.start()
 
-        authManager = AuthManager()
-        spirc = SpircWrapper(this)
-
-        player = Player(this, stateHolder = playbackStateHolder)
-
 //        AeadConfig.register()
-        initializeRepositories()
 
         imageLoader = ImageLoader.Builder(this)
             .crossfade(true)
@@ -73,31 +58,5 @@ class OutifyApplication : Application() {
                     .maxSizePercent(0.25)
                     .build()
             ).build()
-    }
-
-    private fun initializeRepositories(){
-        trackRepository = TrackRepository(database.trackDao())
-        metadata = Metadata(
-            db = database,
-            trackRepo = trackRepository,
-            trackDao = database.trackDao(),
-            artistDao = database.artistDao(),
-            trackArtistDao = database.trackArtistDao(),
-            albumDao = database.albumDao(),
-            albumArtistDao = database.albumArtistDao(),
-            albumTrackDao = database.albumTrackDao(),
-            playlistDao = database.playlistDao()
-        )
-
-        libraryRepository = LibraryRepository(metadata)
-        searchRepository = SearchRepository()
-    }
-
-    companion object {
-        lateinit var authManager: AuthManager
-        lateinit var spirc: SpircWrapper
-        var playbackStateHolder = PlaybackStateHolder()
-        var session: Session = Session()
-        var spircController = SpircController()
     }
 }

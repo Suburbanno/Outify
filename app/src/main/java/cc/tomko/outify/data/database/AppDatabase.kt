@@ -11,9 +11,11 @@ import cc.tomko.outify.data.database.dao.AlbumArtistDao
 import cc.tomko.outify.data.database.dao.AlbumDao
 import cc.tomko.outify.data.database.dao.AlbumTrackDao
 import cc.tomko.outify.data.database.dao.ArtistDao
+import cc.tomko.outify.data.database.dao.LikedDao
 import cc.tomko.outify.data.database.dao.PlaylistDao
 import cc.tomko.outify.data.database.dao.TrackArtistDao
 import cc.tomko.outify.data.database.dao.TrackDao
+import cc.tomko.outify.data.database.impl.LikedTrackEntity
 import cc.tomko.outify.data.database.impl.PlaylistTrackEntity
 import cc.tomko.outify.data.database.playlist.PlaylistDiffEntity
 import cc.tomko.outify.data.database.playlist.PlaylistItemEntity
@@ -31,8 +33,9 @@ import cc.tomko.outify.data.database.playlist.PlaylistWithItems
         PlaylistItemEntity::class,
         PlaylistDiffEntity::class,
         PlaylistTrackEntity::class,
+        LikedTrackEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase() {
@@ -43,6 +46,7 @@ abstract class AppDatabase: RoomDatabase() {
     abstract fun albumArtistDao(): AlbumArtistDao
     abstract fun albumTrackDao(): AlbumTrackDao
     abstract fun playlistDao(): PlaylistDao
+    abstract fun likedDao(): LikedDao
 
     companion object {
         @Volatile

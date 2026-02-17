@@ -1,19 +1,23 @@
-package cc.tomko.outify.core;
+package cc.tomko.outify.core
 
-public class AuthManager {
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
+
+@Singleton
+class AuthManager @Inject constructor() {
     /**
      * Checks for cached credentials.
      * Performs raw filesystem check
      */
-    public native boolean hasCachedCredentials();
+    external fun hasCachedCredentials(): Boolean
 
     /**
-    * Processes the OAuth Code and caches the credentials into storage if success
+     * Processes the OAuth Code and caches the credentials into storage if success
      */
-    public native boolean handleOAuthCode(String code, String state);
+    external fun handleOAuthCode(code: String, state: String): Boolean
 
-	/**
-	 * Returns URL of Spotify authorization page
-	 */
-	public native String getAuthorizationURL();
+    /**
+     * Returns URL of Spotify authorization page
+     */
+    external fun getAuthorizationURL(): String
 }

@@ -138,11 +138,12 @@ fun SharedTransitionScope.ArtistLikedTracksScreen(
         is ArtistUiState.Success -> {
             val artist = (uiState as ArtistUiState.Success).artist
             val artworkUrl = ALBUM_COVER_URL + artist.getCover(CoverSize.LARGE)?.uri
+            val spirc = viewModel.spirc
 
             val likedTracks by viewModel.likedTracks.collectAsState()
             val likedTrackCount = likedTracks.size
 
-            val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
+            val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
 
             val lazyList = rememberLazyListState()
 
@@ -242,7 +243,7 @@ fun SharedTransitionScope.ArtistLikedTracksScreen(
                         SwipeableTrackRow(
                             track = track,
                             currentTrack = currentTrack,
-                            onRowClick = remember(track.uri) { { OutifyApplication.spirc.load(track.uri) } },
+                            onRowClick = remember(track.uri) { { spirc.load(track.uri) } },
                             onArtworkClick = {onArtworkClick(track)},
                         )
                     }

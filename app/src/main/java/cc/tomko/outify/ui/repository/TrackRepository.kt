@@ -4,10 +4,11 @@ import androidx.room.Transaction
 import cc.tomko.outify.data.database.TrackEntity
 import cc.tomko.outify.data.database.dao.TrackDao
 import java.time.Clock
+import javax.inject.Inject
 
-class TrackRepository(
+class TrackRepository @Inject constructor(
     private val trackDao: TrackDao,
-    private val clock: Clock = Clock.systemUTC()
+    private val clock: Clock,
 ) {
 
     val CACHE_TTL_MS: Long = 5_000_000

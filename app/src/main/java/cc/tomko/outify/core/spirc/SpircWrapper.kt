@@ -9,8 +9,14 @@ import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.services.MusicService
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class SpircWrapper(val context: Context) {
+@Singleton
+class SpircWrapper @Inject constructor(
+    @ApplicationContext val context: Context
+){
     @OptIn(UnstableApi::class)
     private fun ensureServiceRunning() {
         val intent = Intent(context, MusicService::class.java)

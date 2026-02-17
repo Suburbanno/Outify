@@ -1,30 +1,38 @@
 package cc.tomko.outify.ui.viewmodel.library.album
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.screens.library.album.AlbumUiState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.lang.Exception
+import javax.inject.Inject
 
 /**
  * View model for album screen
  */
-class AlbumViewModel(
-    application: Application,
-    private val albumUri: String,
-    private val metadata: Metadata = (application as OutifyApplication).metadata
-): AndroidViewModel(application) {
+@HiltViewModel
+class AlbumViewModel @Inject constructor(
+    private val metadata: Metadata,
+    private val playbackStateHolder: PlaybackStateHolder,
+    val spirc: SpircWrapper
+): ViewModel() {
 
     private val _uiState = MutableStateFlow(AlbumUiState())
     val uiState: StateFlow<AlbumUiState> = _uiState
 
-    fun loadAlbum() {
+    fun currentTrack(): Flow<Track?> =
+        playbackStateHolder.state.map { it.currentTrack }
+
+    suspend fun loadAlbum(albumUri: String) {
         viewModelScope.launch {
             try {
                 val album = metadata
@@ -54,4 +62,12 @@ class AlbumViewModel(
         }
     }
 
+    suspend fun loadAlbumFromTrackUri(trackUri: String) {
+        viewModelScope.launch {
+            val albumId = metadata.getTrackAlbumId(trackUri) ?: // Throw some error?
+            return@launch
+
+            loadAlbum("spotify:album:$albumId")
+        }
+    }
 }

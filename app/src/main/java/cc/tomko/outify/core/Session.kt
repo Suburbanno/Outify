@@ -2,13 +2,14 @@ package cc.tomko.outify.core
 
 import android.util.Log
 import cc.tomko.outify.core.spirc.Spirc
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Handles the librespot session
  */
-class Session {
-    val spClient: SpClient = SpClient()
-
+@Singleton
+class Session @Inject constructor() {
     external fun initializeSession(callback: SessionCallback)
 
     external fun shutdown(): Boolean

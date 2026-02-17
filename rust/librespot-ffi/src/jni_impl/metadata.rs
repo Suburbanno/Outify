@@ -17,8 +17,7 @@ const SPOTIFY_ITEM_TYPE_TRACK: &str = "track";
 const SPOTIFY_ITEM_TYPE_LOCAL: &str = "local";
 const SPOTIFY_ITEM_TYPE_UNKNOWN: &str = "unknown";
 
-#[unsafe(no_mangle)]
-#[export_name = "Java_cc_tomko_outify_data_metadata_Metadata_getNativeMetadata"]
+#[unsafe(export_name = "Java_cc_tomko_outify_data_metadata_NativeMetadata_getNativeMetadata")]
 pub extern "system" fn get_native_metadata(
     mut env: jni::JNIEnv,
     _this: JClass,

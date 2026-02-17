@@ -95,10 +95,6 @@ fun SharedTransitionScope.AlbumDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(viewModel) {
-        viewModel.loadAlbum()
-    }
-
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
 
@@ -131,7 +127,8 @@ fun SharedTransitionScope.AlbumDetailScreen(
             val album = uiState.album!!
             val tracks = uiState.tracks
             val artworkUrl = ALBUM_COVER_URL + album.getCover(CoverSize.LARGE)?.uri
-            val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
+            val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+            val spirc = viewModel.spirc
 
             val lazyList = rememberLazyListState()
 
@@ -229,7 +226,7 @@ fun SharedTransitionScope.AlbumDetailScreen(
                         SwipeableTrackRow(
                             track = track,
                             currentTrack = currentTrack,
-                            onRowClick = remember(track.uri) { { OutifyApplication.spirc.load(album.uri,track.uri) } },
+                            onRowClick = remember(track.uri) { { spirc.load(album.uri,track.uri) } },
                             onArtistClick = { artistClick(track.artists.first().uri) }, // TODO: Make some popup where user chooses the artist, in case of multiple artists
                         )
                     }

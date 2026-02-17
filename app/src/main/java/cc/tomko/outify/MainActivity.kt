@@ -44,11 +44,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalAnimatedVisibilityScope
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
+import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.services.MusicService
 import cc.tomko.outify.ui.components.navigation.NavDestination
 import cc.tomko.outify.ui.components.navigation.NavigationRoot
@@ -59,12 +61,18 @@ import cc.tomko.outify.ui.components.player.QueueBottomSheet
 import cc.tomko.outify.ui.components.player.rememberQueueBottomSheetState
 import cc.tomko.outify.ui.screens.auth.AuthActivity
 import cc.tomko.outify.ui.theme.OutifyTheme
+import cc.tomko.outify.ui.viewmodel.MainViewModel
+import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableSharedFlow
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject
+    lateinit var authManager: AuthManager
+
     private val deepLinkFlow = MutableSharedFlow<Uri>(extraBufferCapacity = 1)
 
     data object MainActivity {
@@ -82,7 +90,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             OutifyTheme(
                 content = {
-                    App()
+                    val mainViewModel: MainViewModel = hiltViewModel()
+                    App(mainViewModel)
                 }
             )
         }
@@ -105,7 +114,9 @@ class MainActivity : ComponentActivity() {
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun App(){
+    fun App(
+        viewModel: MainViewModel
+    ){
         val backStack = rememberNavBackStack(Route.HomeScreen)
 
         LaunchedEffect(Unit) {
@@ -124,8 +135,9 @@ class MainActivity : ComponentActivity() {
         )
 
         val sheetState = rememberQueueBottomSheetState()
-        val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
-        val queueViewModel = remember { QueueViewModel(application) }
+
+        val queueViewModel: QueueViewModel = hiltViewModel()
+        val miniPlayerViewModel: MiniPlayerViewModel = hiltViewModel()
 
         SharedTransitionLayout {
             CompositionLocalProvider(
@@ -134,6 +146,8 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     bottomBar = {
                         Column {
+                            val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+
                             AnimatedVisibility(
                                 visible = currentTrack != null,
 //                                visible = true,
@@ -145,6 +159,7 @@ class MainActivity : ComponentActivity() {
                                 ) + fadeOut()
                             ) {
                                 MiniPlayer(
+                                    viewModel = miniPlayerViewModel,
                                     backStack = backStack,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
                                     showQueue = {
@@ -182,9 +197,7 @@ class MainActivity : ComponentActivity() {
 
     // Checks for existing credentials and redirects to the login page if needed
     fun handleAuth(): Boolean {
-        val authMan = OutifyApplication.authManager;
-
-        if (!authMan.hasCachedCredentials()) {
+        if (!authManager.hasCachedCredentials()) {
             startActivity(Intent(this, AuthActivity::class.java));
             finish();
             return false;

@@ -40,15 +40,13 @@ import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
 import cc.tomko.outify.ui.viewmodel.library.LibraryViewModel
 import cc.tomko.outify.ui.viewmodel.library.PlaylistViewModel
 import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModel
-import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModelFactory
+import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
 
 @Composable
 fun SharedTransitionScope.NavigationRoot(
     backStack: NavBackStack<NavKey>,
     modifier: Modifier = Modifier
 ) {
-    val app = LocalContext.current.applicationContext as OutifyApplication?
-
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
@@ -76,7 +74,9 @@ fun SharedTransitionScope.NavigationRoot(
                 }
                 is Route.PlayerScreen -> {
                     NavEntry(key) {
-                        PlayerScreen(OutifyApplication.playbackStateHolder)
+                        val viewModel: PlayerViewModel = hiltViewModel()
+
+                        PlayerScreen(viewModel)
                     }
                 }
 
@@ -103,28 +103,18 @@ fun SharedTransitionScope.NavigationRoot(
 
                 is Route.SearchScreen -> {
                     NavEntry(key) {
-                        val viewModel = remember { SearchViewModel(app!!, app.metadata) }
+                        val viewModel = hiltViewModel<SearchViewModel>()
                         SearchScreen(backStack,viewModel)
                     }
                 }
 
                 is Route.AlbumScreenFromTrackUri -> {
                     NavEntry(key) {
-                        val context = LocalContext.current.applicationContext as OutifyApplication
-                        val track by produceState<Track?>(initialValue = null, key1 = key.trackUri) {
-                            value = context.metadata.getTrackMetadata(listOf(key.trackUri)).firstOrNull()
+                        val viewModel: AlbumViewModel = hiltViewModel()
+
+                        LaunchedEffect(key.trackUri) {
+                            viewModel.loadAlbumFromTrackUri(key.trackUri)
                         }
-
-                        val albumUri = track?.album?.uri ?: ""
-                        val factory = AlbumViewModelFactory(
-                            application = context,
-                            albumUri = albumUri
-                        )
-
-                        val viewModel: AlbumViewModel = viewModel(
-                            key = albumUri,
-                            factory = factory
-                        )
 
                         AlbumDetailScreen(
                             viewModel = viewModel,
@@ -140,18 +130,11 @@ fun SharedTransitionScope.NavigationRoot(
 
                 is Route.AlbumScreenFromAlbumUri -> {
                     NavEntry(key) {
-                        val context = LocalContext.current.applicationContext as OutifyApplication
+                        val viewModel: AlbumViewModel = hiltViewModel()
 
-                        val albumUri = key.albumUri
-                        val factory = AlbumViewModelFactory(
-                            application = context,
-                            albumUri = albumUri
-                        )
-
-                        val viewModel: AlbumViewModel = viewModel(
-                            key = albumUri,
-                            factory = factory
-                        )
+                        LaunchedEffect(key.albumUri) {
+                            viewModel.loadAlbum(key.albumUri)
+                        }
 
                         AlbumDetailScreen(
                             viewModel = viewModel,

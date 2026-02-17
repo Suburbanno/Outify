@@ -47,6 +47,7 @@ import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.navigation.Route
+import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -56,18 +57,18 @@ import kotlinx.coroutines.coroutineScope
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SharedTransitionScope.MiniPlayer(
+    viewModel: MiniPlayerViewModel,
     backStack: NavBackStack<NavKey>,
     showQueue: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+    val isPlaying by viewModel.isPlaying().collectAsState(initial = false)
+    val currentTime by viewModel.currentTime().collectAsState(initial = 0L)
+    val spirc = viewModel.spirc
 
-    val playbackState by OutifyApplication.playbackStateHolder.state.collectAsState()
-    val currentTrack = playbackState.currentTrack
-    val isPlaying = playbackState.isPlaying
-
-    val currentTime = playbackState.position.active.inWholeMilliseconds
-    val totalTime = currentTrack?.duration
+    val totalTime = currentTrack?.duration ?: 0L
 
     val imageSize = 40.dp
     val imageSizePx = with(LocalDensity.current) { imageSize.roundToPx() }
@@ -155,7 +156,7 @@ fun SharedTransitionScope.MiniPlayer(
                     // Elapsed time / total time
                     Row {
                         Text(
-                            text = "${formatTime(currentTime)} / ${formatTime(totalTime ?: 0L)}",
+                            text = "${formatTime(currentTime)} / ${formatTime(totalTime)}",
                             style = MaterialTheme.typography.bodyMediumEmphasized,
                             maxLines = 1,
                         )
@@ -182,7 +183,7 @@ fun SharedTransitionScope.MiniPlayer(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = {
-                            OutifyApplication.spirc.playerPrevious()
+                            spirc.playerPrevious()
                         }) {
                             Icon(
                                 imageVector = Icons.Default.SkipPrevious,
@@ -191,8 +192,8 @@ fun SharedTransitionScope.MiniPlayer(
                         }
 
                         IconButton(onClick = {
-                            OutifyApplication.playbackStateHolder.setTrack(currentTrack)
-                            OutifyApplication.spirc.playerPlayPause()
+                            viewModel.setTrack(currentTrack)
+                            spirc.playerPlayPause()
                         }) {
                             if (isPlaying) {
                                 Icon(
@@ -208,7 +209,7 @@ fun SharedTransitionScope.MiniPlayer(
                         }
 
                         IconButton(onClick = {
-                            OutifyApplication.spirc.playerNext()
+                            spirc.playerNext()
                         }) {
                             Icon(
                                 imageVector = Icons.Default.SkipNext,

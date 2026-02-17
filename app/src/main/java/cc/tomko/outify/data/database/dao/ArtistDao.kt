@@ -5,7 +5,9 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Transaction
 import cc.tomko.outify.data.database.ArtistEntity
+import javax.inject.Singleton
 
+@Singleton
 @Dao
 interface ArtistDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)

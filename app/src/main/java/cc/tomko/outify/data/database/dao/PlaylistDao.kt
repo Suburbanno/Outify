@@ -8,8 +8,10 @@ import cc.tomko.outify.data.database.PlaylistEntity
 import cc.tomko.outify.data.database.playlist.PlaylistItemEntity
 import cc.tomko.outify.data.database.playlist.PlaylistWithItems
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Singleton
 
 @Dao
+@Singleton
 interface PlaylistDao {
     @Transaction
     @Query("SELECT * FROM playlists WHERE id = :id")

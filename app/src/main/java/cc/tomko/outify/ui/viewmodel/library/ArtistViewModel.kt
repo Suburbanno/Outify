@@ -6,17 +6,23 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.SpClient
+import cc.tomko.outify.core.Spirc.SpircWrapper
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -25,6 +31,9 @@ import javax.inject.Inject
 @HiltViewModel
 class ArtistViewModel @Inject constructor(
     private val metadata: Metadata,
+    private val spClient: SpClient,
+    private val playbackStateHolder: PlaybackStateHolder,
+    val spirc: SpircWrapper,
 ): ViewModel() {
     val json = Json { ignoreUnknownKeys = true }
 
@@ -33,6 +42,9 @@ class ArtistViewModel @Inject constructor(
 
     private val likedTrackUris = MutableStateFlow<List<String>>(emptyList())
     private val popularTrackUris = MutableStateFlow<List<String>>(emptyList())
+
+    fun currentTrack(): Flow<Track?> =
+        playbackStateHolder.state.map { it.currentTrack }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val likedTracks: StateFlow<List<Track>> = likedTrackUris
@@ -67,7 +79,7 @@ class ArtistViewModel @Inject constructor(
                     return@launch
                 }
 
-                val likedSongsJson = OutifyApplication.session.spClient.getUserCollection(":artist:${artist.id}")
+                val likedSongsJson = spClient.getUserCollection(":artist:${artist.id}")
                 val likedSongsUris = json.decodeFromString<List<String>>(likedSongsJson)
 
                 likedTrackUris.value = likedSongsUris

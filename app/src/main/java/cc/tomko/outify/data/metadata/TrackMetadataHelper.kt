@@ -17,7 +17,6 @@ import cc.tomko.outify.data.database.dao.AlbumDao
 import cc.tomko.outify.data.database.dao.ArtistDao
 import cc.tomko.outify.data.database.dao.TrackArtistDao
 import cc.tomko.outify.data.database.dao.TrackDao
-import cc.tomko.outify.data.database.album.toDomain
 import cc.tomko.outify.data.database.toDomain
 import cc.tomko.outify.data.toEntities
 import cc.tomko.outify.ui.repository.TrackRepository
@@ -33,11 +32,15 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.serialization.json.Json
+import javax.inject.Inject
+import javax.inject.Named
+import javax.inject.Singleton
 
 /**
  * Helper class for track metadata
  */
-internal class TrackMetadataHelper(
+@Singleton
+class TrackMetadataHelper @Inject constructor(
     private val db: AppDatabase,
     private val trackRepo: TrackRepository,
     private val trackDao: TrackDao,
@@ -45,11 +48,10 @@ internal class TrackMetadataHelper(
     private val trackArtistDao: TrackArtistDao,
     private val albumDao: AlbumDao,
     private val albumArtistDao: AlbumArtistDao,
-    private val concurrency: Int = 10,
-    private val metadata: Metadata,
-    private val json: Json
+    private val nativeMetadata: NativeMetadata,
+    private val json: Json,
+    @Named("metadataConcurrency") private val concurrency: Int,
 ) {
-
     /**
      * Returns list of Tracks with their metadata
      */
@@ -121,6 +123,10 @@ internal class TrackMetadataHelper(
         return result
     }
 
+    suspend fun getTrackAlbumId(trackUri: String): String? {
+        return trackDao.getAlbumIdForTrack(trackUri)
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observeTracks(uris: List<String>): Flow<List<Track>> {
         if (uris.isEmpty()) return flowOf(emptyList())
@@ -184,7 +190,7 @@ internal class TrackMetadataHelper(
                 val deferred = chunk.map { uri ->
                     async {
                         try {
-                            val raw = metadata.getNativeMetadata(uri)
+                            val raw = nativeMetadata.getNativeMetadata(uri)
                             val t = json.decodeFromString<Track>(raw)
                             println(raw)
                             uri to t

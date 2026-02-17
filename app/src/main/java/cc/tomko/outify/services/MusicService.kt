@@ -26,6 +26,8 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.playback.Player
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
@@ -37,10 +39,16 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URL
+import javax.inject.Inject
+import javax.inject.Singleton
 
 
 @UnstableApi
-class MusicService : MediaSessionService() {
+@Singleton
+class MusicService @Inject constructor(
+    private val player: Player,
+    private val playbackStateHolder: PlaybackStateHolder
+) : MediaSessionService() {
     private val CHANNEL_ID = "outify_playback"
     private val notificationId: Int
         get() = CHANNEL_ID.hashCode()
@@ -58,8 +66,6 @@ class MusicService : MediaSessionService() {
         super.onCreate()
 
         createNotificationChannel()
-
-        val player = (this.applicationContext as OutifyApplication).player
 
         mediaSession = MediaSession.Builder(this, player)
             .setCallback(object : MediaSession.Callback {
@@ -84,7 +90,6 @@ class MusicService : MediaSessionService() {
                 .build()
         )
 
-        val playbackStateHolder = OutifyApplication.playbackStateHolder
         serviceScope.launch {
             playbackStateHolder.state.collect { state ->
                 val track = state.currentTrack
@@ -205,7 +210,6 @@ class MusicService : MediaSessionService() {
     }
 
     override fun onDestroy() {
-        val player = (this.applicationContext as OutifyApplication).player
         stopForeground(STOP_FOREGROUND_REMOVE)
 
         mediaSession.release()

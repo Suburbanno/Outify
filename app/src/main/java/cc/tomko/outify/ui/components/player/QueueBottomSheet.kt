@@ -83,8 +83,9 @@ fun SharedTransitionScope.QueueBottomSheet(
     val hapticFeedback = LocalHapticFeedback.current
     val queueState by viewModel.queueState.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val spirc = viewModel.spirc
 
-    val currentTrack = OutifyApplication.playbackStateHolder.state.collectAsState().value.currentTrack
+    val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
 
     // Load queue when sheet is opened
     LaunchedEffect(viewModel) {
@@ -325,7 +326,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                                             onRowClick = remember(item.track.uri) {
                                                 {
                                                     coroutineScope.launch {
-                                                        OutifyApplication.spirc.load( item.track.uri)
+                                                        spirc.load( item.track.uri)
                                                     }
                                                 }
                                             },

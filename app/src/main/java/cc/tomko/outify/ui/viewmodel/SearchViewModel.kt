@@ -6,22 +6,32 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.room.util.query
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.model.search.SearchResult
 import cc.tomko.outify.ui.repository.SearchRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class SearchViewModel(
-    application: Application,
+@OptIn(FlowPreview::class)
+@HiltViewModel
+class SearchViewModel @Inject constructor(
     metadata: Metadata,
-    private val repository: SearchRepository = (application as OutifyApplication).searchRepository
-): AndroidViewModel(application) {
+    val spirc: SpircWrapper,
+    private val repository: SearchRepository,
+    private val playbackStateHolder: PlaybackStateHolder,
+): ViewModel() {
     private val queryFlow = MutableStateFlow("")
 
     private val _results = MutableStateFlow<List<SearchResult>>(emptyList())
@@ -33,10 +43,13 @@ class SearchViewModel(
     private val _trackMap = MutableStateFlow<Map<String, Track>>(emptyMap())
     val trackMap: StateFlow<Map<String, Track>> = _trackMap
 
+    fun currentTrack(): Flow<Track?> =
+        playbackStateHolder.state.map { it.currentTrack }
+
     init {
         viewModelScope.launch {
             queryFlow
-                .debounce(300)
+                .debounce(500)
                 .distinctUntilChanged()
                 .collectLatest { query ->
                     if (query.isEmpty()) {

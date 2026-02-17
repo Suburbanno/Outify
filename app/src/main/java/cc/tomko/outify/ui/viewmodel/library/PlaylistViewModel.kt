@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.data.metadata.Metadata
+import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +23,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -30,8 +33,13 @@ import kotlinx.serialization.json.Json
 @HiltViewModel
 class PlaylistViewModel @Inject constructor(
     private val metadata: Metadata,
+    private val playbackStateHolder: PlaybackStateHolder,
+    val spirc: SpircWrapper,
 ): ViewModel() {
     val json = Json { ignoreUnknownKeys = true }
+
+    fun currentTrack(): Flow<Track?> =
+        playbackStateHolder.state.map { it.currentTrack }
 
     private val _uiState = MutableStateFlow<PlaylistUiState>(PlaylistUiState.Loading)
     val uiState: StateFlow<PlaylistUiState> = _uiState

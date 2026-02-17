@@ -42,7 +42,7 @@ class LibraryViewModel @Inject constructor(
                 if (uris.isEmpty()) {
                     flow { emit(emptyList()) }
                 } else {
-                    metadata.playlistMetadataHelper.observePlaylists(uris)
+                    metadata.observePlaylists(uris)
                 }
             }
             .stateIn(

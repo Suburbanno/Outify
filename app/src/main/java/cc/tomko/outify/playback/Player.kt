@@ -1,43 +1,38 @@
 package cc.tomko.outify.playback
 
 import android.app.Application
-import androidx.annotation.OptIn
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
-import androidx.media3.common.Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST
-import androidx.media3.common.Player.STATE_BUFFERING
-import androidx.media3.common.Player.STATE_IDLE
-import androidx.media3.common.Player.STATE_READY
 import androidx.media3.common.SimpleBasePlayer
-import androidx.media3.common.SimpleBasePlayer.MediaItemData
-import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import cc.tomko.outify.playback.model.PlayState
-import cc.tomko.outify.playback.model.RepeatMode
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
+@Singleton
 @UnstableApi
-class Player(
+class Player @Inject constructor(
     application: Application,
-    val stateHolder: PlaybackStateHolder = PlaybackStateHolder(),
+    val stateHolder: PlaybackStateHolder,
+    val spirc: SpircWrapper,
 ): SimpleBasePlayer(application.mainLooper) {
     private val json = Json { ignoreUnknownKeys = true }
     private val playerJob = SupervisorJob()
@@ -47,9 +42,9 @@ class Player(
     )
 
     var engine: AudioEngine = AudioEngine(application.applicationContext, object: PlayerEventCallback {
-        override fun onTrackChange(spotify_uri: String, json_raw: String) {
+        override fun onTrackChange(spotify_uri: String, json: String) {
             scope.launch {
-                val track: Track = json.decodeFromString(json_raw)
+                val track: Track = this@Player.json.decodeFromString(json)
                 stateHolder.setTrack(track)
                 invalidateState()
             }
@@ -123,9 +118,9 @@ class Player(
     override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
         // TODO: More robust handling?
         if (playWhenReady) {
-            OutifyApplication.spirc.playerPlay()
+            spirc.playerPlay()
         } else {
-            OutifyApplication.spirc.playerPause()
+            spirc.playerPause()
         }
         // return a completed future - if your controller needs async work, return a future that completes later
         return com.google.common.util.concurrent.Futures.immediateVoidFuture()
@@ -137,7 +132,7 @@ class Player(
     }
 
     override fun handleStop(): ListenableFuture<*> {
-        OutifyApplication.spirc.playerPause() //TODO: Implement playerStop
+        spirc.playerPause() //TODO: Implement playerStop
         return com.google.common.util.concurrent.Futures.immediateVoidFuture()
     }
 

@@ -4,6 +4,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
@@ -12,9 +13,11 @@ import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.model.player.PlayerUIState
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,9 +25,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
-class PlayerViewModel(
-    playbackStateHolder: PlaybackStateHolder
+@HiltViewModel
+class PlayerViewModel @Inject constructor(
+    val spirc: SpircWrapper,
+    private val playbackStateHolder: PlaybackStateHolder,
 ): ViewModel() {
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
@@ -51,9 +57,12 @@ class PlayerViewModel(
      */
     fun onAction(action: PlayerAction) {
         when (action) {
-            PlayerAction.PlayPause -> OutifyApplication.spirc.playerPlayPause()
-            PlayerAction.Next -> OutifyApplication.spirc.playerNext()
-            PlayerAction.Previous -> OutifyApplication.spirc.playerPrevious()
+            PlayerAction.PlayPause -> spirc.playerPlayPause()
+            PlayerAction.Next -> spirc.playerNext()
+            PlayerAction.Previous -> spirc.playerPrevious()
         }
     }
+
+    fun currentTrack(): Flow<Track?> =
+        playbackStateHolder.state.map { it.currentTrack }
 }
