@@ -1,7 +1,5 @@
 use jni::{
-    JNIEnv,
-    objects::{JClass, JObject, JString},
-    sys::{jboolean, jstring},
+    objects::{JClass, JObject, JString}, sys::{jboolean, jlong, jstring}, JNIEnv
 };
 use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, PlayingTrack};
 use librespot_core::SpotifyUri;
@@ -201,6 +199,25 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_transfer(
         }
         Err(e) => {
             warn!("Failed to transfer spirc: {}", e);
+            0
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_seekTo(
+    _env: JNIEnv,
+    _this: JClass,
+    jposition: jlong,
+) -> jboolean {
+    match with_spirc(|runtime| runtime.seek_to(jposition as u32)) {
+        Ok(Ok(_)) => 1,
+        Ok(Err(e)) => {
+            warn!("Failed to seek spirc: {}", e);
+            0
+        }
+        Err(e) => {
+            warn!("Failed to seek spirc: {}", e);
             0
         }
     }

@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.spirc.Spirc
@@ -65,7 +66,7 @@ fun SharedTransitionScope.MiniPlayer(
     val context = LocalContext.current
     val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
     val isPlaying by viewModel.isPlaying().collectAsState(initial = false)
-    val currentTime by viewModel.currentTime().collectAsState(initial = 0L)
+    val currentTime by viewModel.positionMs.collectAsState(initial = 0L)
     val spirc = viewModel.spirc
 
     val totalTime = currentTrack?.duration ?: 0L

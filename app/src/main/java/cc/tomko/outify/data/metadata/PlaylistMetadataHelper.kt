@@ -2,6 +2,7 @@ package cc.tomko.outify.data.metadata
 
 import android.util.Log
 import androidx.room.withTransaction
+import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.data.PlaylistDiff
 import cc.tomko.outify.data.PlaylistItem
@@ -43,8 +44,20 @@ class PlaylistMetadataHelper @Inject constructor(
         val cached = playlistDao.getPlaylistWithItems(playlistId)
 
         val remotePlaylist = runCatching {
-            val raw = nativeMetadata.getNativeMetadata(uri)
-            json.decodeFromString<Playlist>(raw)
+            try {
+                // Retry on rate limit
+                val raw = nativeMetadata.retryOnRateLimit {
+                    nativeMetadata.fetchMetadata(uri)
+                }
+
+                json.decodeFromString<Playlist>(raw.toString())
+            } catch (e: RateLimitException) {
+                Log.w("Metadata", "getPlaylistMetadata: rate-limited for $uri, giving up", e)
+                null
+            } catch (e: Exception) {
+                Log.e("Metadata", "getPlaylistMetadata: failed for $uri", e)
+                null
+            }
         }.getOrNull()
 
         if (remotePlaylist == null && cached == null) return@coroutineScope null

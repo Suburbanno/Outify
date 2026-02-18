@@ -2,6 +2,9 @@ package cc.tomko.outify.ui.screens
 
 import android.os.SystemClock
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +24,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Explicit
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.Shuffle
 import androidx.compose.material.icons.outlined.SkipNext
 import androidx.compose.material.icons.outlined.SkipPrevious
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -28,14 +33,17 @@ import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -51,13 +60,17 @@ import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.supervisorScope
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -68,7 +81,7 @@ fun SharedTransitionScope.PlayerScreen(
 
     val uiState by viewModel.uiState.collectAsState()
     val artworkUrl = uiState.albumArt?.let { ALBUM_COVER_URL + it }
-    println(artworkUrl)
+    val positionMs by viewModel.positionMs.collectAsState()
 
     val imageSize = 400.dp
     val imageSizePx = with(LocalDensity.current) { imageSize.roundToPx() }
@@ -147,9 +160,11 @@ fun SharedTransitionScope.PlayerScreen(
             // Time seeker
             TrackProgressBar(
                 durationMs = uiState.totalLengthMs,
-                positionMs = uiState.positionMs,
-                lastSyncMs = uiState.lastUpdateTime,
+                positionMs = positionMs,
                 isPlaying = uiState.isPlaying,
+                onSeek = { position ->
+                    viewModel.onAction(PlayerAction.SeekTo(position))
+                }
             )
 
             Spacer(Modifier.height(32.dp))
@@ -159,6 +174,8 @@ fun SharedTransitionScope.PlayerScreen(
                 onPlayPause = { viewModel.onAction(PlayerAction.PlayPause) },
                 onNextTrack = { viewModel.onAction(PlayerAction.Next) },
                 onPreviousTrack = { viewModel.onAction(PlayerAction.Previous) },
+                onShuffleChange = {},
+                onRepeatMode = {},
             )
         }
     }
@@ -168,57 +185,48 @@ fun SharedTransitionScope.PlayerScreen(
 fun TrackProgressBar(
     durationMs: Long,
     positionMs: Long,
-    lastSyncMs: Long,
     isPlaying: Boolean,
     onSeek: (Long) -> Unit = {}
 ) {
-    var displayedPosition by remember { mutableLongStateOf(positionMs.coerceIn(0L, durationMs)) }
     var isDragging by remember { mutableStateOf(false) }
+    var sliderValue by remember { mutableFloatStateOf(0f) }
 
-    LaunchedEffect(positionMs, lastSyncMs, isPlaying) {
-        if (!isDragging) {
-            displayedPosition = if (isPlaying) {
-                val now = SystemClock.elapsedRealtime()
-                val played = positionMs + (now - lastSyncMs)
-                played.coerceIn(0L, durationMs)
-            } else {
-                positionMs.coerceIn(0L, durationMs)
-            }
+    LaunchedEffect(positionMs, durationMs, isDragging) {
+        if (!isDragging && durationMs > 0) {
+            sliderValue = (positionMs.toFloat() / durationMs.toFloat())
+                .coerceIn(0f, 1f)
         }
     }
 
-    LaunchedEffect(isPlaying, isDragging) {
-        if (isPlaying && !isDragging) {
-            while (true) {
-                val now = SystemClock.elapsedRealtime()
-                displayedPosition = (positionMs + (now - lastSyncMs)).coerceIn(0L, durationMs)
-                delay(250L)
-            }
-        }
-    }
+    val displayedPosition = (sliderValue * durationMs)
+        .toLong()
+        .coerceIn(0L, durationMs)
 
-    val durationSec = (durationMs / 1000f).coerceAtLeast(1f)
-    val valueSec = displayedPosition / 1000f
-
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
         Text(
             text = "${formatTime(displayedPosition)} / ${formatTime(durationMs)}",
             style = MaterialTheme.typography.bodyMedium
         )
 
-        Slider(
-            value = valueSec,
-            onValueChange = { newValueSec ->
+        WavyMusicSlider(
+            value = sliderValue,
+            onValueChange = { newValue ->
                 isDragging = true
-                displayedPosition = (newValueSec * 1000f).toLong().coerceIn(0L, durationMs)
+                sliderValue = newValue.coerceIn(0f, 1f)
             },
             onValueChangeFinished = {
-                onSeek(displayedPosition)
-                // TODO: Send seek to spotify
+                val newPositionMs =
+                    (sliderValue * durationMs).toLong()
+                        .coerceIn(0L, durationMs)
+
+                onSeek(newPositionMs)
                 isDragging = false
             },
-            valueRange = 0f..durationSec,
-            modifier = Modifier.fillMaxWidth()
+            isPlaying = isPlaying
         )
     }
 }
@@ -230,35 +238,66 @@ private fun formatTime(ms: Long): String {
     return "%02d:%02d".format(minutes, seconds)
 }
 
-
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun PlaybackControls(
     isPlaying: Boolean,
     onPlayPause: () -> Unit,
     onNextTrack: () -> Unit,
     onPreviousTrack: () -> Unit,
+    onShuffleChange: () -> Unit,
+    onRepeatMode: () -> Unit,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(24.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Shuffle button
+        IconButton(
+            onClick = onShuffleChange,
+            modifier = Modifier.size(42.dp)
+        ) {
+            Icon(Icons.Outlined.Shuffle, contentDescription = "Shuffle mode")
+        }
+
         // Previous button
-        ExpressiveFloatingActionButton(
-            icon = Icons.Outlined.SkipPrevious,
-            checked = true,
-            checkedColor = MaterialTheme.colorScheme.secondaryContainer,
-            uncheckedColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            onClick = {
-                onPreviousTrack()
-            }
-        )
+        IconButton(
+            onClick = onPreviousTrack,
+            modifier = Modifier.size(42.dp)
+        ) {
+            Icon(Icons.Outlined.SkipPrevious, contentDescription = "Previous track")
+        }
 
         // Play/Pause button
         val icon = if (isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow
+        var rotated by remember { mutableStateOf(false) }
+        val rotation by animateFloatAsState(
+            targetValue = if (rotated) 20f else 0f,
+            animationSpec = tween(
+                durationMillis = 150,
+                easing = FastOutSlowInEasing
+            ),
+            label = "playButtonRotation"
+        )
+
+        LaunchedEffect(rotated) {
+            if (rotated) {
+                delay(150)
+                rotated = false
+            }
+        }
+
         FilledIconButton(
-            onClick = { onPlayPause() },
-            shape = CircleShape,
-            modifier = Modifier.size(96.dp),
+            onClick = {
+                rotated = true
+                onPlayPause()
+            },
+            shape = MaterialShapes.Cookie9Sided.toShape(),
+            modifier = Modifier
+                .size(96.dp)
+                .graphicsLayer {
+                    rotationZ = rotation
+                },
             colors = IconButtonDefaults.filledIconButtonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
@@ -267,51 +306,26 @@ fun PlaybackControls(
             Icon(
                 imageVector = icon,
                 contentDescription = if (isPlaying) "Pause" else "Play",
-                modifier = Modifier.padding(12.dp).size(42.dp)
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(42.dp)
             )
         }
 
-        // Skip
-        ExpressiveFloatingActionButton(
-            icon = Icons.Outlined.SkipNext,
-            checked = true,
-            checkedColor = MaterialTheme.colorScheme.secondaryContainer,
-            uncheckedColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            onClick = {
-                onNextTrack()
-            },
-        )
-    }
-}
+        // Next track
+        IconButton(
+            onClick = onNextTrack,
+            modifier = Modifier.size(42.dp)
+        ) {
+            Icon(Icons.Outlined.SkipNext, contentDescription = "Next track")
+        }
 
-@Composable
-fun RowScope.ExpressiveFloatingActionButton(
-    icon: ImageVector,
-    checked: Boolean,
-    checkedColor: Color,
-    uncheckedColor: Color,
-    onClick: () -> Unit,
-) {
-    var shapeSelected by remember { mutableStateOf(false) }
-
-    val cornerRadius = if (shapeSelected) 6.dp else 16.dp
-
-    val iconSize = 70.dp
-    IconButton(
-        modifier = Modifier
-            .padding(4.dp)
-            .weight(.75f)
-            .height(iconSize),
-        colors = IconButtonDefaults.filledIconButtonColors(
-            containerColor = if (shapeSelected || checked) checkedColor else uncheckedColor,
-            contentColor = if (shapeSelected || checked) uncheckedColor else checkedColor,
-        ),
-        shape = MaterialTheme.shapes.large.copy(CornerSize(cornerRadius)),
-        onClick = onClick,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-        )
+        // Repeat mode
+        IconButton(
+            onClick = onRepeatMode,
+            modifier = Modifier.size(42.dp)
+        ) {
+            Icon(Icons.Outlined.Repeat, contentDescription = "Repeat mode")
+        }
     }
 }

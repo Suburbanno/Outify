@@ -2,6 +2,7 @@ package cc.tomko.outify.data.metadata
 
 import android.util.Log
 import androidx.room.withTransaction
+import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.database.album.AlbumArtistEntity
 import cc.tomko.outify.data.database.AlbumEntity
@@ -190,12 +191,18 @@ class TrackMetadataHelper @Inject constructor(
                 val deferred = chunk.map { uri ->
                     async {
                         try {
-                            val raw = nativeMetadata.getNativeMetadata(uri)
-                            val t = json.decodeFromString<Track>(raw)
-                            println(raw)
+                            // Retry on rate limit
+                            val raw = nativeMetadata.retryOnRateLimit {
+                                nativeMetadata.fetchMetadata(uri)
+                            }
+
+                            val t = json.decodeFromString<Track>(raw.toString())
                             uri to t
+                        } catch (e: RateLimitException) {
+                            Log.w("Metadata", "fetchTracks: rate-limited for $uri, giving up", e)
+                            null
                         } catch (e: Exception) {
-                            Log.e("Metadata", "fetchMissingTracks: failed to fetch: " + uri, e)
+                            Log.e("Metadata", "fetchTracks: failed for $uri", e)
                             null
                         }
                     }

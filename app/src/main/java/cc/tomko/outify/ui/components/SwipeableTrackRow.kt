@@ -20,12 +20,14 @@ import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.TrackRow
 import cc.tomko.outify.ui.components.navigation.Route
+import cc.tomko.outify.utils.SharedElementKey
 
 @Composable
 fun SharedTransitionScope.SwipeableTrackRow(
     track: Track,
     modifier: Modifier = Modifier,
     currentTrack: Track? = null,
+    isTransitioning: Boolean = false,
     onRowClick: (() -> Unit)? = null,
     onRowLongClick: (() -> Unit)? = null,
     onArtworkClick: (() -> Unit)? = null,
@@ -75,6 +77,8 @@ fun SharedTransitionScope.SwipeableTrackRow(
             onArtworkClick = onArtworkClick,
             onTitleClick = onTitleClick,
             onArtistClick = onArtistClick,
+            sharedTransitionKey = if (isTransitioning)
+                "${SharedElementKey.ALBUM_ARTWORK}_${track.uri}" else null
         )
     }
 }

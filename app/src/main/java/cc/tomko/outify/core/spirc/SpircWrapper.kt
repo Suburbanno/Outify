@@ -8,14 +8,18 @@ import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.services.MusicService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 @Singleton
 class SpircWrapper @Inject constructor(
-    @ApplicationContext val context: Context
+    @ApplicationContext val context: Context,
+    private val playbackStateHolder: PlaybackStateHolder,
 ){
     @OptIn(UnstableApi::class)
     private fun ensureServiceRunning() {
@@ -58,6 +62,17 @@ class SpircWrapper @Inject constructor(
      */
     fun transfer(): Boolean {
         return Spirc.transfer()
+    }
+
+    /**
+     * Seeks the current track to given position
+     * @return `true` if success
+     */
+    suspend fun seekTo(positionMs: Long): Boolean {
+        // Assuming it went successfully - pre-updating the position
+        playbackStateHolder.seekTo(positionMs.toDuration(DurationUnit.MILLISECONDS))
+
+        return Spirc.seekTo(positionMs)
     }
 
     /**

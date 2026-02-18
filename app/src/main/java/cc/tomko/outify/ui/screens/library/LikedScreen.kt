@@ -23,7 +23,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -96,6 +98,7 @@ fun SharedTransitionScope.LikedScreen(
     val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
     val totalCount by viewModel.totalCount.collectAsState()
 
+    var transitioningTrackUri by remember { mutableStateOf<String?>(null) }
     LazyColumn(state = listState) {
         item {
             Spacer(Modifier.height(24.dp))
@@ -115,17 +118,21 @@ fun SharedTransitionScope.LikedScreen(
             SwipeableTrackRow(
                 track,
                 currentTrack = currentTrack,
+                isTransitioning = transitioningTrackUri == track.uri,
                 onRowClick = remember(track.uri) {
                     {
+                        transitioningTrackUri = track.uri
                         spirc.load(null,track.uri)
                     }
                 },
                 onRowLongClick = {
                 },
                 onArtworkClick = {
+                    transitioningTrackUri = track.uri
                     backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
                 },
                 onArtistClick = {
+                    transitioningTrackUri = track.uri
                     backStack.add(Route.ArtistScreen(track.artists.first().uri))
                 },
             )

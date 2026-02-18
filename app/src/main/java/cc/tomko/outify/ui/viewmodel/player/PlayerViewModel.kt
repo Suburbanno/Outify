@@ -17,6 +17,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,6 +26,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,6 +37,24 @@ class PlayerViewModel @Inject constructor(
 ): ViewModel() {
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
+
+    private val _positionMs = MutableStateFlow(playbackStateHolder.estimatePosition().inWholeMilliseconds)
+    val positionMs = _positionMs.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            while (isActive) {
+                _positionMs.value = playbackStateHolder.estimatePosition().inWholeMilliseconds
+                delay(250L)
+            }
+        }
+
+        viewModelScope.launch {
+            playbackStateHolder.state.collect { playback ->
+                _state.value = playback
+            }
+        }
+    }
 
     val uiState: StateFlow<PlayerUIState> =
         playbackStateHolder.state
@@ -60,6 +81,11 @@ class PlayerViewModel @Inject constructor(
             PlayerAction.PlayPause -> spirc.playerPlayPause()
             PlayerAction.Next -> spirc.playerNext()
             PlayerAction.Previous -> spirc.playerPrevious()
+            is PlayerAction.SeekTo -> {
+                viewModelScope.launch {
+                    spirc.seekTo(action.position)
+                }
+            }
         }
     }
 

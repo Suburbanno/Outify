@@ -139,6 +139,10 @@ impl SpircRuntime {
         self.spirc.transfer(Some(request))
     }
 
+    pub fn seek_to(&self, position: u32) -> Result<(), librespot_core::Error> {
+        self.spirc.set_position_ms(position)
+    }
+
     pub fn shutdown(&self) {
         self.spirc.shutdown();
     }

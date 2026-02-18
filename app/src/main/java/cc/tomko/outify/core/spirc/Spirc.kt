@@ -54,6 +54,13 @@ object Spirc {
     external fun transfer(): Boolean
 
     /**
+     * Seeks the current track to given position
+     * @return `true` if success
+     */
+    @JvmStatic
+    external fun seekTo(positionMs: Long): Boolean
+
+    /**
      * Tells the player to start playing
      */
     @JvmStatic

@@ -2,6 +2,7 @@ package cc.tomko.outify.playback
 
 import android.app.Application
 import androidx.core.net.toUri
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackParameters
@@ -88,7 +89,9 @@ class Player @Inject constructor(
             listOf(
                 MediaItemData.Builder(track.id)
                     .setMediaItem(track.toMediaItem())
-                    .setDurationUs(track.duration * 1000)
+                    .setDurationUs(
+                        if (track.duration > 0) track.duration * 1000L else C.TIME_UNSET
+                    )
                     .setDefaultPositionUs(0)
                     .setIsSeekable(true)
                     .build()
@@ -128,6 +131,19 @@ class Player @Inject constructor(
 
     override fun handleSeek(mediaItemIndex: Int, positionMs: Long, seekCommand: Int): ListenableFuture<*> {
 //        spirc.seekTo(mediaItemIndex, positionMs)
+        when (seekCommand) {
+            COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM -> spirc.playerPrevious()
+            COMMAND_SEEK_TO_PREVIOUS -> spirc.playerPrevious()
+
+            COMMAND_SEEK_TO_NEXT_MEDIA_ITEM -> spirc.playerNext()
+            COMMAND_SEEK_TO_NEXT -> spirc.playerNext()
+
+            COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM -> {
+                scope.launch {
+                    spirc.seekTo(positionMs)
+                }
+            }
+        }
         return com.google.common.util.concurrent.Futures.immediateVoidFuture()
     }
 
@@ -165,6 +181,7 @@ class Player @Inject constructor(
     private fun determineCommands(hasMedia: Boolean): Player.Commands {
         val builder = Player.Commands.Builder()
             .add(COMMAND_PLAY_PAUSE)
+            .add(COMMAND_GET_CURRENT_MEDIA_ITEM)
 
         if (hasMedia) {
             builder.addAll(

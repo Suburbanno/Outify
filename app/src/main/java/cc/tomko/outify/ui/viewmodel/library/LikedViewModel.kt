@@ -4,18 +4,13 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.Spirc.SpircWrapper
-import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.database.toDomain
 import cc.tomko.outify.playback.PlaybackStateHolder
-import cc.tomko.outify.ui.repository.LibraryRepository
 import cc.tomko.outify.ui.repository.LikedRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -25,7 +20,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
-import kotlin.math.min
 
 @HiltViewModel
 class LikedViewModel @Inject constructor(

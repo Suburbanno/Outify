@@ -32,6 +32,7 @@ import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.toBitmap
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -45,10 +46,13 @@ import javax.inject.Singleton
 
 @UnstableApi
 @Singleton
-class MusicService @Inject constructor(
-    private val player: Player,
-    private val playbackStateHolder: PlaybackStateHolder
-) : MediaSessionService() {
+@AndroidEntryPoint
+class MusicService @Inject constructor() : MediaSessionService() {
+    @Inject
+    lateinit var player: Player
+    @Inject
+    lateinit var playbackStateHolder: PlaybackStateHolder
+
     private val CHANNEL_ID = "outify_playback"
     private val notificationId: Int
         get() = CHANNEL_ID.hashCode()
