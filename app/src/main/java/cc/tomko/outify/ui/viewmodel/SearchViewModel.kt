@@ -1,19 +1,25 @@
 package cc.tomko.outify.ui.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.room.util.query
-import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.ALBUM_COVER_URL
+import cc.tomko.outify.R
 import cc.tomko.outify.core.Spirc.SpircWrapper
+import cc.tomko.outify.data.Album
+import cc.tomko.outify.data.Artist
+import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.PlaybackStateHolder
-import cc.tomko.outify.ui.model.search.SearchResult
+import cc.tomko.outify.ui.model.search.SearchResultType
 import cc.tomko.outify.ui.repository.SearchRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,25 +29,24 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.emptyList
+import kotlin.collections.mapNotNull
 
 @OptIn(FlowPreview::class)
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    metadata: Metadata,
+    val metadata: Metadata,
     val spirc: SpircWrapper,
     private val repository: SearchRepository,
     private val playbackStateHolder: PlaybackStateHolder,
 ): ViewModel() {
     private val queryFlow = MutableStateFlow("")
 
-    private val _results = MutableStateFlow<List<SearchResult>>(emptyList())
-    val results: StateFlow<List<SearchResult>> = _results
+    private val _results = MutableStateFlow<List<SearchUiModel>>(emptyList())
+    val results: StateFlow<List<SearchUiModel>> = _results
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
-
-    private val _trackMap = MutableStateFlow<Map<String, Track>>(emptyMap())
-    val trackMap: StateFlow<Map<String, Track>> = _trackMap
 
     fun currentTrack(): Flow<Track?> =
         playbackStateHolder.state.map { it.currentTrack }
@@ -52,29 +57,156 @@ class SearchViewModel @Inject constructor(
                 .debounce(500)
                 .distinctUntilChanged()
                 .collectLatest { query ->
-                    if (query.isEmpty()) {
+
+                    if (query.isBlank()) {
                         _results.value = emptyList()
-                        _trackMap.value = emptyMap()
                         return@collectLatest
                     }
 
                     _isLoading.value = true
-                    try {
-                        val res = repository.search(query)
-                        _results.value = res
 
-                        val trackUris = res.filter { it.uri.startsWith("spotify:track:") }.map { it.uri }
-                        if (trackUris.isNotEmpty()) {
-                            val tracks = try {
-                                metadata.getTrackMetadata(trackUris)
-                            } catch (e: Exception) {
-                                emptyList()
+                    try {
+                        val searchResults = repository.search(query)
+
+                        val grouped = searchResults.groupBy { it.type }
+
+                        coroutineScope {
+
+                            val trackDeferred = async {
+                                grouped[SearchResultType.TRACK]
+                                    ?.map { it.uri }
+                                    ?.let { metadata.getTrackMetadata(it).associateBy { t -> t.uri } }
+                                    ?: emptyMap<String, Track>()
                             }
-                            _trackMap.value = tracks.associateBy { it.uri }
-                        } else {
-                            _trackMap.value = emptyMap()
+
+                            val artistDeferred = async {
+                                searchResults
+                                    .filter { it.type == SearchResultType.ARTIST }
+                                    .mapNotNull { result ->
+                                        runCatching {
+                                            metadata.getArtistMetadata(result.uri)
+                                        }.getOrNull()?.let {
+                                            result.uri to it
+                                        }
+                                    }.toMap()
+                            }
+
+                            val albumDeferred = async {
+                                searchResults
+                                    .filter { it.type == SearchResultType.ALBUM }
+                                    .mapNotNull { result ->
+                                        runCatching {
+                                            metadata.getAlbumMetadata(result.uri)
+                                        }.getOrNull()?.let {
+                                            result.uri to it
+                                        }
+                                    }.toMap()
+                            }
+
+                            val playlistDeferred = async {
+                                searchResults
+                                    .filter { it.type == SearchResultType.PLAYLIST }
+                                    .mapNotNull { result ->
+                                        runCatching {
+                                            metadata.getPlaylistMetadata(result.uri)
+                                        }.getOrNull()?.let {
+                                            result.uri to it
+                                        }
+                                    }.toMap()
+                            }
+
+//                            val showDeferred = async {
+//                                searchResults
+//                                    .filter { it.type == SearchResultType.SHOW }
+//                                    .mapNotNull { result ->
+//                                        runCatching {
+//                                            metadata.getShowMetadata(result.uri)
+//                                        }.getOrNull()?.let {
+//                                            result.uri to it
+//                                        }
+//                                    }.toMap()
+//                            }
+//
+//                            val episodeDeferred = async {
+//                                searchResults
+//                                    .filter { it.type == SearchResultType.EPISODE }
+//                                    .mapNotNull { result ->
+//                                        runCatching {
+//                                            metadata.getEpisodeMetadata(result.uri)
+//                                        }.getOrNull()?.let {
+//                                            result.uri to it
+//                                        }
+//                                    }.toMap()
+//                            }
+
+                            val sectionedList = mutableListOf<SearchUiModel>()
+
+
+                            fun <T> addSection(
+                                type: SearchResultType,
+                                @StringRes titleRes: Int,
+                                map: Map<String, T>,
+                                mapper: (String, T) -> SearchUiModel
+                            ) {
+                                val items = grouped[type] ?: return
+                                if (items.isEmpty()) return
+
+                                val mapped = items.mapNotNull { result ->
+                                    map[result.uri]?.let { data ->
+                                        mapper(result.uri, data)
+                                    }
+                                }
+
+                                if (mapped.isNotEmpty()) {
+                                    sectionedList.add(SearchUiModel.SectionHeader(titleRes))
+                                    sectionedList.addAll(mapped)
+                                }
+                            }
+
+                            coroutineScope {
+                                val trackMap: Map<String, Track> = trackDeferred.await()
+                                val artistMap: Map<String, Artist> = artistDeferred.await()
+                                val albumMap: Map<String, Album> = albumDeferred.await()
+                                val playlistMap: Map<String, Playlist> = playlistDeferred.await()
+
+                                addSection(
+                                    type = SearchResultType.TRACK,
+                                    titleRes = R.string.search_section_tracks,
+                                    map = trackMap
+                                ) { uri, track ->
+                                    SearchUiModel.TrackItem(uri, track)
+                                }
+
+                                addSection(
+                                    type = SearchResultType.ARTIST,
+                                    titleRes = R.string.search_section_artists,
+                                    map = artistMap
+                                ) { uri, artist ->
+                                    SearchUiModel.ArtistItem(uri, artist)
+                                }
+
+                                addSection(
+                                    type = SearchResultType.ALBUM,
+                                    titleRes = R.string.search_section_albums,
+                                    map = albumMap
+                                ) { uri, album ->
+                                    SearchUiModel.AlbumItem(uri, album)
+                                }
+
+                                addSection(
+                                    type = SearchResultType.PLAYLIST,
+                                    titleRes = R.string.search_section_playlists,
+                                    map = playlistMap
+                                ) { uri, playlist ->
+                                    SearchUiModel.PlaylistItem(uri, playlist)
+                                }
+                            }
+
+                            _results.value = sectionedList
                         }
 
+                    } catch (e: Exception) {
+                        _results.value = emptyList()
                     } finally {
                         _isLoading.value = false
                     }
@@ -85,4 +217,56 @@ class SearchViewModel @Inject constructor(
     fun onQueryChange(query: String){
         queryFlow.value = query
     }
+
+    suspend fun getArtworkUrl(playlist: Playlist): String {
+        if(playlist.attributes.pictureId.isNotEmpty()) {
+            return ALBUM_COVER_URL + playlist.attributes.pictureId
+        }
+
+        // Getting first track
+        val trackUri: String = playlist.contents.firstOrNull()?.uri ?: ""
+        val track = metadata.getTrackMetadata(listOf(trackUri)).firstOrNull()
+
+        return (ALBUM_COVER_URL + track?.album?.getCover(CoverSize.MEDIUM)?.uri)
+    }
+}
+
+sealed class SearchUiModel {
+    abstract val uri: String
+
+    data class SectionHeader(
+        @StringRes val titleRes: Int
+    ) : SearchUiModel() {
+        override val uri: String = "header_$titleRes"
+    }
+
+    data class TrackItem(
+        override val uri: String,
+        val track: Track
+    ) : SearchUiModel()
+
+    data class ArtistItem(
+        override val uri: String,
+        val artist: Artist
+    ) : SearchUiModel()
+
+    data class AlbumItem(
+        override val uri: String,
+        val album: Album
+    ) : SearchUiModel()
+
+    data class PlaylistItem(
+        override val uri: String,
+        val playlist: Playlist
+    ) : SearchUiModel()
+
+//    data class ShowItem(
+//        override val uri: String,
+//        val show: Show
+//    ) : SearchUiModel()
+//
+//    data class EpisodeItem(
+//        override val uri: String,
+//        val episode: Episode
+//    ) : SearchUiModel()
 }

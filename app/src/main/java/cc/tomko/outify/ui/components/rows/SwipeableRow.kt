@@ -1,4 +1,4 @@
-package cc.tomko.outify.ui.components
+package cc.tomko.outify.ui.components.rows
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -30,7 +31,7 @@ data class SwipeGesture(
     val icon: @Composable BoxScope.() -> Unit,
     val onTrigger: () -> Unit,
     val dismissOnTrigger: Boolean = false,
-    val backgroundColor: androidx.compose.ui.graphics.Color? = null
+    val backgroundColor: Color? = null
 ) {
     init {
         require(thresholdFraction in 0f..1f) { "thresholdFraction must be between 0 and 1" }

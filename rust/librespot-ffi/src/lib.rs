@@ -8,6 +8,7 @@ pub mod metadata;
 pub mod oauth;
 pub mod session;
 pub mod spclient;
+pub mod spotify;
 
 mod playback;
 mod profile;
@@ -32,10 +33,9 @@ use tokio::runtime::Runtime;
 
 static TOKIO_RUNTIME: OnceCell<Runtime> = OnceCell::new();
 static JVM: OnceCell<JavaVM> = OnceCell::new();
+
 static FILES_DIR: OnceCell<PathBuf> = OnceCell::new();
 static CACHE_DIR: OnceCell<PathBuf> = OnceCell::new();
-
-static CONNECTING: AtomicBool = AtomicBool::new(false);
 
 #[unsafe(no_mangle)]
 pub extern "system" fn JNI_OnLoad(vm: JavaVM, _reserved: *mut std::os::raw::c_void) -> jint {
@@ -81,4 +81,6 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(
 
     session::init_session_container();
     spirc::init_spirc_container();
+
+    spotify::client::init_client();
 }

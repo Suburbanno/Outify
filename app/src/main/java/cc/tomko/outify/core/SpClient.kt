@@ -5,7 +5,7 @@ import javax.inject.Singleton
 
 @Singleton
 class SpClient @Inject constructor() {
-    external fun search(query: String, pageOffset: Int, pages: Int): String
+    external fun search(query: String, type: String, offset: Int = -1, pages: Int = -1): Array<String>
 
     external fun getUserCollection(query: String? = null): String
 

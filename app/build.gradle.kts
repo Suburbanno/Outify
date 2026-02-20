@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.ApplicationExtension
+
 plugins {
     id("eclipse")
     id("com.google.devtools.ksp") version "2.3.4"
@@ -9,13 +11,9 @@ plugins {
     kotlin("plugin.serialization") version "2.3.0"
 }
 
-android {
-    namespace = "cc.tomko.outify"
+extensions.configure<ApplicationExtension>("android") {
     compileSdk = 36
-
-    buildFeatures {
-        compose = true
-    }
+    namespace = "cc.tomko.outify"
 
     defaultConfig {
         applicationId = "cc.tomko.outify"
@@ -23,8 +21,12 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
+    }
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+        }
     }
 
     buildTypes {
@@ -61,6 +63,9 @@ dependencies {
             because("Unify annotations artifact to avoid duplicate classes")
         }
     }
+
+//    // Rustls
+//    implementation(libs.rustls.platform.verifier)
 
     implementation(libs.appcompat)
     implementation(libs.activity)

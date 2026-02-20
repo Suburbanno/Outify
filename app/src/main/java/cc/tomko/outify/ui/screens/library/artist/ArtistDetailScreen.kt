@@ -80,13 +80,11 @@ import androidx.compose.ui.util.lerp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
-import cc.tomko.outify.ui.components.SwipeableTrackRow
-import cc.tomko.outify.ui.components.TrackRow
+import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
 import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
 import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
 import cc.tomko.outify.utils.SharedElementKey

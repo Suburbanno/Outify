@@ -7,4 +7,11 @@
     <string name="audio_playback_attribution">This app plays audio</string>
     <string name="media_notificationn_channel">Media playback</string>
     <string name="media_notification_channel_description">Controls for audio playback</string>
+
+    <string name="search_section_tracks">Tracks</string>
+    <string name="search_section_artists">Artists</string>
+    <string name="search_section_albums">Albums</string>
+    <string name="search_section_playlists">Playlists</string>
+    <string name="search_section_episodes">Episodes</string>
+    <string name="search_section_shows">Shows</string>
 </resources>

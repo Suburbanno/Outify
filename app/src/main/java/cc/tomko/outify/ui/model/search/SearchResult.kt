@@ -5,9 +5,9 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class SearchResult(
     val uri: String,
-    val resultType: SearchResultType
+    val type: SearchResultType
 )
 
 enum class SearchResultType {
-    TRACK, ARTIST, EPISODE, PLAYLIST, RADIO
+    TRACK, ARTIST, EPISODE, PLAYLIST, ALBUM, SHOW
 }

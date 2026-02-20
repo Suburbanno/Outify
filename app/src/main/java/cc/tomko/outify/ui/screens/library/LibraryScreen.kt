@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
-import cc.tomko.outify.ui.components.PlaylistRow
+import cc.tomko.outify.ui.components.rows.PlaylistRow
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.viewmodel.library.LibraryUiState
 import cc.tomko.outify.ui.viewmodel.library.LibraryViewModel

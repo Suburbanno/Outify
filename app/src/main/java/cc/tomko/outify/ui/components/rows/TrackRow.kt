@@ -1,4 +1,4 @@
-package cc.tomko.outify.ui.components
+package cc.tomko.outify.ui.components.rows
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -37,18 +38,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 
-enum class PlaylistRowDensity { Compact, Default, Spacious }
+enum class TrackRowDensity { Compact, Default, Spacious }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SharedTransitionScope.PlaylistRow(
-    playlist: Playlist,
+fun SharedTransitionScope.TrackRow(
+    title: String,
+    artist: String,
     artworkUrl: String?,
 
     modifier: Modifier = Modifier,
@@ -66,7 +67,7 @@ fun SharedTransitionScope.PlaylistRow(
 
     contentDescription: String? = null,
 
-    sharedTransitionKey: String? = "${SharedElementKey.PLAYLIST_ARTWORK}_${playlist.uri}",
+    sharedTransitionKey: String? = "${SharedElementKey.ALBUM_ARTWORK}_${artworkUrl}",
     color: Color = MaterialTheme.colorScheme.surfaceVariant,
 ) {
     val context = LocalContext.current
@@ -156,7 +157,7 @@ fun SharedTransitionScope.PlaylistRow(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = playlist.attributes.name,
+                    text = title,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = when(density){
@@ -174,13 +175,13 @@ fun SharedTransitionScope.PlaylistRow(
                                 )
                             } else Modifier
                         )
-                        .testTag("playlistrow.title")
+                        .testTag("trackrow.title")
                 )
 
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
-                    text = playlist.attributes.description,
+                    text = artist,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodySmall,
@@ -193,7 +194,7 @@ fun SharedTransitionScope.PlaylistRow(
                                 )
                             } else Modifier
                         )
-                        .testTag("playlistrow.artist")
+                        .testTag("trackrow.artist")
                 )
             }
 
@@ -208,7 +209,7 @@ fun SharedTransitionScope.PlaylistRow(
                 if (isPlaying) {
                     // Playing indicator
                     Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.PlayArrow,
+                        imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Playing",
                         modifier = Modifier.size(20.dp)
                     )

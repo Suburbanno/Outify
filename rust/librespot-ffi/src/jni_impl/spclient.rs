@@ -8,10 +8,63 @@ use librespot_metadata::{Metadata, Track};
 use oauth2::reqwest;
 use regex::Regex;
 
-use crate::session::with_session;
+use crate::{jni_utils::vec_to_jstring_array, session::with_session, spotify::client::get_client};
 
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_search")]
+pub extern "system" fn spotify_search(
+    mut env: JNIEnv,
+    _class: JClass,
+    query: JString,
+    jtype: JString,
+    offset: jint,
+    limit: jint,
+) -> jobjectArray {
+    let client = get_client();
+
+    let query: String = match env.get_string(&query) {
+        Ok(q) => q.into(),
+        Err(e) => {
+            error!("failed to get query as string: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let jtype: String = match env.get_string(&jtype) {
+        Ok(q) => q.into(),
+        Err(e) => {
+            error!("failed to get jtype as string: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let limit = if limit == -1 { None } else { Some(limit) };
+    let offset = if offset == -1 { None } else { Some(offset) };
+
+    let uris_res = rt.block_on(async { client.search(&query, &jtype, limit, offset).await });
+
+    let uris = match uris_res {
+        Ok(u) => u,
+        Err(e) => {
+            error!("failed to search spotify: {e}");
+            return std::ptr::null_mut();
+        }
+    };
+
+    vec_to_jstring_array(&mut env, uris)
+}
+
+// Searches for tracks using context
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_core_SpClient_search(
+#[deprecated]
+pub extern "system" fn Java_cc_tomko_outify_core_SpClient_searchContext(
     mut env: JNIEnv,
     _class: JClass,
     query: JString,

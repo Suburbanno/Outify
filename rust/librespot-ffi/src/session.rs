@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::RwLock};
+use std::{path::PathBuf, pin::Pin, sync::RwLock};
 
 use crate::{CACHE_DIR, FILES_DIR, TOKIO_RUNTIME};
 use jni::{
@@ -173,4 +173,21 @@ where
         .ok_or_else(|| librespot_core::Error::internal("Session not created"))?;
 
     Ok(f(session))
+}
+
+pub async fn with_session_async<F, R>(f: F) -> Result<R, librespot_core::Error>
+where
+    for<'s> F: FnOnce(&'s librespot_core::Session) -> Pin<Box<dyn Future<Output = R> + 's>>,
+{
+    let container = SESSION
+        .get()
+        .ok_or_else(|| librespot_core::Error::internal("Session container not initialized"))?;
+
+    let guard = container.read().unwrap();
+
+    let session = guard
+        .as_ref()
+        .ok_or_else(|| librespot_core::Error::internal("Session not created"))?;
+
+    Ok(f(session).await)
 }

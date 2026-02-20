@@ -1,25 +1,19 @@
-package cc.tomko.outify.ui.components
+package cc.tomko.outify.ui.components.rows
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.AddToPhotos
-import androidx.compose.material.icons.filled.PlaylistAdd
-import androidx.compose.material.icons.filled.QueuePlayNext
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
-import cc.tomko.outify.ui.components.TrackRow
-import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.utils.SharedElementKey
 
 @Composable

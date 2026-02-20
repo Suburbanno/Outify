@@ -15,9 +15,20 @@ class SearchRepository @Inject constructor(
 
      fun search(query: String): List<SearchResult> {
          val encodedQuery = query.replace(" ", "+")
-         val json_raw = spClient.search(encodedQuery, 0, 3)
-         val uris = json.decodeFromString<List<String>>(json_raw)
+         val uris = spClient.search(encodedQuery, "track,artist,album,playlist")
 
-         return uris.map { SearchResult(it, SearchResultType.TRACK) }
+         return uris.mapNotNull { uri ->
+             val type = when {
+                 uri.startsWith("spotify:track:") -> SearchResultType.TRACK
+                 uri.startsWith("spotify:artist:") -> SearchResultType.ARTIST
+                 uri.startsWith("spotify:album:") -> SearchResultType.ALBUM
+                 uri.startsWith("spotify:playlist:") -> SearchResultType.PLAYLIST
+                 uri.startsWith("spotify:show:") -> SearchResultType.SHOW
+                 uri.startsWith("spotify:episode:") -> SearchResultType.EPISODE
+                 else -> null
+             }
+
+             type?.let { SearchResult(uri, it) }
+         }
      }
 }

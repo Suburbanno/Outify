@@ -1,9 +1,8 @@
-package cc.tomko.outify.ui.components
+package cc.tomko.outify.ui.components.rows
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,20 +15,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -42,18 +41,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.Artist
+import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 
-enum class TrackRowDensity { Compact, Default, Spacious }
-
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun SharedTransitionScope.TrackRow(
-    title: String,
-    artist: String,
+fun SharedTransitionScope.ArtistRow(
+    artist: Artist,
     artworkUrl: String?,
 
     modifier: Modifier = Modifier,
@@ -64,14 +62,10 @@ fun SharedTransitionScope.TrackRow(
 
     // Interaction handlers
     onRowClick: (() -> Unit)? = null,
-    onRowLongClick: (() -> Unit)? = null,
-    onArtworkClick: (() -> Unit)? = null,
-    onTitleClick: (() -> Unit)? = null,
-    onArtistClick: (() -> Unit)? = null,
 
     contentDescription: String? = null,
 
-    sharedTransitionKey: String? = "${SharedElementKey.ALBUM_ARTWORK}_${artworkUrl}",
+    sharedTransitionKey: String? = "${SharedElementKey.ARTIST_COVER}_${artist.uri}",
     color: Color = MaterialTheme.colorScheme.surfaceVariant,
 ) {
     val context = LocalContext.current
@@ -91,12 +85,11 @@ fun SharedTransitionScope.TrackRow(
             .build()
     }
 
-    val combinedModifier = if (onRowClick != null || onRowLongClick != null) {
+    val combinedModifier = if (onRowClick != null ) {
         modifier
             .fillMaxWidth()
             .combinedClickable(
-                onClick = { onRowClick?.invoke() },
-                onLongClick = { onRowLongClick?.invoke() }
+                onClick = { onRowClick.invoke() },
             )
     } else {
         modifier.fillMaxWidth()
@@ -131,7 +124,7 @@ fun SharedTransitionScope.TrackRow(
         ) {
             Surface(
                 color = color,
-                shape = RoundedCornerShape(6.dp),
+                shape = MaterialShapes.Circle.toShape(),
                 modifier = Modifier
                     .padding(start = 16.dp, top = 2.dp, bottom = 2.dp)
                     .size(imageDp)
@@ -141,14 +134,6 @@ fun SharedTransitionScope.TrackRow(
                     imageLoader = imageLoader,
                     contentDescription = "Artwork",
                     modifier = modifierWithSharedBounds
-                        .then(
-                            if (onArtworkClick != null) {
-                                Modifier.combinedClickable(
-                                    onClick = { onArtworkClick() },
-                                    onLongClick = {}
-                                )
-                            } else Modifier
-                        )
                 )
             }
 
@@ -161,7 +146,7 @@ fun SharedTransitionScope.TrackRow(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = title,
+                    text = artist.name,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyLarge.copy(fontSize = when(density){
@@ -171,34 +156,7 @@ fun SharedTransitionScope.TrackRow(
                     }),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .then(
-                            if (onTitleClick != null) {
-                                Modifier.combinedClickable(
-                                    onClick = { onTitleClick() },
-                                    onLongClick = {}
-                                )
-                            } else Modifier
-                        )
-                        .testTag("trackrow.title")
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = artist,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .then(
-                            if (onArtistClick != null) {
-                                Modifier.combinedClickable(
-                                    onClick = { onArtistClick() },
-                                    onLongClick = {}
-                                )
-                            } else Modifier
-                        )
-                        .testTag("trackrow.artist")
+                        .testTag("artistrow.title")
                 )
             }
 
@@ -213,7 +171,7 @@ fun SharedTransitionScope.TrackRow(
                 if (isPlaying) {
                     // Playing indicator
                     Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.PlayArrow,
+                        imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Playing",
                         modifier = Modifier.size(20.dp)
                     )
