@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -40,6 +41,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -71,176 +73,203 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
+import cc.tomko.outify.ui.viewmodel.library.PlaylistUiState
 import cc.tomko.outify.ui.viewmodel.library.PlaylistViewModel
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import kotlinx.coroutines.launch
+import kotlin.collections.mutableListOf
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedTransitionScope.PlaylistScreen(
-    playlistUri: String,
     viewModel: PlaylistViewModel,
     onArtworkClick: (track: Track) -> Unit,
     artistClick: (uri: String) -> Unit,
     onBack: () -> Unit,
 ) {
-    // Observe playlist from DB (helper triggers background refresh)
-    val playlist by viewModel.observePlaylist(playlistUri).collectAsState(initial = null)
-
-    LaunchedEffect(Unit) {
-        viewModel.refreshPlaylist(playlistUri)
-    }
-
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
 
-    if (playlist == null) {
-        // Loading / empty state
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            ContainedLoadingIndicator()
+    val uiState by viewModel.uiState.collectAsState()
+
+    when (uiState) {
+        is PlaylistUiState.Loading -> {
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                ContainedLoadingIndicator()
+            }
         }
-        return
-    }
 
-    // Non-null from here on
-    val playlistVal = playlist!!
-    val tracks = playlistVal.contents
+        is PlaylistUiState.Error -> {
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = (uiState as PlaylistUiState.Error).error,
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
 
-    val lazyList = rememberLazyListState()
+        is PlaylistUiState.Success -> {
+            val playlist = (uiState as PlaylistUiState.Success).playlist!!
+            val tracks = playlist.contents
 
-    // Prefetch visible + ahead items
-    LaunchedEffect(lazyList, tracks) {
-        snapshotFlow { lazyList.layoutInfo.visibleItemsInfo }
-            .collect { visibleItems ->
-                if (visibleItems.isEmpty()) return@collect
+            val lazyList = rememberLazyListState()
+            val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+            val spirc = viewModel.spirc
 
-                val firstVisible = visibleItems.first().index
-                val lastVisible = visibleItems.last().index
+            val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            val minTopBarHeight = 64.dp + statusBarHeight
+            val maxTopBarHeight = 300.dp
 
-                val prefetchUntil = (lastVisible + 10).coerceAtMost(tracks.lastIndex)
-                val urisToLoad = (firstVisible..prefetchUntil).mapNotNull { idx ->
-                    tracks.getOrNull(idx)?.uri
-                }
+            val minTopBarHeightPx = with(density) { minTopBarHeight.toPx() }
+            val maxTopBarHeightPx = with(density) { maxTopBarHeight.toPx() }
 
-                if (urisToLoad.isNotEmpty()) {
-                    viewModel.loadMetadataIfNeeded(urisToLoad)
+            val topBarHeight = remember { Animatable(maxTopBarHeightPx) }
+            var collapseFraction by remember { mutableFloatStateOf(0f) }
+
+            LaunchedEffect(topBarHeight.value) {
+                collapseFraction = 1f - ((topBarHeight.value - minTopBarHeightPx) / (maxTopBarHeightPx - minTopBarHeightPx)).coerceIn(0f, 1f)
+            }
+
+            var artworkUrl by remember { mutableStateOf("") }
+            var authors by remember { mutableStateOf(emptyList<String>()) }
+            LaunchedEffect(playlist.uri) {
+                artworkUrl = viewModel.getArtworkUrl(playlist)
+                authors = viewModel.getAuthors(playlist)
+            }
+
+            val nestedScroll = remember {
+                object : NestedScrollConnection {
+                    override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                        val delta = available.y
+                        val isScrollingDown = delta < 0
+
+                        if(!isScrollingDown && (lazyList.firstVisibleItemIndex > 0 || lazyList.firstVisibleItemScrollOffset > 0)) {
+                            return Offset.Zero
+                        }
+
+                        val previousHeight = topBarHeight.value
+                        val height = (previousHeight + delta).coerceIn(minTopBarHeightPx, maxTopBarHeightPx)
+                        val consumed = height - previousHeight
+
+                        if(consumed.roundToInt() != 0){
+                            coroutineScope.launch {
+                                topBarHeight.snapTo(height)
+                            }
+                        }
+
+                        val canConsumeScroll = !(isScrollingDown && height == minTopBarHeightPx)
+                        return if (canConsumeScroll) Offset(0f, consumed) else Offset.Zero
+                    }
                 }
             }
-    }
 
-    val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
-    val spirc = viewModel.spirc
+            LaunchedEffect(lazyList.isScrollInProgress) {
+                if(!lazyList.isScrollInProgress) {
+                    val shouldExpand = topBarHeight.value > (minTopBarHeightPx + maxTopBarHeightPx) / 2
+                    val canExpand = lazyList.firstVisibleItemIndex == 0 && lazyList.firstVisibleItemScrollOffset == 0
 
-    val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val minTopBarHeight = 64.dp + statusBarHeight
-    val maxTopBarHeight = 300.dp
+                    val targetValue = if (shouldExpand && canExpand) maxTopBarHeightPx else minTopBarHeightPx
 
-    val minTopBarHeightPx = with(density) { minTopBarHeight.toPx() }
-    val maxTopBarHeightPx = with(density) { maxTopBarHeight.toPx() }
-
-    val topBarHeight = remember { Animatable(maxTopBarHeightPx) }
-    var collapseFraction by remember { mutableFloatStateOf(0f) }
-
-    LaunchedEffect(topBarHeight.value) {
-        collapseFraction = 1f - ((topBarHeight.value - minTopBarHeightPx) / (maxTopBarHeightPx - minTopBarHeightPx)).coerceIn(0f, 1f)
-    }
-
-    val nestedScroll = remember {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                val delta = available.y
-                val isScrollingDown = delta < 0
-
-                if(!isScrollingDown && (lazyList.firstVisibleItemIndex > 0 || lazyList.firstVisibleItemScrollOffset > 0)) {
-                    return Offset.Zero
+                    if (topBarHeight.value != targetValue) {
+                        coroutineScope.launch {
+                            topBarHeight.animateTo(
+                                targetValue,
+                                spring(stiffness = Spring.StiffnessMedium)
+                            )
+                        }
+                    }
                 }
+            }
 
-                val previousHeight = topBarHeight.value
-                val height = (previousHeight + delta).coerceIn(minTopBarHeightPx, maxTopBarHeightPx)
-                val consumed = height - previousHeight
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color = MaterialTheme.colorScheme.surface)
+                    .nestedScroll(nestedScroll)
+            ) {
+                val currentTopBarHeightDp = with(density) { topBarHeight.value.toDp() }
 
-                if(consumed.roundToInt() != 0){
-                    coroutineScope.launch {
-                        topBarHeight.snapTo(height)
+                LazyColumn(
+                    state = lazyList,
+                    contentPadding = PaddingValues(
+                        top = currentTopBarHeightDp,
+                        start = 16.dp,
+                        end = if ((lazyList.canScrollForward || lazyList.canScrollBackward) && collapseFraction > 0.95f) 24.dp else 16.dp,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    itemsIndexed(tracks, key = { idx,track -> "${track.id}_${idx}" }) { idx,playlistItem ->
+                        val track by remember(playlistItem.uri) {
+                            viewModel.trackFlow(playlistItem.uri)
+                        }.collectAsState(initial = null)
+
+                        if (track != null) {
+                            SwipeableTrackRow(
+                                track = track!!,
+                                currentTrack = currentTrack,
+                                onRowClick = remember(playlistItem.uri) { {
+                                    spirc.load(playlist.uri, playlistItem.uri)
+                                } },
+                                onArtworkClick = {onArtworkClick(track!!)},
+                            )
+                        } else  {
+                            LaunchedEffect(playlistItem.uri) {
+                                viewModel.getOrLoadTrack(playlistItem.uri)
+                            }
+                        }
                     }
                 }
 
-                val canConsumeScroll = !(isScrollingDown && height == minTopBarHeightPx)
-                return if (canConsumeScroll) Offset(0f, consumed) else Offset.Zero
+                CollapsingAlbumTopBar(
+                    playlist = playlist,
+                    songsCount = tracks.size,
+                    authors = authors,
+                    collapseFraction = collapseFraction,
+                    headerHeight = currentTopBarHeightDp,
+                    artworkUrl = artworkUrl,
+                    onBackPressed = onBack,
+                    onPlayClick = {
+                        spirc.shuffleLoad(playlist.uri)
+                    }
+                )
             }
         }
     }
 
-    LaunchedEffect(lazyList.isScrollInProgress) {
-        if(!lazyList.isScrollInProgress) {
-            val shouldExpand = topBarHeight.value > (minTopBarHeightPx + maxTopBarHeightPx) / 2
-            val canExpand = lazyList.firstVisibleItemIndex == 0 && lazyList.firstVisibleItemScrollOffset == 0
+    // Prefetch visible + ahead items
+//    LaunchedEffect(lazyList, tracks) {
+//        snapshotFlow { lazyList.layoutInfo.visibleItemsInfo }
+//            .collect { visibleItems ->
+//                if (visibleItems.isEmpty()) return@collect
+//
+//                val firstVisible = visibleItems.first().index
+//                val lastVisible = visibleItems.last().index
+//
+//                val prefetchUntil = (lastVisible + 10).coerceAtMost(tracks.lastIndex)
+//                val urisToLoad = (firstVisible..prefetchUntil).mapNotNull { idx ->
+//                    tracks.getOrNull(idx)?.uri
+//                }
+//
+//                if (urisToLoad.isNotEmpty()) {
+//                    viewModel.loadMetadataIfNeeded(urisToLoad)
+//                }
+//            }
+//    }
 
-            val targetValue = if (shouldExpand && canExpand) maxTopBarHeightPx else minTopBarHeightPx
-
-            if (topBarHeight.value != targetValue) {
-                coroutineScope.launch {
-                    topBarHeight.animateTo(
-                        targetValue,
-                        spring(stiffness = Spring.StiffnessMedium)
-                    )
-                }
-            }
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.surface)
-            .nestedScroll(nestedScroll)
-    ) {
-        val currentTopBarHeightDp = with(density) { topBarHeight.value.toDp() }
-
-        LazyColumn(
-            state = lazyList,
-            contentPadding = PaddingValues(
-                top = currentTopBarHeightDp,
-                start = 16.dp,
-                end = if ((lazyList.canScrollForward || lazyList.canScrollBackward) && collapseFraction > 0.95f) 24.dp else 16.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(tracks, key = { track -> "playlist_song_${track.uri}" }) { playlistItem ->
-                val metadataMap by viewModel.trackMetadata.collectAsState()
-                val track = metadataMap[playlistItem.uri]
-
-                if (track != null) {
-                    SwipeableTrackRow(
-                        track = track,
-                        currentTrack = currentTrack,
-                        onRowClick = {
-                            spirc.load(playlist!!.uri, playlistItem.uri)
-                        }
-                    )
-                } else {
-                }
-            }
-        }
-
-        CollapsingAlbumTopBar(
-            playlist = playlistVal,
-            songsCount = tracks.size,
-            collapseFraction = collapseFraction,
-            headerHeight = currentTopBarHeightDp,
-            onBackPressed = onBack,
-            onPlayClick = { /* implement play */ }
-        )
-    }
 }
 
 
@@ -249,8 +278,10 @@ fun SharedTransitionScope.PlaylistScreen(
 private fun SharedTransitionScope.CollapsingAlbumTopBar(
     playlist: Playlist,
     songsCount: Int,
+    authors: List<String>,
     collapseFraction: Float,
     headerHeight: Dp,
+    artworkUrl: String,
     onBackPressed: () -> Unit,
     onPlayClick: () -> Unit
 ) {
@@ -277,7 +308,6 @@ private fun SharedTransitionScope.CollapsingAlbumTopBar(
     val titleContainerHeight = lerp(88.dp, 56.dp, collapseFraction)
     val yOffsetCorrection = lerp((titleContainerHeight / 2) - 64.dp, 0.dp, collapseFraction)
 
-    val artworkUrl = ALBUM_COVER_URL + playlist.attributes.pictureId
     val imageRequest = ImageRequest.Builder(context)
         .data(artworkUrl)
         .allowHardware(true)
@@ -387,7 +417,7 @@ private fun SharedTransitionScope.CollapsingAlbumTopBar(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "• $songsCount songs",
+                        text = "${authors.joinToString { it }} • $songsCount songs",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

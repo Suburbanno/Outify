@@ -290,6 +290,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
                     onBackPressed = onBack,
                     artworkUrl = artworkUrl,
                     onPlayClick = {
+                        spirc.shuffleLoad(artist.uri)
                     }
                 )
             }

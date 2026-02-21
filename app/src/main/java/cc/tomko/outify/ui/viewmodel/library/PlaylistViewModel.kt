@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.viewmodel.library
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.ALBUM_COVER_URL
@@ -23,11 +24,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 @HiltViewModel
@@ -44,38 +49,10 @@ class PlaylistViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<PlaylistUiState>(PlaylistUiState.Loading)
     val uiState: StateFlow<PlaylistUiState> = _uiState
 
-    private val _trackMetadata =
-        MutableStateFlow<Map<String, Track>>(emptyMap())
-    val trackMetadata: StateFlow<Map<String, Track>> =
-        _trackMetadata.asStateFlow()
+    private val _trackMetadata = MutableStateFlow<Map<String, Track>>(emptyMap())
+    val trackMetadata: StateFlow<Map<String, Track>> = _trackMetadata.asStateFlow()
 
-    fun observePlaylist(uri: String): Flow<Playlist?> {
-        return metadata.observePlaylist(uri)
-    }
-
-    fun refreshPlaylist(uri: String) {
-        viewModelScope.launch {
-            metadata.getPlaylistMetadata(uri)
-        }
-    }
-
-    fun loadMetadataIfNeeded(uris: List<String>) {
-        val missing = uris.filterNot { _trackMetadata.value.containsKey(it) }
-        if (missing.isEmpty()) return
-
-        viewModelScope.launch(Dispatchers.IO) {
-            val tracks: List<Track> = metadata.getTrackMetadata(missing)
-
-            val results: Map<String, Track> =
-                tracks.associateBy { it.uri }
-
-            _trackMetadata.update { current ->
-                current + results
-            }
-        }
-    }
-
-    suspend fun loadPlaylist(playlistUri: String) {
+    fun loadPlaylist(playlistUri: String) {
         viewModelScope.launch {
             _uiState.value = PlaylistUiState.Loading
 
@@ -83,9 +60,37 @@ class PlaylistViewModel @Inject constructor(
                 metadata.getPlaylistMetadata(playlistUri)
             }.onSuccess { playlist ->
                 _uiState.value = PlaylistUiState.Success(playlist)
-            }.onFailure {
-                _uiState.value = PlaylistUiState.Error(it.message ?: "Unknown error")
+            }.onFailure { e ->
+                _uiState.value = PlaylistUiState.Error(e.message ?: "Unknown error")
             }
+        }
+    }
+
+    fun trackFlow(uri: String): Flow<Track?> =
+        trackMetadata
+            .map { it[uri] }
+            .distinctUntilChanged()
+
+    suspend fun getOrLoadTrack(uri: String): Track? {
+        trackMetadata.value[uri]?.let { return it }
+
+        val fetched = withContext(Dispatchers.IO) {
+            metadata.getTrackMetadata(listOf(uri)).firstOrNull()
+        } ?: return null
+
+        _trackMetadata.update { current -> current + (uri to fetched) }
+
+        return fetched
+    }
+
+    fun loadMetadataIfNeeded(uris: List<String>) {
+        val missing = uris.filterNot { _trackMetadata.value.containsKey(it) }
+        if (missing.isEmpty()) return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            val tracks = metadata.getTrackMetadata(missing)
+            val results = tracks.associateBy { it.uri }
+            _trackMetadata.update { current -> current + results }
         }
     }
 
@@ -99,6 +104,12 @@ class PlaylistViewModel @Inject constructor(
         val track = metadata.getTrackMetadata(listOf(trackUri)).firstOrNull()
 
         return (ALBUM_COVER_URL + track?.album?.getCover(CoverSize.MEDIUM)?.uri)
+    }
+
+    suspend fun getAuthors(playlist: Playlist): List<String> {
+        return playlist.contents.map { it ->
+            it.attributes.addedBy
+        }
     }
 }
 

@@ -63,14 +63,6 @@ impl From<&Artist> for ArtistJson {
             .map(|track| track.to_uri())
             .collect();
 
-        for ele in artist.portraits.iter() {
-            info!("Portrait uri: {}", ele.id.to_string());
-        }
-
-        for ele in artist.portrait_group.iter() {
-            info!("Portrait g uri: {}", ele.id.to_string());
-        }
-
         Self {
             id: artist.id.to_id(),
             uri: artist.id.to_uri(),

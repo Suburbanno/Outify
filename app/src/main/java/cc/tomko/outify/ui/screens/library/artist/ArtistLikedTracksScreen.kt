@@ -256,6 +256,7 @@ fun SharedTransitionScope.ArtistLikedTracksScreen(
                     onBackPressed = onBack,
                     artworkUrl = artworkUrl,
                     onPlayClick = {
+                        spirc.shuffleLoad(artist.uri) // TODO: Make it use the correct URI
                     },
                 )
             }

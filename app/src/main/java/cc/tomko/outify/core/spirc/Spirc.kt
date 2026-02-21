@@ -32,6 +32,12 @@ object Spirc {
     external fun load(context: String? = null, playingTrackUri: String? = null): Boolean
 
     /**
+     * Loads the context URI and starts playing randomly within it
+     */
+    @JvmStatic
+    external fun shuffleLoad(uri: String): Boolean
+
+    /**
      * Adds a SpotifyURI to queue
      * @param spotifyUri valid form of URI, that will get loaded
      * @return `true` if loaded successfully

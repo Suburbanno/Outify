@@ -249,6 +249,7 @@ fun SharedTransitionScope.AlbumDetailScreen(
                     headerHeight = currentTopBarHeightDp,
                     onBackPressed = onBack,
                     onPlayClick = {
+                        spirc.shuffleLoad(album.uri)
                     }
                 )
             }

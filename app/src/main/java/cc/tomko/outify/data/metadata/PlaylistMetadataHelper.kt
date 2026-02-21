@@ -14,12 +14,14 @@ import cc.tomko.outify.data.database.playlist.PlaylistOperationDto
 import cc.tomko.outify.data.database.playlist.PlaylistWithItems
 import cc.tomko.outify.data.database.playlist.toDomain
 import cc.tomko.outify.data.database.playlist.toDomainOrNull
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,18 +41,19 @@ class PlaylistMetadataHelper @Inject constructor(
         if (uri.isBlank()) return@coroutineScope null
 
         val playlistId = uri.removePrefix("spotify:playlist:")
-
-        // Load cached representation
         val cached = playlistDao.getPlaylistWithItems(playlistId)
 
         val remotePlaylist = runCatching {
             try {
-                // Retry on rate limit
-                val raw = nativeMetadata.retryOnRateLimit {
-                    nativeMetadata.fetchMetadata(uri)
+                val raw = withContext(Dispatchers.IO) {
+                    nativeMetadata.retryOnRateLimit {
+                        nativeMetadata.fetchMetadata(uri)
+                    }
                 }
 
-                json.decodeFromString<Playlist>(raw.toString())
+                withContext(Dispatchers.Default) {
+                    json.decodeFromString<Playlist>(raw.toString())
+                }
             } catch (e: RateLimitException) {
                 Log.w("Metadata", "getPlaylistMetadata: rate-limited for $uri, giving up", e)
                 null
@@ -64,27 +67,33 @@ class PlaylistMetadataHelper @Inject constructor(
 
         if (remotePlaylist != null) {
             if (cached == null) {
-                persistPlaylist(remotePlaylist)
+                withContext(Dispatchers.IO) {
+                    persistPlaylist(remotePlaylist)
+                }
                 return@coroutineScope remotePlaylist
             }
 
-            // cached exists -> check revision
             val storedRevision = cached.playlist.revision
             val remoteRevision = remotePlaylist.revision
 
             if (storedRevision == remoteRevision) {
-                // no change
                 return@coroutineScope cached.toDomain()
             }
 
             val diff = remotePlaylist.diff
             if (diff != null) {
-                applyDiffAndPersist(cached, diff, remotePlaylist)
+                withContext(Dispatchers.IO) {
+                    applyDiffAndPersist(cached, diff, remotePlaylist)
+                }
             } else {
-                persistPlaylist(remotePlaylist)
+                withContext(Dispatchers.IO) {
+                    persistPlaylist(remotePlaylist)
+                }
             }
 
-            val updated = playlistDao.getPlaylistWithItems(playlistId)
+            val updated = withContext(Dispatchers.IO) {
+                playlistDao.getPlaylistWithItems(playlistId)
+            }
             return@coroutineScope updated?.toDomain()
         } else {
             return@coroutineScope cached?.toDomain()
@@ -102,14 +111,16 @@ class PlaylistMetadataHelper @Inject constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     fun observePlaylists(uris: List<String>) = flow {
         if (uris.isEmpty()) {
-            emit(emptyList<Playlist>())
+            emit(emptyList())
             return@flow
         }
 
         val playlistIds = uris.map { it.removePrefix("spotify:playlist:") }
 
-        // emit cached immediately
-        val cached = playlistDao.getPlaylistsWithItems(playlistIds).mapNotNull { it.toDomainOrNull() }
+        val cached = withContext(Dispatchers.IO) {
+            playlistDao.getPlaylistsWithItems(playlistIds)
+        }.mapNotNull { it.toDomainOrNull() }
+
         Log.d("PlaylistMeta", "observePlaylists: cached.size=${cached.size} for ids=$playlistIds")
         emit(cached)
 

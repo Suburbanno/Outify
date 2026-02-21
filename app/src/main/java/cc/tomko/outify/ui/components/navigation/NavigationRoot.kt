@@ -186,9 +186,9 @@ fun SharedTransitionScope.NavigationRoot(
                 is Route.PlaylistScreen -> {
                     NavEntry(key) {
                         val viewModel: PlaylistViewModel = hiltViewModel()
+                        viewModel.loadPlaylist(key.playlistUri)
 
                         PlaylistScreen(
-                            key.playlistUri,
                             viewModel = viewModel,
                             onBack = {
                                 backStack.removeAt(backStack.lastIndex)

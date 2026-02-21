@@ -1,5 +1,7 @@
 use jni::{
-    objects::{JClass, JObject, JString}, sys::{jboolean, jlong, jstring}, JNIEnv
+    JNIEnv,
+    objects::{JClass, JObject, JString},
+    sys::{jboolean, jlong, jstring},
 };
 use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, PlayingTrack};
 use librespot_core::SpotifyUri;
@@ -112,6 +114,45 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_load(
     let options = LoadRequestOptions {
         start_playing: true,
         playing_track: track,
+        ..Default::default()
+    };
+
+    let req = LoadRequest::from_context_uri(uri, options);
+
+    match with_spirc(|runtime| runtime.load(req)) {
+        Ok(Ok(_)) => 1 as jboolean,
+        Ok(Err(e)) => {
+            error!("Failed to load Spirc: {}", e);
+            0 as jboolean
+        }
+        Err(e) => {
+            error!("Spirc not available: {}", e);
+            0 as jboolean
+        }
+    }
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_shuffleLoad")]
+pub extern "system" fn shuffle_load(mut env: JNIEnv, _this: JClass, juri: JString) -> jboolean {
+    let uri: String = match env.get_string(&juri) {
+        Ok(u) => u.into(),
+        Err(e) => {
+            warn!("Failed to get URI from JNI juri: {}", e);
+            return 0;
+        }
+    };
+
+    let spotify_uri = match SpotifyUri::from_uri(uri.as_str()) {
+        Ok(uri) => uri,
+        Err(e) => {
+            warn!("failed to get SpotifyURI: {}", e);
+            return 0;
+        }
+    };
+
+    let options = LoadRequestOptions {
+        start_playing: true,
+        context_options: Some(LoadContextOptions::Options(librespot_connect::Options { shuffle: true, repeat: true, repeat_track: false })),
         ..Default::default()
     };
 

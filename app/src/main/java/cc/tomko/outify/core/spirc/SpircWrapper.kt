@@ -40,6 +40,14 @@ class SpircWrapper @Inject constructor(
     }
 
     /**
+     * Loads the context URI and starts playing randomly within it
+     */
+    fun shuffleLoad(uri: String): Boolean {
+        ensureServiceRunning()
+        return Spirc.shuffleLoad(uri)
+    }
+
+    /**
      * Adds a SpotifyURI to queue
      * @param spotifyUri valid form of URI, that will get loaded
      * @return `true` if loaded successfully
