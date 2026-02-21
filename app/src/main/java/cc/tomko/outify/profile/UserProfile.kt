@@ -1,5 +1,12 @@
-package cc.tomko.outify.profile;
+package cc.tomko.outify.profile
 
-public class UserProfile {
-    public native void getUserProfile();
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class UserProfile @Inject constructor() {
+    /**
+     * Retrieves the users profile as a string
+     */
+    external fun getUserProfile(username: String? = null): String
 }

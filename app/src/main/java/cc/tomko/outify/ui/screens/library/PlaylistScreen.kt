@@ -71,6 +71,7 @@ import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Playlist
+import cc.tomko.outify.data.Profile
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
 import cc.tomko.outify.ui.viewmodel.library.PlaylistUiState
@@ -144,7 +145,7 @@ fun SharedTransitionScope.PlaylistScreen(
             }
 
             var artworkUrl by remember { mutableStateOf("") }
-            var authors by remember { mutableStateOf(emptyList<String>()) }
+            var authors by remember { mutableStateOf(emptyList<Profile>()) }
             LaunchedEffect(playlist.uri) {
                 artworkUrl = viewModel.getArtworkUrl(playlist)
                 authors = viewModel.getAuthors(playlist)
@@ -278,7 +279,7 @@ fun SharedTransitionScope.PlaylistScreen(
 private fun SharedTransitionScope.CollapsingAlbumTopBar(
     playlist: Playlist,
     songsCount: Int,
-    authors: List<String>,
+    authors: List<Profile>,
     collapseFraction: Float,
     headerHeight: Dp,
     artworkUrl: String,
@@ -417,7 +418,7 @@ private fun SharedTransitionScope.CollapsingAlbumTopBar(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${authors.joinToString { it }} • $songsCount songs",
+                        text = "${authors.joinToString { it.name ?: "Unknown" } } • $songsCount songs",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,

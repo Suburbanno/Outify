@@ -13,14 +13,29 @@ data class Profile(
     @SerialName("image_url")
     val imageUrl: String? = null,
     @SerialName("followers_count")
-    val followersCount: Int,
+    val followersCount: Int?,
     @SerialName("following_count")
-    val followingCount: Int,
-    @SerialName("has_spotify_name")
-    val hasSpotifyName: Boolean,
-    @SerialName("has_spotify_image")
-    val hasSpotifyImage: Boolean,
+    val followingCount: Int?,
     val color: Int,
-    @SerialName("allows_follows")
-    val allowsFollows: Boolean,
+    @SerialName("allow_follows")
+    val allowFollows: Boolean?,
+
+    @SerialName("total_playlist_count")
+    val totalPlaylistCount: Int? = null,
+    @SerialName("public_playlists")
+    val publicPlaylists: List<ProfilePlaylist> = emptyList()
+)
+
+@Serializable
+data class ProfilePlaylist(
+    val uri: String,
+    val name: String,
+    @SerialName("imageUrl")
+    val imageUrl: String? = null,
+    @SerialName("followers_count")
+    val followersCount: Int,
+    @SerialName("owner_uri")
+    val ownerUri: String,
+    @SerialName("is_following")
+    val isFollowing: Boolean,
 )

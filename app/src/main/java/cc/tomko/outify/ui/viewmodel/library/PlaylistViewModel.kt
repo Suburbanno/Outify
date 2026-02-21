@@ -8,10 +8,12 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Playlist
+import cc.tomko.outify.data.Profile
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.profile.UserProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +42,7 @@ class PlaylistViewModel @Inject constructor(
     private val metadata: Metadata,
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
+    val userProfile: UserProfile,
 ): ViewModel() {
     val json = Json { ignoreUnknownKeys = true }
 
@@ -106,10 +109,17 @@ class PlaylistViewModel @Inject constructor(
         return (ALBUM_COVER_URL + track?.album?.getCover(CoverSize.MEDIUM)?.uri)
     }
 
-    suspend fun getAuthors(playlist: Playlist): List<String> {
-        return playlist.contents.map { it ->
-            it.attributes.addedBy
-        }
+    suspend fun getAuthors(playlist: Playlist): List<Profile> = coroutineScope {
+        val ids = playlist.contents
+            .map { it.attributes.addedBy }
+            .distinct()
+
+        ids.map { id ->
+            async(Dispatchers.IO) {
+                val jsonRaw = userProfile.getUserProfile(id)
+                json.decodeFromString<Profile>(jsonRaw)
+            }
+        }.awaitAll()
     }
 }
 

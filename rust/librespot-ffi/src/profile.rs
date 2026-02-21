@@ -1,20 +1,27 @@
 use crate::{
     TOKIO_RUNTIME,
+    metadata::user::UserJson,
     session::{SESSION, with_session},
 };
-use jni::{objects::JClass, sys::JNIEnv};
+use jni::{
+    objects::{JClass, JString},
+    sys::jstring,
+};
 
-pub async fn get_user_profile() {
+pub async fn get_user_profile(username: Option<String>) -> Option<UserJson> {
     info!("Getting user profile..");
     let session = match with_session(|s| s.clone()) {
         Ok(s) => s,
         Err(e) => {
             error!("Session unavailable: {}", e);
-            return;
+            return None;
         }
     };
 
-    let username = session.username();
+    let username = match username {
+        Some(u) => u,
+        None => session.username(),
+    };
     let limit: u32 = 5000;
 
     info!("Requesting user profile");
@@ -23,27 +30,69 @@ pub async fn get_user_profile() {
         .get_user_profile(&username, Some(limit), Some(limit))
         .await
         .unwrap();
-    info!(
-        "User profile: {}",
-        String::from_utf8(result.to_vec()).unwrap()
-    );
+
+    let json = String::from_utf8(result.to_vec()).unwrap();
+    info!("{}",&json);
+    let profile: UserJson = match serde_json::from_str(&json) {
+        Ok(p) => p,
+        Err(e) => {
+            error!("failed to deserialize UserJson: {e}");
+            return None;
+        }
+    };
+
+    Some(profile)
 }
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_profile_UserProfile_getUserProfile(
-    _env: JNIEnv,
+    mut env: jni::JNIEnv,
     _this: JClass,
-) {
+    username: JString,
+) -> jstring {
     info!("GetUserProfile");
     let rt = match TOKIO_RUNTIME.get() {
         Some(r) => r,
         None => {
             warn!("Failed to initialize session as Tokio Runtime is not initialized!");
-            return;
+            return std::ptr::null_mut();
         }
     };
 
-    rt.block_on(async {
-        get_user_profile().await;
-    });
+    let username: Option<String> = if username.is_null() {
+        None
+    } else {
+        match env.get_string(&username) {
+            Ok(js) => Some(js.into()),
+            Err(e) => {
+                error!("failed to get username: {}", e);
+                return std::ptr::null_mut();
+            }
+        }
+    };
+
+    let profile: UserJson = match rt.block_on(get_user_profile(username)) {
+        Some(u) => u,
+        None => {
+            log::error!("failed to get user profile");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let json = match serde_json::to_string(&profile) {
+        Ok(j) => j,
+        Err(e) => {
+            log::error!("failed to serialize UserJson: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    // Convert Rust String -> jstring and return
+    match env.new_string(json) {
+        Ok(j) => j.into_raw(),
+        Err(e) => {
+            log::error!("failed to convert json to JNI string: {}", e);
+            std::ptr::null_mut()
+        }
+    }
 }

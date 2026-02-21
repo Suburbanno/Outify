@@ -1,4 +1,5 @@
 pub mod playlist;
+pub mod user;
 
 use base64::{Engine as _, engine::general_purpose};
 use librespot_core::SpotifyId;
