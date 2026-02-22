@@ -147,6 +147,14 @@ impl SpircRuntime {
         self.spirc.shutdown();
     }
 
+    pub fn shuffle(&self, enabled: bool) -> Result<(), librespot_core::Error> {
+        self.spirc.shuffle(enabled)
+    }
+
+    pub fn repeat(&self, enabled: bool) -> Result<(), librespot_core::Error> {
+        self.spirc.repeat(enabled)
+    }
+
     pub async fn prev_tracks(
         &self,
     ) -> Result<Vec<librespot_protocol::player::ProvidedTrack>, librespot_core::Error> {

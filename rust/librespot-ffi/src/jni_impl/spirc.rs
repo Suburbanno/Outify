@@ -5,6 +5,7 @@ use jni::{
 };
 use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, PlayingTrack};
 use librespot_core::SpotifyUri;
+use serde::de::IntoDeserializer;
 
 use crate::{
     session::with_session,
@@ -152,7 +153,11 @@ pub extern "system" fn shuffle_load(mut env: JNIEnv, _this: JClass, juri: JStrin
 
     let options = LoadRequestOptions {
         start_playing: true,
-        context_options: Some(LoadContextOptions::Options(librespot_connect::Options { shuffle: true, repeat: true, repeat_track: false })),
+        context_options: Some(LoadContextOptions::Options(librespot_connect::Options {
+            shuffle: true,
+            repeat: true,
+            repeat_track: false,
+        })),
         ..Default::default()
     };
 
@@ -259,6 +264,48 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_seekTo(
         }
         Err(e) => {
             warn!("Failed to seek spirc: {}", e);
+            0
+        }
+    }
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_shuffle")]
+pub extern "system" fn shuffle_spirc(
+    mut env: JNIEnv,
+    _this: JClass,
+    enabled: jboolean,
+) -> jboolean {
+
+    let enabled = enabled != 0;
+    match with_spirc(|runtime| runtime.shuffle(enabled)) {
+        Ok(Ok(_)) => 1,
+        Ok(Err(e)) => {
+            warn!("Failed to shuffle spirc: {}", e);
+            0
+        }
+        Err(e) => {
+            warn!("Failed to shuffle spirc: {}", e);
+            0
+        }
+    }
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_repeat")]
+pub extern "system" fn repeat_spirc(
+    mut env: JNIEnv,
+    _this: JClass,
+    enabled: jboolean,
+) -> jboolean {
+
+    let enabled = enabled != 0;
+    match with_spirc(|runtime| runtime.repeat(enabled)) {
+        Ok(Ok(_)) => 1,
+        Ok(Err(e)) => {
+            warn!("Failed to repeat spirc: {}", e);
+            0
+        }
+        Err(e) => {
+            warn!("Failed to repeat spirc: {}", e);
             0
         }
     }

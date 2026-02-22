@@ -21,6 +21,9 @@ class SpircWrapper @Inject constructor(
     @ApplicationContext val context: Context,
     private val playbackStateHolder: PlaybackStateHolder,
 ){
+    var isShuffling = false
+    var isRepeating = false
+
     @OptIn(UnstableApi::class)
     private fun ensureServiceRunning() {
         val intent = Intent(context, MusicService::class.java)
@@ -37,6 +40,24 @@ class SpircWrapper @Inject constructor(
     fun load(context: String? = null, playingTrackUri: String? = null): Boolean {
         ensureServiceRunning()
         return Spirc.load(context, playingTrackUri)
+    }
+
+    /**
+     * Shuffles the playback
+     * @return <code>true</code> if success
+     */
+    fun shuffle(enabled: Boolean): Boolean {
+        isShuffling = enabled
+        return Spirc.shuffle(enabled)
+    }
+
+    /**
+     * Repeats the playback
+     * @return <code>true</code> if success
+     */
+    fun repeat(enabled: Boolean): Boolean {
+        isRepeating = enabled
+        return Spirc.repeat(enabled)
     }
 
     /**

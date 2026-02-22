@@ -67,6 +67,20 @@ object Spirc {
     external fun seekTo(positionMs: Long): Boolean
 
     /**
+     * Shuffles the playback
+     * @return <code>true</code> if success
+     */
+    @JvmStatic
+    external fun shuffle(enabled: Boolean): Boolean
+
+    /**
+     * Repeats the playback
+     * @return <code>true</code> if success
+     */
+    @JvmStatic
+    external fun repeat(enabled: Boolean): Boolean
+
+    /**
      * Tells the player to start playing
      */
     @JvmStatic

@@ -41,6 +41,11 @@ class PlayerViewModel @Inject constructor(
     private val _positionMs = MutableStateFlow(playbackStateHolder.estimatePosition().inWholeMilliseconds)
     val positionMs = _positionMs.asStateFlow()
 
+    private val _isShuffling = MutableStateFlow(false)
+    val isShuffling = _isShuffling.asStateFlow()
+    private val _isRepeating = MutableStateFlow(false)
+    val isRepeating = _isRepeating.asStateFlow()
+
     init {
         viewModelScope.launch {
             while (isActive) {
@@ -85,6 +90,14 @@ class PlayerViewModel @Inject constructor(
                 viewModelScope.launch {
                     spirc.seekTo(action.position)
                 }
+            }
+            PlayerAction.RepeatToggle -> {
+                _isRepeating.value = !spirc.isRepeating
+                spirc.repeat(!spirc.isRepeating)
+            }
+            PlayerAction.ShuffleToggle -> {
+                _isShuffling.value = !spirc.isShuffling
+                spirc.shuffle(!spirc.isShuffling)
             }
         }
     }

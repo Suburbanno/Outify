@@ -21,7 +21,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Forward
 import androidx.compose.material.icons.filled.Explicit
+import androidx.compose.material.icons.outlined.DoubleArrow
+import androidx.compose.material.icons.outlined.Forward
+import androidx.compose.material.icons.outlined.Loop
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Repeat
@@ -82,6 +86,9 @@ fun SharedTransitionScope.PlayerScreen(
     val uiState by viewModel.uiState.collectAsState()
     val artworkUrl = uiState.albumArt?.let { ALBUM_COVER_URL + it }
     val positionMs by viewModel.positionMs.collectAsState()
+
+    val isShuffling by viewModel.isShuffling.collectAsState()
+    val isRepeating by viewModel.isRepeating.collectAsState()
 
     val imageSize = 400.dp
     val imageSizePx = with(LocalDensity.current) { imageSize.roundToPx() }
@@ -171,11 +178,13 @@ fun SharedTransitionScope.PlayerScreen(
 
             PlaybackControls(
                 isPlaying = uiState.isPlaying,
+                isShuffling = isShuffling,
+                isRepeating = isRepeating,
                 onPlayPause = { viewModel.onAction(PlayerAction.PlayPause) },
                 onNextTrack = { viewModel.onAction(PlayerAction.Next) },
                 onPreviousTrack = { viewModel.onAction(PlayerAction.Previous) },
-                onShuffleChange = {},
-                onRepeatMode = {},
+                onShuffleChange = { viewModel.onAction(PlayerAction.ShuffleToggle) },
+                onRepeatMode = { viewModel.onAction(PlayerAction.RepeatToggle) },
             )
         }
     }
@@ -242,6 +251,8 @@ private fun formatTime(ms: Long): String {
 @Composable
 fun PlaybackControls(
     isPlaying: Boolean,
+    isShuffling: Boolean,
+    isRepeating: Boolean,
     onPlayPause: () -> Unit,
     onNextTrack: () -> Unit,
     onPreviousTrack: () -> Unit,
@@ -255,9 +266,17 @@ fun PlaybackControls(
         // Shuffle button
         IconButton(
             onClick = onShuffleChange,
-            modifier = Modifier.size(42.dp)
+            modifier = Modifier.size(42.dp),
         ) {
-            Icon(Icons.Outlined.Shuffle, contentDescription = "Shuffle mode")
+            Icon(
+                imageVector = if (isShuffling)
+                    Icons.Outlined.Shuffle
+                else Icons.AutoMirrored.Outlined.Forward,
+                contentDescription = "Shuffle mode",
+                tint = if (isShuffling)
+                    MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
         // Previous button
@@ -325,7 +344,15 @@ fun PlaybackControls(
             onClick = onRepeatMode,
             modifier = Modifier.size(42.dp)
         ) {
-            Icon(Icons.Outlined.Repeat, contentDescription = "Repeat mode")
+            Icon(
+                imageVector = if(isRepeating)
+                    Icons.Outlined.Repeat
+                else Icons.Outlined.Loop,
+                contentDescription = "Repeat mode",
+                tint = if (isRepeating)
+                    MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
