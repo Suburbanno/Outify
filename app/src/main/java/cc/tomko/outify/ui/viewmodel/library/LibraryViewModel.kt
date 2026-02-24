@@ -35,6 +35,8 @@ class LibraryViewModel @Inject constructor(
 
     private val playlistUris = MutableStateFlow<List<String>>(emptyList())
 
+    val isRefreshing = MutableStateFlow(false)
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val playlists: StateFlow<List<Playlist>> =
         playlistUris
@@ -68,6 +70,7 @@ class LibraryViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = LibraryUiState.Loading
 
+            isRefreshing.value = true
             runCatching {
                 metadata.getPlaylistUris()
             }.onSuccess { uris ->
@@ -76,9 +79,13 @@ class LibraryViewModel @Inject constructor(
             }.onFailure {
                 _uiState.value = LibraryUiState.Error(it.message ?: "Unknown error")
             }
+            isRefreshing.value = false
         }
     }
 
+    fun refresh(){
+        loadPlaylistUris()
+    }
 }
 
 sealed interface LibraryUiState {
