@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Forward
 import androidx.compose.material.icons.filled.Explicit
+import androidx.compose.material.icons.filled.Loop
 import androidx.compose.material.icons.outlined.DoubleArrow
 import androidx.compose.material.icons.outlined.Forward
 import androidx.compose.material.icons.outlined.Loop
@@ -207,6 +208,7 @@ fun SharedTransitionScope.PlayerScreen(
 
             PlaybackControls(
                 isPlaying = uiState.isPlaying,
+                isBuffering = uiState.isBuffering,
                 isShuffling = isShuffling,
                 isRepeating = isRepeating,
                 onPlayPause = { viewModel.onAction(PlayerAction.PlayPause) },
@@ -280,6 +282,7 @@ private fun formatTime(ms: Long): String {
 @Composable
 fun PlaybackControls(
     isPlaying: Boolean,
+    isBuffering: Boolean,
     isShuffling: Boolean,
     isRepeating: Boolean,
     onPlayPause: () -> Unit,
@@ -317,7 +320,6 @@ fun PlaybackControls(
         }
 
         // Play/Pause button
-        val icon = if (isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow
         var rotated by remember { mutableStateOf(false) }
         val rotation by animateFloatAsState(
             targetValue = if (rotated) 20f else 0f,
@@ -351,6 +353,9 @@ fun PlaybackControls(
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
         ) {
+            val icon = if(isBuffering) Icons.Default.Loop
+            else if (isPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow
+
             Icon(
                 imageVector = icon,
                 contentDescription = if (isPlaying) "Pause" else "Play",

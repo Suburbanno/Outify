@@ -9,4 +9,4 @@ mod oauth;
 pub mod playback;
 mod session;
 mod spclient;
-mod spirc;
+pub mod spirc;

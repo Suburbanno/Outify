@@ -15,4 +15,5 @@ data class PlaybackState(
     val repeatMode: RepeatMode = RepeatMode.NONE,
     val shuffleEnabled: Boolean = false,
     val isPlaying: Boolean = false,
+    val isBuffering: Boolean = true,
 )

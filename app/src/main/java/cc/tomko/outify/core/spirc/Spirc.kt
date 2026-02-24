@@ -15,12 +15,30 @@ interface SpircInitializationCallback {
     fun failed()
 }
 
+interface SpircBufferCallback {
+    /**
+     * Called when spirc is buffering
+     */
+    fun started()
+
+    /**
+     * Called when spirc stops buffering
+     */
+    fun stopped()
+}
+
 object Spirc {
     /**
      * Initializes the SpircRuntime
      */
     @JvmStatic
     external fun initializeSpirc(callback: SpircInitializationCallback): Boolean
+
+    /**
+     * Sets the buffer callback for spirc
+     */
+    @JvmStatic
+    external fun bufferCallback(callback: SpircBufferCallback): Boolean
 
     /**
      * Loads a SpotifyURI

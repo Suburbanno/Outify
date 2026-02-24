@@ -9,6 +9,7 @@ data class PlayerUIState(
     val title: String = "",
     val artists: List<Artist> = emptyList(),
     val albumArt: String? = null,
+    val isBuffering: Boolean = true,
     val isPlaying: Boolean = false,
     var isExplicit: Boolean = false,
 

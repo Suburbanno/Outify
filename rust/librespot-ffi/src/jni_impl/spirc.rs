@@ -1,6 +1,8 @@
+use std::sync::Mutex;
+
 use jni::{
     JNIEnv,
-    objects::{JClass, JObject, JString},
+    objects::{GlobalRef, JClass, JObject, JString},
     sys::{jboolean, jlong, jstring},
 };
 use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, PlayingTrack};
@@ -11,6 +13,8 @@ use crate::{
     session::with_session,
     spirc::{SpircRuntime, with_spirc},
 };
+
+pub static BUFFER_CALLBACK: Mutex<Option<GlobalRef>> = Mutex::new(None);
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
@@ -61,6 +65,39 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
             }
         }
     });
+
+    1
+}
+
+// Sets the buffer callback, so we can notify UI of spirc buferring
+#[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_bufferCallback")]
+pub extern "system" fn set_buffer_callback(
+    mut env: JNIEnv,
+    _this: JClass,
+    callback: JObject,
+) -> jboolean {
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(rt) => rt,
+        None => {
+            error!("Cannot initialize spirc due to uninitialized tokio");
+            return 0;
+        }
+    };
+
+    let handle = rt.handle().clone();
+
+    let global_callback = match env.new_global_ref(callback) {
+        Ok(g) => g,
+        Err(e) => {
+            error!("Failed to make global ref for callback: {e}");
+            return 0;
+        }
+    };
+
+    {
+        let mut lock = BUFFER_CALLBACK.lock().unwrap();
+        *lock = Some(global_callback);
+    }
 
     1
 }
@@ -281,7 +318,6 @@ pub extern "system" fn shuffle_spirc(
     _this: JClass,
     enabled: jboolean,
 ) -> jboolean {
-
     let enabled = enabled != 0;
     match with_spirc(|runtime| runtime.shuffle(enabled)) {
         Ok(Ok(_)) => 1,
@@ -297,12 +333,7 @@ pub extern "system" fn shuffle_spirc(
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_repeat")]
-pub extern "system" fn repeat_spirc(
-    mut env: JNIEnv,
-    _this: JClass,
-    enabled: jboolean,
-) -> jboolean {
-
+pub extern "system" fn repeat_spirc(mut env: JNIEnv, _this: JClass, enabled: jboolean) -> jboolean {
     let enabled = enabled != 0;
     match with_spirc(|runtime| runtime.repeat(enabled)) {
         Ok(Ok(_)) => 1,

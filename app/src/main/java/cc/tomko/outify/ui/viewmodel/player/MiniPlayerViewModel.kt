@@ -39,6 +39,9 @@ class MiniPlayerViewModel @Inject constructor(
     fun isPlaying(): Flow<Boolean> =
         playbackStateHolder.state.map { it.isPlaying }
 
+    fun isBuffering(): Flow<Boolean> =
+        playbackStateHolder.state.map { it.isBuffering }
+
     fun setTrack(track: Track?) {
         playbackStateHolder.setTrack(track)
     }

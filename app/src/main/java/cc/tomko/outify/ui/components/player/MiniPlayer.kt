@@ -5,9 +5,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,6 +22,8 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -34,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -66,6 +71,7 @@ fun SharedTransitionScope.MiniPlayer(
     val context = LocalContext.current
     val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
     val isPlaying by viewModel.isPlaying().collectAsState(initial = false)
+    val isBuffering by viewModel.isBuffering().collectAsState(initial = false)
     val currentTime by viewModel.positionMs.collectAsState(initial = 0L)
     val spirc = viewModel.spirc
 
@@ -104,23 +110,36 @@ fun SharedTransitionScope.MiniPlayer(
                     .padding(end = 10.dp)
             ) {
                 // Album artwork
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(6.dp),
-                    modifier = Modifier
+                Box(
+                    modifier = Modifier.size(64.dp)
                         .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
-                        .size(imageSize)
-                        .sharedElementWithCallerManagedVisibility(
-                            sharedContentState = rememberSharedContentState(SharedElementKey.PLAYER_ARTWORK),
-                            visible = true,
-                        )
                 ) {
-                    AsyncImage(
-                        model = imageRequest,
-                        imageLoader = imageLoader,
-                        contentDescription = "Artwork",
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(6.dp),
                         modifier = Modifier
-                    )
+                            .size(imageSize)
+                            .sharedElementWithCallerManagedVisibility(
+                                sharedContentState = rememberSharedContentState(SharedElementKey.PLAYER_ARTWORK),
+                                visible = true,
+                            )
+                    ) {
+                        AsyncImage(
+                            model = imageRequest,
+                            imageLoader = imageLoader,
+                            contentDescription = "Artwork",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(6.dp)),
+                            contentScale = ContentScale.Crop,
+                        )
+                    }
+
+                    if (isBuffering) {
+                        CircularWavyProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))

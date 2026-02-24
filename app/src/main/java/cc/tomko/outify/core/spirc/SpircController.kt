@@ -5,6 +5,8 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.Session
 import cc.tomko.outify.core.SessionCallback
 import cc.tomko.outify.core.Spirc.SpircWrapper
+import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.playback.model.PlaybackState
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -12,6 +14,7 @@ import javax.inject.Singleton
 class SpircController @Inject constructor(
     private val session: Session,
     private val spirc: SpircWrapper,
+    private val playbackStateHolder: PlaybackStateHolder
 ) {
     fun start() {
         session.initializeSession(object : SessionCallback {
@@ -29,6 +32,17 @@ class SpircController @Inject constructor(
     private fun initializeSpirc(){
         Spirc.initializeSpirc(object : SpircInitializationCallback {
             override fun initialized() {
+                Spirc.bufferCallback(object : SpircBufferCallback {
+                    override fun started() {
+                        playbackStateHolder.setBuffering(true)
+                    }
+
+                    override fun stopped() {
+                        playbackStateHolder.setBuffering(false)
+                    }
+
+                })
+
                 activateAndTransfer()
             }
 

@@ -245,6 +245,13 @@ fn handle_event(event: PlayerEvent) {
         PlayerEvent::AddedToQueue { track_id } => {
             info!("Track added to queue:  {}", track_id);
         }
+        PlayerEvent::BufferStart {} => {
+            info!("We are buffering!");
+            notify_buffer_state("started".to_string());
+        }
+        PlayerEvent::BufferStop {} => {
+            notify_buffer_state("stopped".to_string());
+        }
         _ => {
             // Not yet implemented
         }
@@ -312,6 +319,42 @@ pub async fn initialize_spirc() -> Result<(), librespot_core::Error> {
     debug!("SpircRuntime initialized");
 
     Ok(())
+}
+
+// Notifies UI of buffer state with given method
+// TODO: Optimize threads
+fn notify_buffer_state(method: String) {
+    let jvm = match crate::JVM.get() {
+        Some(j) => j,
+        None => {
+            error!("cannot notify buffer state as JVM is none!");
+            return;
+        }
+    };
+
+    let callback_opt = {
+        let lock = crate::jni_impl::spirc::BUFFER_CALLBACK.lock().unwrap();
+        lock.clone()
+    };
+
+    if let Some(callback) = callback_opt {
+        let mut env = match jvm.attach_current_thread() {
+            Ok(env) => env,
+            Err(e) => {
+                error!("failed to attach env: {e}");
+                return;
+            }
+        };
+
+        if let Err(e) = env.call_method(
+            callback.as_obj(),
+            method,
+            "()V",
+            &[],
+        ) {
+            log::error!("Failed to call buffer callback: {e}");
+        }
+    }
 }
 
 pub fn with_spirc<F, R>(f: F) -> Result<R, librespot_core::Error>

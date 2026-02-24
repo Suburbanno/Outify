@@ -75,6 +75,7 @@ class PlayerViewModel @Inject constructor(
                     totalLengthMs = track?.duration ?: 0L,
                     positionMs = position.active.inWholeMilliseconds,
                     lastUpdateTime = position.lastSync,
+                    isBuffering = state.isBuffering,
                 )
             }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PlayerUIState())
 

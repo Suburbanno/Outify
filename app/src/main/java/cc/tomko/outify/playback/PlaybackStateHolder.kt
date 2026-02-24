@@ -98,6 +98,10 @@ class PlaybackStateHolder @Inject constructor() {
         }
     }
 
+    fun setBuffering(buffering: Boolean) {
+        _state.value = _state.value.copy(isBuffering = buffering)
+    }
+
     private fun computePositionLocked(): Duration {
         val cur = _state.value
         if (!cur.isPlaying) return cur.position.active
