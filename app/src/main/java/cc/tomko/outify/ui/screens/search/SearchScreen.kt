@@ -61,9 +61,11 @@ import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.R
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.navigation.Route.AlbumScreenFromTrackUri
 import cc.tomko.outify.ui.components.navigation.Route.ArtistScreen
 import cc.tomko.outify.ui.components.navigation.Route.PlaylistScreen
+import cc.tomko.outify.ui.components.rows.AlbumRow
 import cc.tomko.outify.ui.components.rows.ArtistRow
 import cc.tomko.outify.ui.components.rows.PlaylistRow
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
@@ -196,7 +198,16 @@ fun SharedTransitionScope.SearchScreen(
                         )
                     }
                     is SearchUiModel.AlbumItem -> {
+                        val album = item.album
+                        val artworkUrl = ALBUM_COVER_URL + album.getCover(CoverSize.MEDIUM)?.uri;
 
+                        AlbumRow(
+                            album = album,
+                            artworkUrl = artworkUrl,
+                            onRowClick = {
+                                backStack.add(Route.AlbumScreenFromAlbumUri(album.uri))
+                            },
+                        )
                     }
                     is SearchUiModel.ArtistItem -> {
                         val artist = item.artist
