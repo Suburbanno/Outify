@@ -184,7 +184,7 @@ fun SharedTransitionScope.LikedScreen(
                 )
 
                 Text(
-                    text = "By you • ${tracks.size} songs",
+                    text = "By you • $totalCount songs",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },

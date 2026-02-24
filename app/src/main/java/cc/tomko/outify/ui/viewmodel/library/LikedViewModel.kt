@@ -59,12 +59,14 @@ class LikedViewModel @Inject constructor(
     private var lastFetchedOffset = -1
 
     init {
-        viewModelScope.launch {
-            // Sync URI list first; the Flow will fire once liked_songs is updated
-            likedRepository.syncLikedUris()
+        if(spirc.isUsable) {
+            viewModelScope.launch {
+                // Sync URI list first; the Flow will fire once liked_songs is updated
+                likedRepository.syncLikedUris()
+            }
+            // Kick off the first page
+            triggerLoad(offset = 0)
         }
-        // Kick off the first page
-        triggerLoad(offset = 0)
     }
 
     /**

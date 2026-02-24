@@ -62,14 +62,18 @@ class SpircController @Inject constructor(
         if (!spirc.transfer()) {
             Log.e("SpircController", "Failed to transfer Spirc session!")
         }
+
+        spirc.isUsable = true
     }
 
     private fun handleSessionShutdown() {
         Log.w("SpircController", "Session has shut down! Restarting..", );
+        spirc.isUsable = false
     }
 
     private fun handleSpircFailure() {
         // Retry?
         // Tear down session?
+        spirc.isUsable = false
     }
 }

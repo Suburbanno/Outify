@@ -3,10 +3,8 @@ package cc.tomko.outify.core.Spirc
 import android.content.Context
 import android.content.Intent
 import androidx.annotation.OptIn
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
-import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.services.MusicService
@@ -23,6 +21,11 @@ class SpircWrapper @Inject constructor(
 ){
     var isShuffling = false
     var isRepeating = false
+
+    /**
+     * Whether Spirc is in usable state, so we can query it
+     */
+    var isUsable = false
 
     @OptIn(UnstableApi::class)
     private fun ensureServiceRunning() {
