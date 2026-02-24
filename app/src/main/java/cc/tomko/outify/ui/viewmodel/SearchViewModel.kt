@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -74,17 +75,38 @@ class SearchViewModel @Inject constructor(
                         val searchResults = repository.search(query)
 
                         val grouped = searchResults.groupBy { it.type }
+                        val sectionedList = mutableListOf<SearchUiModel>()
+
+                        fun <T> appendSectionIfPresent(
+                            type: SearchResultType,
+                            titleRes: Int,
+                            map: Map<String, T>,
+                            mapper: (String, T) -> SearchUiModel
+                        ) {
+                            val items = grouped[type] ?: return
+                            if (items.isEmpty()) return
+
+                            val mapped = items.mapNotNull { result ->
+                                map[result.uri]?.let { data ->
+                                    mapper(result.uri, data)
+                                }
+                            }
+
+                            if (mapped.isNotEmpty()) {
+                                sectionedList.add(SearchUiModel.SectionHeader(titleRes))
+                                sectionedList.addAll(mapped)
+                            }
+                        }
 
                         coroutineScope {
-
-                            val trackDeferred = async {
+                            val trackDeferred = async(Dispatchers.IO) {
                                 grouped[SearchResultType.TRACK]
                                     ?.map { it.uri }
                                     ?.let { metadata.getTrackMetadata(it).associateBy { t -> t.uri } }
-                                    ?: emptyMap<String, Track>()
+                                    ?: emptyMap()
                             }
 
-                            val artistDeferred = async {
+                            val artistDeferred = async(Dispatchers.IO) {
                                 searchResults
                                     .filter { it.type == SearchResultType.ARTIST }
                                     .mapNotNull { result ->
@@ -96,7 +118,7 @@ class SearchViewModel @Inject constructor(
                                     }.toMap()
                             }
 
-                            val albumDeferred = async {
+                            val albumDeferred = async(Dispatchers.IO) {
                                 searchResults
                                     .filter { it.type == SearchResultType.ALBUM }
                                     .mapNotNull { result ->
@@ -108,7 +130,7 @@ class SearchViewModel @Inject constructor(
                                     }.toMap()
                             }
 
-                            val playlistDeferred = async {
+                            val playlistDefered = async(Dispatchers.IO) {
                                 searchResults
                                     .filter { it.type == SearchResultType.PLAYLIST }
                                     .mapNotNull { result ->
@@ -120,94 +142,41 @@ class SearchViewModel @Inject constructor(
                                     }.toMap()
                             }
 
-//                            val showDeferred = async {
-//                                searchResults
-//                                    .filter { it.type == SearchResultType.SHOW }
-//                                    .mapNotNull { result ->
-//                                        runCatching {
-//                                            metadata.getShowMetadata(result.uri)
-//                                        }.getOrNull()?.let {
-//                                            result.uri to it
-//                                        }
-//                                    }.toMap()
-//                            }
-//
-//                            val episodeDeferred = async {
-//                                searchResults
-//                                    .filter { it.type == SearchResultType.EPISODE }
-//                                    .mapNotNull { result ->
-//                                        runCatching {
-//                                            metadata.getEpisodeMetadata(result.uri)
-//                                        }.getOrNull()?.let {
-//                                            result.uri to it
-//                                        }
-//                                    }.toMap()
-//                            }
+                            val playlistUris = searchResults
+                                .filter { it.type == SearchResultType.PLAYLIST }
+                                .map { it.uri }
 
-                            val sectionedList = mutableListOf<SearchUiModel>()
+                            val trackMap: Map<String, Track> = trackDeferred.await()
+                            appendSectionIfPresent(
+                                type = SearchResultType.TRACK,
+                                titleRes = R.string.search_section_tracks,
+                                map = trackMap
+                            ) { uri, track -> SearchUiModel.TrackItem(uri, track) }
+                            _results.value = sectionedList.toList()
 
+                            val artistMap: Map<String, Artist> = artistDeferred.await()
+                            appendSectionIfPresent(
+                                type = SearchResultType.ARTIST,
+                                titleRes = R.string.search_section_artists,
+                                map = artistMap
+                            ) { uri, artist -> SearchUiModel.ArtistItem(uri, artist) }
+                            _results.value = sectionedList.toList()
 
-                            fun <T> addSection(
-                                type: SearchResultType,
-                                @StringRes titleRes: Int,
-                                map: Map<String, T>,
-                                mapper: (String, T) -> SearchUiModel
-                            ) {
-                                val items = grouped[type] ?: return
-                                if (items.isEmpty()) return
+                            val albumMap: Map<String, Album> = albumDeferred.await()
+                            appendSectionIfPresent(
+                                type = SearchResultType.ALBUM,
+                                titleRes = R.string.search_section_albums,
+                                map = albumMap
+                            ) { uri, album -> SearchUiModel.AlbumItem(uri, album) }
+                            _results.value = sectionedList.toList()
 
-                                val mapped = items.mapNotNull { result ->
-                                    map[result.uri]?.let { data ->
-                                        mapper(result.uri, data)
-                                    }
-                                }
-
-                                if (mapped.isNotEmpty()) {
-                                    sectionedList.add(SearchUiModel.SectionHeader(titleRes))
-                                    sectionedList.addAll(mapped)
-                                }
-                            }
-
-                            coroutineScope {
-                                val trackMap: Map<String, Track> = trackDeferred.await()
-                                val artistMap: Map<String, Artist> = artistDeferred.await()
-                                val albumMap: Map<String, Album> = albumDeferred.await()
-                                val playlistMap: Map<String, Playlist> = playlistDeferred.await()
-
-                                addSection(
-                                    type = SearchResultType.TRACK,
-                                    titleRes = R.string.search_section_tracks,
-                                    map = trackMap
-                                ) { uri, track ->
-                                    SearchUiModel.TrackItem(uri, track)
-                                }
-
-                                addSection(
-                                    type = SearchResultType.ARTIST,
-                                    titleRes = R.string.search_section_artists,
-                                    map = artistMap
-                                ) { uri, artist ->
-                                    SearchUiModel.ArtistItem(uri, artist)
-                                }
-
-                                addSection(
-                                    type = SearchResultType.ALBUM,
-                                    titleRes = R.string.search_section_albums,
-                                    map = albumMap
-                                ) { uri, album ->
-                                    SearchUiModel.AlbumItem(uri, album)
-                                }
-
-                                addSection(
-                                    type = SearchResultType.PLAYLIST,
-                                    titleRes = R.string.search_section_playlists,
-                                    map = playlistMap
-                                ) { uri, playlist ->
-                                    SearchUiModel.PlaylistItem(uri, playlist)
-                                }
-                            }
-
-                            _results.value = sectionedList
+                            val playlistMap: Map<String, Playlist> = playlistDefered.await()
+                            appendSectionIfPresent(
+                                type = SearchResultType.PLAYLIST,
+                                titleRes = R.string.search_section_playlists,
+                                map = playlistMap
+                            ) { uri, playlist -> SearchUiModel.PlaylistItem(uri, playlist) }
+                            _results.value = sectionedList.toList()
                         }
 
                     } catch (e: Exception) {

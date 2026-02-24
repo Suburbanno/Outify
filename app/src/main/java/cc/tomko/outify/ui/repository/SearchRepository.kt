@@ -4,6 +4,8 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.ui.model.search.SearchResult
 import cc.tomko.outify.ui.model.search.SearchResultType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
@@ -13,11 +15,11 @@ class SearchRepository @Inject constructor(
  {
      val json = Json { ignoreUnknownKeys = true }
 
-     fun search(query: String): List<SearchResult> {
+     suspend fun search(query: String): List<SearchResult> = withContext(Dispatchers.IO) {
          val encodedQuery = query.replace(" ", "+")
          val uris = spClient.search(encodedQuery, "track,artist,album,playlist")
 
-         return uris.mapNotNull { uri ->
+         uris.mapNotNull { uri ->
              val type = when {
                  uri.startsWith("spotify:track:") -> SearchResultType.TRACK
                  uri.startsWith("spotify:artist:") -> SearchResultType.ARTIST

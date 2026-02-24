@@ -56,8 +56,9 @@ class TrackMetadataHelper @Inject constructor(
     /**
      * Returns list of Tracks with their metadata
      */
-    suspend fun getTrackMetadata(uris: List<String>): List<Track> {
-        if (uris.isEmpty()) return emptyList()
+    suspend fun getTrackMetadata(trackUris: List<String>): List<Track> {
+        if (trackUris.isEmpty()) return emptyList()
+        val uris = trackUris.filter { it.startsWith("spotify:track:") }
 
         val cachedMap = loadCachedTracks(uris).toMutableMap()
 
@@ -185,9 +186,10 @@ class TrackMetadataHelper @Inject constructor(
     private suspend fun fetchTracks(uris: List<String>): List<Pair<String, Track>> =
         supervisorScope {
             if (uris.isEmpty()) return@supervisorScope emptyList()
+            val filtered = uris.filter { it.startsWith("spotify:track:") }
 
             val results = mutableListOf<Pair<String, Track>>()
-            uris.chunked(concurrency).forEach { chunk ->
+            filtered.chunked(concurrency).forEach { chunk ->
                 val deferred = chunk.map { uri ->
                     async {
                         try {
