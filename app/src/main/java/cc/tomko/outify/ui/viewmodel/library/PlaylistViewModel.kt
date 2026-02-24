@@ -121,6 +121,10 @@ class PlaylistViewModel @Inject constructor(
             }
         }.awaitAll()
     }
+
+    fun setTrack(track: Track) {
+        playbackStateHolder.setTrack(track)
+    }
 }
 
 sealed interface PlaylistUiState {

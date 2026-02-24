@@ -90,6 +90,10 @@ class LikedViewModel @Inject constructor(
         }
     }
 
+    fun setTrack(track: Track) {
+        playbackStateHolder.setTrack(track)
+    }
+
     fun currentTrack(): Flow<Track?> =
         playbackStateHolder.state.map { it.currentTrack }
 }

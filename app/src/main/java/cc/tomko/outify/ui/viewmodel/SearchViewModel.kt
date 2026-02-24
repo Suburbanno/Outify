@@ -142,10 +142,6 @@ class SearchViewModel @Inject constructor(
                                     }.toMap()
                             }
 
-                            val playlistUris = searchResults
-                                .filter { it.type == SearchResultType.PLAYLIST }
-                                .map { it.uri }
-
                             val trackMap: Map<String, Track> = trackDeferred.await()
                             appendSectionIfPresent(
                                 type = SearchResultType.TRACK,
@@ -210,6 +206,10 @@ class SearchViewModel @Inject constructor(
                 Log.w("SearchViewModel", "saveItem failed", )
             }
         }
+    }
+
+    fun setTrack(track: Track) {
+        playbackStateHolder.setTrack(track)
     }
 }
 

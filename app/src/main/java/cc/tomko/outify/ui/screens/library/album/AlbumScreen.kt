@@ -224,7 +224,10 @@ fun SharedTransitionScope.AlbumDetailScreen(
                         SwipeableTrackRow(
                             track = track,
                             currentTrack = currentTrack,
-                            onRowClick = remember(track.uri) { { spirc.load(album.uri,track.uri) } },
+                            onRowClick = remember(track.uri) { {
+                                viewModel.setTrack(track)
+                                spirc.load(album.uri,track.uri)
+                            } },
                             onArtistClick = { artistClick(track.artists.first().uri) }, // TODO: Make some popup where user chooses the artist, in case of multiple artists
                         )
                     }

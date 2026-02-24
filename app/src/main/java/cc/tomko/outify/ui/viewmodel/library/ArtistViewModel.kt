@@ -91,6 +91,10 @@ class ArtistViewModel @Inject constructor(
             }
         }
     }
+
+    fun setTrack(track: Track) {
+        playbackStateHolder.setTrack(track)
+    }
 }
 
 sealed interface ArtistUiState {

@@ -224,6 +224,7 @@ fun SharedTransitionScope.PlaylistScreen(
                                 currentTrack = currentTrack,
                                 onRowClick = remember(playlistItem.uri) { {
                                     spirc.load(playlist.uri, playlistItem.uri)
+                                    viewModel.setTrack(track!!)
                                 } },
                                 onArtworkClick = {onArtworkClick(track!!)},
                             )

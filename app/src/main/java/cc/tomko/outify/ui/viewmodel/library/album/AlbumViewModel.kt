@@ -70,4 +70,8 @@ class AlbumViewModel @Inject constructor(
             loadAlbum("spotify:album:$albumId")
         }
     }
+
+    fun setTrack(track: Track) {
+        playbackStateHolder.setTrack(track)
+    }
 }

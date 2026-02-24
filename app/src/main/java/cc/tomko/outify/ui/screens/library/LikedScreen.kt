@@ -106,6 +106,8 @@ fun SharedTransitionScope.LikedScreen(
                     {
                         transitioningTrackUri = track.uri
                         spirc.load(null,track.uri)
+                        // Optimistic UI
+                        viewModel.setTrack(track)
                     }
                 },
                 onRowLongClick = {

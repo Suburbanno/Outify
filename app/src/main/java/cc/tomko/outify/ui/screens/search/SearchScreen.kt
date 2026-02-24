@@ -184,6 +184,7 @@ fun SharedTransitionScope.SearchScreen(
                             track = track,
                             currentTrack = currentTrack,
                             onRowClick = {
+                                viewModel.setTrack(track)
                                 spirc.load(item.uri)
                             },
                             onArtworkClick = {

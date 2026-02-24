@@ -263,6 +263,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
                             track = track,
                             currentTrack = currentTrack,
                             onRowClick = remember(track.uri) { {
+                                viewModel.setTrack(track)
                                 spirc.load(artist.uri, track.uri)
                             } },
                             onArtworkClick = {onArtworkClick(track)},

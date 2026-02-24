@@ -230,7 +230,10 @@ fun SharedTransitionScope.ArtistLikedTracksScreen(
                         SwipeableTrackRow(
                             track = track,
                             currentTrack = currentTrack,
-                            onRowClick = remember(track.uri) { { spirc.load(track.uri) } },
+                            onRowClick = remember(track.uri) { {
+                                viewModel.setTrack(track)
+                                spirc.load(track.uri)
+                            } },
                             onArtworkClick = {onArtworkClick(track)},
                         )
                     }
