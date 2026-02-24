@@ -13,6 +13,7 @@ import cc.tomko.outify.ui.repository.LikedRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -29,6 +30,7 @@ class LikedViewModel @Inject constructor(
     private val likedRepository: LikedRepository,
     private val playbackStateHolder: PlaybackStateHolder,
 ) : ViewModel() {
+    val isRefreshing = MutableStateFlow(false)
 
     companion object {
         private const val PAGE_SIZE = 30
@@ -59,10 +61,16 @@ class LikedViewModel @Inject constructor(
     private var lastFetchedOffset = -1
 
     init {
+        refresh()
+    }
+
+    fun refresh() {
         if(spirc.isUsable) {
             viewModelScope.launch {
                 // Sync URI list first; the Flow will fire once liked_songs is updated
+                isRefreshing.value = true
                 likedRepository.syncLikedUris()
+                isRefreshing.value = false
             }
             // Kick off the first page
             triggerLoad(offset = 0)

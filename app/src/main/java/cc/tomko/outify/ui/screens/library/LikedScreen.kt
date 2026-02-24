@@ -21,13 +21,17 @@ import androidx.compose.material3.LargeExtendedFloatingActionButton
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -51,7 +55,9 @@ import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -102,8 +108,10 @@ fun SharedTransitionScope.LikedScreen(
     val totalCount by viewModel.totalCount.collectAsState()
 
     var transitioningTrackUri by remember { mutableStateOf<String?>(null) }
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
 
     val collapsingState = rememberCollapsingHeaderState()
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(listState.isScrollInProgress) {
         if (!listState.isScrollInProgress) {
@@ -115,7 +123,14 @@ fun SharedTransitionScope.LikedScreen(
         }
     }
 
-    Box(
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = {
+            scope.launch {
+                listState.scrollToItem(0)
+                viewModel.refresh()
+            }
+        },
         modifier = Modifier
             .fillMaxSize()
             .background(color = MaterialTheme.colorScheme.surface)
@@ -164,7 +179,6 @@ fun SharedTransitionScope.LikedScreen(
                 )
             }
         }
-
 
         CollapsingHeader(
             collapseFraction = collapsingState.collapseFraction,
