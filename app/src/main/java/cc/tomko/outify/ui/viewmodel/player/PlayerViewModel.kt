@@ -68,7 +68,7 @@ class PlayerViewModel @Inject constructor(
                 val position = state.position
                 PlayerUIState(
                     title = track?.name ?: "Unknown Track",
-                    artist = track?.artists?.joinToString { it.name } ?: "Unknown Artist",
+                    artists = track?.artists ?: emptyList(),
                     albumArt = track?.album?.getCover(CoverSize.LARGE)?.uri,
                     isPlaying = state.isPlaying,
                     isExplicit = track?.explicit ?: false,

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.Artist
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -49,7 +50,7 @@ enum class TrackRowDensity { Compact, Default, Spacious }
 @Composable
 fun SharedTransitionScope.TrackRow(
     title: String,
-    artist: String,
+    artists: List<Artist>,
     artworkUrl: String?,
 
     modifier: Modifier = Modifier,
@@ -63,7 +64,7 @@ fun SharedTransitionScope.TrackRow(
     onRowLongClick: (() -> Unit)? = null,
     onArtworkClick: (() -> Unit)? = null,
     onTitleClick: (() -> Unit)? = null,
-    onArtistClick: (() -> Unit)? = null,
+    onArtistClick: ((Artist) -> Unit)? = null,
 
     contentDescription: String? = null,
 
@@ -180,22 +181,36 @@ fun SharedTransitionScope.TrackRow(
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                Text(
-                    text = artist,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .then(
-                            if (onArtistClick != null) {
-                                Modifier.combinedClickable(
-                                    onClick = { onArtistClick() },
-                                    onLongClick = {}
+                // Artists
+                Row(modifier = modifier) {
+                    artists.forEachIndexed { index, artist ->
+
+                        Text(
+                            text = artist.name,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier
+                                .then(
+                                    if (onArtistClick != null) {
+                                        Modifier.combinedClickable(
+                                            onClick = { onArtistClick(artist) },
+                                            onLongClick = {}
+                                        )
+                                    } else Modifier
                                 )
-                            } else Modifier
+                                .testTag("trackrow.artist.$index")
                         )
-                        .testTag("trackrow.artist")
-                )
+
+                        // Add comma separator except after last
+                        if (index < artists.lastIndex) {
+                            Text(
+                                text = ", ",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
             }
 
             if (trailingContent != null) {

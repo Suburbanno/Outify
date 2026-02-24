@@ -4,8 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.Spirc.SpircWrapper
+import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.database.toDomain
+import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.repository.LikedRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -89,6 +91,14 @@ class LikedViewModel @Inject constructor(
             }
         }
     }
+
+    fun getArtwork(): Flow<String?> =
+        likedTracks.map { tracks ->
+            tracks.firstOrNull()
+                ?.album
+                ?.getCover(CoverSize.LARGE)
+                ?.uri
+        }
 
     fun setTrack(track: Track) {
         playbackStateHolder.setTrack(track)

@@ -9,6 +9,7 @@ pub mod oauth;
 pub mod session;
 pub mod spclient;
 pub mod spotify;
+pub mod outifyuri;
 
 mod playback;
 mod profile;

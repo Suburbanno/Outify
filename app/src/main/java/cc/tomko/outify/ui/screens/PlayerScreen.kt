@@ -6,6 +6,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,11 +60,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.Artist
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.ui.model.player.PlayerAction
@@ -81,6 +84,7 @@ import kotlinx.coroutines.supervisorScope
 @Composable
 fun SharedTransitionScope.PlayerScreen(
     viewModel: PlayerViewModel,
+    onArtistClick: (Artist) -> Unit,
 ) {
     val context = LocalContext.current
 
@@ -158,11 +162,34 @@ fun SharedTransitionScope.PlayerScreen(
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            Text(
-                text = uiState.artist,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+
+            Row {
+                uiState.artists.forEachIndexed { index, artist ->
+                    Text(
+                        text = artist.name,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .then(
+                                Modifier.combinedClickable(
+                                    onClick = { onArtistClick(artist) },
+                                    onLongClick = {}
+                                )
+                            )
+                    )
+
+                    // Add comma separator except after last
+                    if (index < uiState.artists.lastIndex) {
+                        Text(
+                            text = ", ",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
 
             Spacer(Modifier.height(32.dp))
 

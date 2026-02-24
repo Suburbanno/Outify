@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
@@ -28,7 +29,7 @@ fun SharedTransitionScope.SwipeableTrackRow(
     onRowLongClick: (() -> Unit)? = null,
     onArtworkClick: (() -> Unit)? = null,
     onTitleClick: (() -> Unit)? = null,
-    onArtistClick: (() -> Unit)? = null,
+    onArtistClick: ((Artist) -> Unit)? = null,
     favoriteTrack: ((String) -> Unit)? = null,
 ) {
     SwipeableRowWithGestures(
@@ -77,7 +78,7 @@ fun SharedTransitionScope.SwipeableTrackRow(
     ) {
         TrackRow(
             title = track.name,
-            artist = track.artists.joinToString { it.name },
+            artists = track.artists,
             artworkUrl = (ALBUM_COVER_URL + track.album?.getCover(CoverSize.SMALL)?.uri),
             isPlaying = currentTrack?.uri.equals(track.uri),
             isSelected = false,

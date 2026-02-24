@@ -1,11 +1,13 @@
 package cc.tomko.outify.ui.model.player
 
+import cc.tomko.outify.data.Artist
+
 /**
  * Holds the UI state of the player
  */
 data class PlayerUIState(
     val title: String = "",
-    val artist: String = "",
+    val artists: List<Artist> = emptyList(),
     val albumArt: String? = null,
     val isPlaying: Boolean = false,
     var isExplicit: Boolean = false,

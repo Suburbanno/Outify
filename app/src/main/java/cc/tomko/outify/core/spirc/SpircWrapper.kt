@@ -63,7 +63,7 @@ class SpircWrapper @Inject constructor(
     /**
      * Loads the context URI and starts playing randomly within it
      */
-    fun shuffleLoad(uri: String): Boolean {
+    fun shuffleLoad(uri: String? = null): Boolean {
         ensureServiceRunning()
         return Spirc.shuffleLoad(uri)
     }

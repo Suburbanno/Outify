@@ -157,6 +157,12 @@ async fn cleanup() {
     });
 }
 
+pub fn get_username() -> String {
+    with_session(|session| {
+        session.username()
+    }).expect("failed to get username")
+}
+
 // Helper function to retrieve &Session
 pub fn with_session<F, R>(f: F) -> Result<R, librespot_core::Error>
 where

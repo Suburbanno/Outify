@@ -311,7 +311,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                                         }
                                         TrackRow(
                                             title = item.track.name,
-                                            artist = item.track.artists.joinToString { it.name },
+                                            artists = item.track.artists,
                                             artworkUrl = artworkUrl,
                                             onRowClick = remember(item.track.uri) {
                                                 {
@@ -320,7 +320,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                                                     }
                                                 }
                                             },
-                                            onArtistClick = {},
+                                            onArtistClick = {}, // TODO: Implement going to artist
                                             sharedTransitionKey = null,
                                             color = Color.Transparent
                                         )

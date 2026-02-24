@@ -76,7 +76,12 @@ fun SharedTransitionScope.NavigationRoot(
                     NavEntry(key) {
                         val viewModel: PlayerViewModel = hiltViewModel()
 
-                        PlayerScreen(viewModel)
+                        PlayerScreen(
+                            viewModel = viewModel,
+                            onArtistClick = {
+                                backStack.add(Route.ArtistScreen(it.uri))
+                            }
+                        )
                     }
                 }
 
@@ -88,7 +93,15 @@ fun SharedTransitionScope.NavigationRoot(
                         LikedScreen(
                             viewModel = viewModel,
                             listState = listState,
-                            backStack = backStack,
+                            onBack = {
+                                backStack.removeAt(backStack.lastIndex)
+                            },
+                            onArtworkClick = {
+                                backStack.add(Route.AlbumScreenFromTrackUri(it.uri))
+                            },
+                            onArtistClick = {
+                                backStack.add(Route.ArtistScreen(it.uri))
+                            }
                         )
                     }
                 }
@@ -162,7 +175,8 @@ fun SharedTransitionScope.NavigationRoot(
                             },
                             onLikedTracksClick = {
                                 backStack.add(Route.ArtistLikedTracksScreen(key.artistUri))
-                            }
+                            },
+                            onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) }
                         ) { }
                     }
                 }
@@ -196,9 +210,7 @@ fun SharedTransitionScope.NavigationRoot(
                             onArtworkClick = { track ->
                                 backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
                             },
-                            artistClick = { artistUri ->
-                                backStack.add(Route.ArtistScreen(artistUri))
-                            }
+                            onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) }
                         )
                     }
                 }

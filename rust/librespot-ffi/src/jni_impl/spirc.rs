@@ -135,19 +135,25 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_load(
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_shuffleLoad")]
 pub extern "system" fn shuffle_load(mut env: JNIEnv, _this: JClass, juri: JString) -> jboolean {
-    let uri: String = match env.get_string(&juri) {
-        Ok(u) => u.into(),
-        Err(e) => {
-            warn!("Failed to get URI from JNI juri: {}", e);
-            return 0;
-        }
-    };
+    // If uri is not present - set to users liked collection
+    // If uri is present - use that uri
+    let uri = if juri.is_null() {
+        let user_id = match with_session(|session| session.username()) {
+            Ok(u) => u,
+            Err(e) => {
+                error!("Failed to get user_id: {e}");
+                return 0;
+            }
+        };
 
-    let spotify_uri = match SpotifyUri::from_uri(uri.as_str()) {
-        Ok(uri) => uri,
-        Err(e) => {
-            warn!("failed to get SpotifyURI: {}", e);
-            return 0;
+        format!("spotify:user:{}:collection", user_id)
+    } else {
+        match env.get_string(&juri) {
+            Ok(u) => u.into(),
+            Err(e) => {
+                warn!("Failed to get URI from JNI juri: {}", e);
+                return 0;
+            }
         }
     };
 
