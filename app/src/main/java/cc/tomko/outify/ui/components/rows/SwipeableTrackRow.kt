@@ -5,11 +5,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.AddToPhotos
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import cc.tomko.outify.ALBUM_COVER_URL
+import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
@@ -27,8 +29,8 @@ fun SharedTransitionScope.SwipeableTrackRow(
     onArtworkClick: (() -> Unit)? = null,
     onTitleClick: (() -> Unit)? = null,
     onArtistClick: (() -> Unit)? = null,
+    favoriteTrack: ((String) -> Unit)? = null,
 ) {
-
     SwipeableRowWithGestures(
         endGestures = listOf(
             SwipeGesture(
@@ -55,6 +57,20 @@ fun SharedTransitionScope.SwipeableTrackRow(
                     )
                 },
                 onTrigger = {  },
+            ),
+        ),
+        startGestures = listOf(
+            SwipeGesture(
+                thresholdFraction = 0.25f,
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = "Add to favorite",
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                },
+                onTrigger = { favoriteTrack?.invoke(track.uri) },
+                backgroundColor = Color(0xC43C8C52),
             )
         ),
         modifier = modifier

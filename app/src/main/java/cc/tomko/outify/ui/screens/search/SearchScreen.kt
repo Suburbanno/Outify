@@ -153,6 +153,9 @@ fun SharedTransitionScope.SearchScreen(
                             onArtworkClick = {
                                 backStack.add(AlbumScreenFromTrackUri(item.uri))
                             },
+                            favoriteTrack = { uri ->
+                                viewModel.saveItem(uri)
+                            }
                         )
                     }
                     is SearchUiModel.AlbumItem -> {

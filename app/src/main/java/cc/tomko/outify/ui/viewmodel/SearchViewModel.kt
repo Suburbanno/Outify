@@ -1,10 +1,12 @@
 package cc.tomko.outify.ui.viewmodel
 
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.R
+import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Artist
@@ -17,6 +19,7 @@ import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.model.search.SearchResultType
 import cc.tomko.outify.ui.repository.SearchRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -28,6 +31,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.collections.emptyList
 import kotlin.collections.mapNotNull
@@ -37,6 +41,7 @@ import kotlin.collections.mapNotNull
 class SearchViewModel @Inject constructor(
     val metadata: Metadata,
     val spirc: SpircWrapper,
+    val spClient: SpClient,
     private val repository: SearchRepository,
     private val playbackStateHolder: PlaybackStateHolder,
 ): ViewModel() {
@@ -228,6 +233,14 @@ class SearchViewModel @Inject constructor(
         val track = metadata.getTrackMetadata(listOf(trackUri)).firstOrNull()
 
         return (ALBUM_COVER_URL + track?.album?.getCover(CoverSize.MEDIUM)?.uri)
+    }
+
+    fun saveItem(uri: String) {
+        viewModelScope.launch {
+            if(!spClient.saveItems(arrayOf(uri))){
+                Log.w("SearchViewModel", "saveItem failed", )
+            }
+        }
     }
 }
 

@@ -1,5 +1,6 @@
+use librespot_core::token::Token;
 use once_cell::sync::{Lazy, OnceCell};
-use reqwest::{Client, header};
+use reqwest::{Client, StatusCode, header};
 use serde::Deserialize;
 use serde_json::Value;
 use std::{
@@ -8,13 +9,17 @@ use std::{
 };
 use tokio::sync::RwLock;
 
-use crate::spotify::{
-    error::SpotifyApiError,
-    search::extract_all_uris,
-    token::{TokenResponse, WebApiToken},
+use crate::{
+    session::with_session,
+    spotify::{
+        error::SpotifyApiError,
+        search::extract_all_uris,
+        token::{TokenResponse, WebApiToken},
+    },
 };
 
 const SPOTIFY_API_URL: &str = "https://api.spotify.com";
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
 
 static SPOTIFY_CLIENT: OnceCell<SpotifyClient> = OnceCell::new();
 
@@ -63,7 +68,7 @@ impl SpotifyClient {
             .get(format!("{}/v1/search", SPOTIFY_API_URL))
             .query(&params)
             .bearer_auth(token)
-            .timeout(Duration::from_secs(5))
+            .timeout(REQUEST_TIMEOUT)
             .send()
             .await?;
 
@@ -77,6 +82,46 @@ impl SpotifyClient {
         let uris = extract_all_uris(parsed);
 
         Ok(uris)
+    }
+
+    // Saves tracks/episodes/albums/..
+    pub async fn save_items(&self, uris: Vec<String>) -> Result<StatusCode, SpotifyApiError> {
+        // let token = self.get_token().await.ok_or(SpotifyApiError::NoToken)?;
+        let token: Token = crate::session::with_session_async(|ses| {
+            Box::pin(async move {
+                // Attempt to get a token
+                match ses
+                    .token_provider()
+                    .get_token_with_client_id("user-library-modify,user-follow-modify,playlist-modify-public", "9a8d2f0ce77a4e248bb71fefcb557637")
+                    .await
+                {
+                    Ok(t) => Ok(t),
+                    Err(e) => {
+                        // Log the error for debugging
+                        log::error!("Failed to get Spotify token: {:?}", e);
+                        // Convert to your error type
+                        Err(SpotifyApiError::NoToken)
+                    }
+                }
+            })
+        })
+        .await??;
+
+        info!("token: {}", &token.access_token);
+
+        let ids = uris.join(",");
+
+        let res = self
+            .client
+            .put(format!("{}/v1/me/library", SPOTIFY_API_URL))
+            .query(&[("uris", ids)])
+            .header(header::CONTENT_LENGTH, "0")
+            .bearer_auth(token.access_token)
+            .timeout(REQUEST_TIMEOUT)
+            .send()
+            .await?;
+
+        Ok(res.status())
     }
 
     pub async fn get_token(&self) -> Option<String> {
@@ -95,6 +140,7 @@ impl SpotifyClient {
             .post("https://accounts.spotify.com/api/token")
             .basic_auth(&self.client_id, Some(&self.client_secret))
             .form(&[("grant_type", "client_credentials")])
+            .timeout(REQUEST_TIMEOUT)
             .send()
             .await
             .ok()?

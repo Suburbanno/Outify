@@ -1,7 +1,7 @@
 use jni::{
     JNIEnv,
-    objects::{JClass, JObject, JString},
-    sys::{jint, jobjectArray, jstring},
+    objects::{JClass, JObject, JObjectArray, JString},
+    sys::{jboolean, jint, jobjectArray, jstring},
 };
 use librespot_core::{SpotifyUri, spclient::SpClient};
 use librespot_metadata::{Metadata, Track};
@@ -59,6 +59,46 @@ pub extern "system" fn spotify_search(
     };
 
     vec_to_jstring_array(&mut env, uris)
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_saveItems")]
+pub extern "system" fn save_item(mut env: JNIEnv, _class: JClass, uris: JObjectArray) -> jboolean {
+    let client = get_client();
+
+    let length = env.get_array_length(&uris).unwrap();
+    let mut rust_uris = Vec::with_capacity(length as usize);
+
+    for i in 0..length {
+        let obj = env.get_object_array_element(&uris, i).unwrap();
+        let jstr: JString = JString::from(obj);
+        let rust_string: String = env.get_string(&jstr).unwrap().into();
+        rust_uris.push(rust_string);
+    }
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return 0;
+        }
+    };
+
+    let result = rt.block_on(async { client.save_items(rust_uris).await });
+
+    match result {
+        Ok(status) => {
+            let success = status.is_success();
+            if !success {
+                warn!("failed to save items with status: {}", status.as_str());
+            }
+
+            success as jboolean
+        }
+        Err(e) => {
+            error!("save_items failed: {e}");
+            0
+        }
+    }
 }
 
 // Searches for tracks using context

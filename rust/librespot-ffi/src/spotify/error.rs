@@ -12,5 +12,8 @@ pub enum SpotifyApiError {
     Json(#[from] serde_json::Error),
 
     #[error("HTTP request failed: {0}")]
-    Reqwest(#[from] reqwest::Error)
+    Reqwest(#[from] reqwest::Error),
+
+    #[error("Librespot error: {0}")]
+    Librespot(#[from] librespot_core::Error)
 }
