@@ -39,4 +39,7 @@ sealed interface Route: NavKey {
 
     @Serializable
     data class ArtistLikedTracksScreen(val artistUri: String): Route, NavKey
+
+    @Serializable
+    data object SettingsScreen: Route, NavKey
 }
