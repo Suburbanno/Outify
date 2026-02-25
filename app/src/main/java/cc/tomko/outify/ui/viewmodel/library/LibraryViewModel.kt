@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.viewmodel.library
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.ALBUM_COVER_URL
@@ -32,6 +33,9 @@ class LibraryViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<LibraryUiState>(LibraryUiState.Loading)
     val uiState: StateFlow<LibraryUiState> = _uiState
+
+    private val _headerArtwork = mutableStateOf<String?>(null)
+    val headerArtwork = _headerArtwork
 
     private val playlistUris = MutableStateFlow<List<String>>(emptyList())
 
@@ -80,6 +84,16 @@ class LibraryViewModel @Inject constructor(
                 _uiState.value = LibraryUiState.Error(it.message ?: "Unknown error")
             }
             isRefreshing.value = false
+        }
+    }
+
+    fun loadHeaderArtwork(playlists: List<Playlist>) {
+        if (_headerArtwork.value != null) return
+        if (playlists.isNotEmpty()) {
+            viewModelScope.launch {
+                _headerArtwork.value =
+                    getArtworkUrl(playlists.random())
+            }
         }
     }
 

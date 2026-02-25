@@ -8,11 +8,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -32,6 +36,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -44,7 +49,9 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.Profile
 import cc.tomko.outify.data.Track
@@ -52,9 +59,11 @@ import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
+import cc.tomko.outify.ui.components.user.UserChipAvatar
 import cc.tomko.outify.ui.viewmodel.library.PlaylistUiState
 import cc.tomko.outify.ui.viewmodel.library.PlaylistViewModel
 import coil3.compose.AsyncImage
+import com.google.common.collect.Multimaps.index
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -105,11 +114,13 @@ fun SharedTransitionScope.PlaylistScreen(
             val spirc = viewModel.spirc
 
             var artworkUrl by remember { mutableStateOf("") }
+            val authorMap by viewModel.authors.collectAsState()
             var authors by remember { mutableStateOf(emptyList<Profile>()) }
             LaunchedEffect(playlist.uri) {
                 artworkUrl = viewModel.getArtworkUrl(playlist)
                 authors = viewModel.getAuthors(playlist)
             }
+            val showAvatarCount = 4
 
             val collapsingState = rememberCollapsingHeaderState()
 
@@ -158,6 +169,15 @@ fun SharedTransitionScope.PlaylistScreen(
                                 onArtworkClick = {onArtworkClick(track!!)},
                                 onArtistClick =  { artist ->
                                     onArtistClick(artist)
+                                },
+                                trailingContent = {
+                                    val author by produceState<Profile?>(initialValue = null, key1 = playlistItem.attributes.addedBy) {
+                                        value = authorMap[playlistItem.attributes.addedBy ]
+                                    }
+
+                                    author?.let {
+                                        UserChipAvatar(it)
+                                    }
                                 }
                             )
                         } else  {
@@ -181,13 +201,30 @@ fun SharedTransitionScope.PlaylistScreen(
                         Text(
                             text = playlist.attributes.name,
                             style = MaterialTheme.typography.headlineMedium,
+                            overflow = TextOverflow.Ellipsis,
                             fontWeight = FontWeight.Bold
                         )
 
-                        Text(
-                            text = "${authors.joinToString { it.name ?: "Unknown" }} • ${tracks.size} songs",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                        Row {
+                            Box {
+                                authors.take(showAvatarCount).forEachIndexed { index, user ->
+                                    UserChipAvatar(
+                                        profile = user,
+                                        size = 20.dp,
+                                        modifier = Modifier
+                                            .offset(x = (index * 12).dp)
+                                            .zIndex((showAvatarCount - index).toFloat())
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width((authors.take(showAvatarCount).size * 12).dp))
+
+                            Text(
+                                text = "• ${tracks.size} songs",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                     },
                     fabContent = {
                         LargeExtendedFloatingActionButton(
@@ -203,25 +240,4 @@ fun SharedTransitionScope.PlaylistScreen(
             }
         }
     }
-
-    // Prefetch visible + ahead items
-//    LaunchedEffect(lazyList, tracks) {
-//        snapshotFlow { lazyList.layoutInfo.visibleItemsInfo }
-//            .collect { visibleItems ->
-//                if (visibleItems.isEmpty()) return@collect
-//
-//                val firstVisible = visibleItems.first().index
-//                val lastVisible = visibleItems.last().index
-//
-//                val prefetchUntil = (lastVisible + 10).coerceAtMost(tracks.lastIndex)
-//                val urisToLoad = (firstVisible..prefetchUntil).mapNotNull { idx ->
-//                    tracks.getOrNull(idx)?.uri
-//                }
-//
-//                if (urisToLoad.isNotEmpty()) {
-//                    viewModel.loadMetadataIfNeeded(urisToLoad)
-//                }
-//            }
-//    }
-
 }

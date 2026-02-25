@@ -7,7 +7,9 @@ pub struct UserJson {
     pub name: String,
     #[serde(default)]
     pub image_url: String,
+    #[serde(default)]
     pub followers_count: i32,
+    #[serde(default)]
     pub following_count: i32,
     #[serde(default)]
     pub is_following: bool,

@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
@@ -44,6 +48,7 @@ import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rows.PlaylistRow
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
+import cc.tomko.outify.ui.components.rows.PlaylistGridItem
 import cc.tomko.outify.ui.viewmodel.library.LibraryUiState
 import cc.tomko.outify.ui.viewmodel.library.LibraryViewModel
 import kotlinx.coroutines.launch
@@ -113,14 +118,16 @@ fun SharedTransitionScope.LibraryScreen(
                 val currentTopBarHeightDp =
                     with(density) { collapsingState.height.value.toDp() }
 
-                LazyColumn(
-                    state = lazyListState,
+                LazyVerticalGrid(
+                    state = rememberLazyGridState(),
+                    columns = GridCells.Adaptive(minSize = 120.dp),
                     contentPadding = PaddingValues(
                         top = currentTopBarHeightDp,
                         start = 16.dp,
                         end = if ((lazyListState.canScrollForward || lazyListState.canScrollBackward) && collapsingState.collapseFraction > 0.95f) 24.dp else 16.dp,
                     ),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(
@@ -135,13 +142,12 @@ fun SharedTransitionScope.LibraryScreen(
                             value = viewModel.getArtworkUrl(playlist)
                         }
 
-                        PlaylistRow(
-                            playlist,
-                            artworkUrl,
-                            onRowClick = {
-                                backStack.add(Route.PlaylistScreen(playlist.uri))
-                            }
-                        )
+                        PlaylistGridItem(
+                            playlist = playlist,
+                            artworkUrl = artworkUrl,
+                        ) {
+                            backStack.add(Route.PlaylistScreen(playlist.uri))
+                        }
                     }
                 }
 
@@ -152,16 +158,13 @@ fun SharedTransitionScope.LibraryScreen(
                         backStack.removeAt(backStack.lastIndex)
                     },
                     backgroundContent = {
-                        var artworkUrl by remember { mutableStateOf("") }
+                        var artworkUrl by viewModel.headerArtwork
                         LaunchedEffect(playlists) {
-                            if(!playlists.isEmpty()) {
-                                artworkUrl = viewModel.getArtworkUrl(playlist = playlists.random())
-                            }
-                            // TODO: Fallback to some artwork
+                            viewModel.loadHeaderArtwork(playlists)
                         }
 
                         ArtworkBackground(
-                            artworkUrl = artworkUrl,
+                            artworkUrl = artworkUrl ?: "", // TODO: Some placeholder when null
                         )
                     },
                     titleContent = {

@@ -1,10 +1,8 @@
 package cc.tomko.outify.ui.viewmodel.library
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Playlist
@@ -17,21 +15,15 @@ import cc.tomko.outify.profile.UserProfile
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,6 +40,9 @@ class PlaylistViewModel @Inject constructor(
 
     fun currentTrack(): Flow<Track?> =
         playbackStateHolder.state.map { it.currentTrack }
+
+    private val _authors = MutableStateFlow<Map<String, Profile>>(emptyMap())
+    val authors: StateFlow<Map<String, Profile>> = _authors
 
     private val _uiState = MutableStateFlow<PlaylistUiState>(PlaylistUiState.Loading)
     val uiState: StateFlow<PlaylistUiState> = _uiState
@@ -116,8 +111,15 @@ class PlaylistViewModel @Inject constructor(
 
         ids.map { id ->
             async(Dispatchers.IO) {
+                val cached = _authors.value[id] ?: _authors.value[id]
+                if (cached != null) return@async cached
+
                 val jsonRaw = userProfile.getUserProfile(id)
-                json.decodeFromString<Profile>(jsonRaw)
+                val profile = json.decodeFromString<Profile>(jsonRaw)
+
+                _authors.update { current -> current + (profile.name!! to profile) }
+
+                profile
             }
         }.awaitAll()
     }

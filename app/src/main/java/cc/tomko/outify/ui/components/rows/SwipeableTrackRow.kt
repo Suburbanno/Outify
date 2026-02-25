@@ -31,6 +31,7 @@ fun SharedTransitionScope.SwipeableTrackRow(
     onTitleClick: (() -> Unit)? = null,
     onArtistClick: ((Artist) -> Unit)? = null,
     favoriteTrack: ((String) -> Unit)? = null,
+    trailingContent: @Composable (() -> Unit)? = null,
 ) {
     SwipeableRowWithGestures(
         endGestures = listOf(
@@ -82,7 +83,7 @@ fun SharedTransitionScope.SwipeableTrackRow(
             artworkUrl = (ALBUM_COVER_URL + track.album?.getCover(CoverSize.SMALL)?.uri),
             isPlaying = currentTrack?.uri.equals(track.uri),
             isSelected = false,
-//                trailingContent = TODO(),
+            trailingContent = trailingContent,
             onRowClick = onRowClick,
             onRowLongClick = onRowLongClick,
             onArtworkClick = onArtworkClick,
