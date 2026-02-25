@@ -176,9 +176,10 @@ impl SpircRuntime {
     pub fn cleanup(&self) {
         self.shutdown();
 
-        if let Some(lock) = SPIRC_RUNTIME.get() {
-            let mut guard = lock.write().unwrap();
-            *guard = None;
+        let lock = SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
+        let mut guard = lock.write().unwrap();
+        if let Some(spirc) = guard.take() {
+            spirc.shutdown();
         }
     }
 }
@@ -261,13 +262,11 @@ fn handle_event(event: PlayerEvent) {
 pub async fn initialize_spirc() -> Result<(), librespot_core::Error> {
     debug!("Initializing SpircRuntime");
 
-    let container = SPIRC_RUNTIME
-        .get()
-        .expect("SPIRC container not initialized");
+    let lock = SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
 
     {
-        let guard = container.read().unwrap();
-        if guard.is_some() {
+        let read_guard = lock.read().unwrap();
+        if read_guard.is_some() {
             warn!("Spirc already initialized!");
             return Err(librespot_core::Error::internal("Spirc already initialized"));
         }
@@ -313,7 +312,7 @@ pub async fn initialize_spirc() -> Result<(), librespot_core::Error> {
         }
     };
 
-    let mut guard = container.write().unwrap();
+    let mut guard = lock.write().unwrap();
     *guard = Some(runtime);
 
     debug!("SpircRuntime initialized");
@@ -346,12 +345,7 @@ fn notify_buffer_state(method: String) {
             }
         };
 
-        if let Err(e) = env.call_method(
-            callback.as_obj(),
-            method,
-            "()V",
-            &[],
-        ) {
+        if let Err(e) = env.call_method(callback.as_obj(), method, "()V", &[]) {
             log::error!("Failed to call buffer callback: {e}");
         }
     }

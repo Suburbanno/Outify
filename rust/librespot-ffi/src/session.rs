@@ -149,7 +149,7 @@ pub fn set_session_callback(global: GlobalRef) {
 async fn cleanup() {
     if let Some(lock) = SESSION.get() {
         let mut guard = lock.write().unwrap();
-        *guard = None;
+        guard.take();
     }
 
     crate::spirc::with_spirc(|spirc| {
