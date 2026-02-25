@@ -8,6 +8,10 @@ import android.os.Build
 import android.util.Log
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.math.max
 
 private const val TAG = "AudioEngine"
@@ -29,28 +33,17 @@ class AudioEngine(
     private var currentChannels = -1
     private var currentFormat: PcmFormat? = null
 
+    private val pcmBuffer = ByteBuffer.allocateDirect(4 * 8192)
+
+    private val writeLock = ReentrantLock()
+
     init {
-        println("Initializing audioengine")
         // Registers this class as the PCM callback.
         // Rust stores the GlobalRef and calls the onPcm method
-        registerPcmCallback(this)
+        registerPcmCallback(this, pcmBuffer)
 
         // Registers callbacks to handle librespot events
         registerPlayerEventListener(eventCallback)
-    }
-
-    /**
-     * Feed raw PCM bytes into the player.
-     */
-    @Synchronized
-    fun onPcm(data: ByteArray, sampleRate: Int, channels: Int, rawFormat: Int) {
-        val format = PcmFormat.S16
-        if (!ensureAudioTrack(sampleRate, channels, format)) {
-            // unsupported format or allocation failed
-            return
-        }
-
-        writePcm(data, format)
     }
 
     @Synchronized
@@ -219,8 +212,50 @@ class AudioEngine(
     /**
      * Marks this class as the one to receive onPcm data
      */
-    private external fun registerPcmCallback(callbackPtr: AudioEngine?)
+    private external fun registerPcmCallback(callbackPtr: AudioEngine?, buffer: ByteBuffer)
 
+    /**
+     * Called from rust trampoline when the PCMBuffer is filled with PCM.
+     */
+    fun onPcmReady(size: Int, sampleRate: Int, channels: Int) {
+        pcmBuffer.order(ByteOrder.nativeOrder())
+
+        if(!ensureAudioTrack(sampleRate, channels, PcmFormat.S16)) {
+            Log.w(TAG, "ensureAudioTrack failed - dropping frame")
+            return
+        }
+
+        val cap = pcmBuffer.capacity()
+        if(size > cap) {
+            Log.w(TAG, "pcm size $size > buffer capacity $cap; dropping frame")
+            return
+        }
+
+        writeLock.withLock {
+            pcmBuffer.position(0)
+            pcmBuffer.limit(size)
+
+            try {
+                val track = audioTrack ?: run {
+                    Log.w(TAG, "audioTrack is null in onPcmReady")
+                    return
+                }
+
+                val written = track.write(pcmBuffer, size, AudioTrack.WRITE_BLOCKING)
+
+                if (written < 0) {
+                    Log.e(TAG, "AudioTrack.write returned error: $written")
+                } else if (written < size) {
+                    Log.w(TAG, "AudioTrack wrote $written / $size bytes (partial write)")
+                }
+            } catch (ise: IllegalStateException) {
+                Log.e(TAG, "AudioTrack write failed", ise)
+            } finally {
+                pcmBuffer.position(0)
+                pcmBuffer.limit(pcmBuffer.capacity())
+            }
+        }
+    }
 
     /**
      * Registers PlayerEvent listener to FFI.
