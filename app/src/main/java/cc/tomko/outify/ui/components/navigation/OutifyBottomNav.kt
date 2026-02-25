@@ -44,7 +44,7 @@ data class NavDestination(
 @Composable
 fun OutifyBottomNav(
     items: List<NavDestination>,
-    selectedId: String,
+    selectedId: String?,
     onItemSelected: (NavDestination) -> Unit,
     modifier: Modifier = Modifier,
     tonalElevation: Dp = 2.dp,

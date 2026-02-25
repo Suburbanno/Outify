@@ -137,6 +137,16 @@ class MainActivity : ComponentActivity() {
             NavDestination("library", "Library", Route.LibraryScreen) { Icon(Icons.Default.LibraryMusic, contentDescription = null) },
         )
 
+        val currentRoute = backStack.last()
+
+        val selectedId = when (currentRoute) {
+            Route.HomeScreen -> "home"
+            Route.SearchScreen -> "search"
+            Route.LikedScreen -> "liked"
+            Route.LibraryScreen -> "library"
+            else -> null
+        }
+
         val sheetState = rememberQueueBottomSheetState()
 
         val queueViewModel: QueueViewModel = hiltViewModel()
@@ -173,7 +183,7 @@ class MainActivity : ComponentActivity() {
 
                             OutifyBottomNav(
                                 items = routes,
-                                selectedId = "home",
+                                selectedId = selectedId,
                                 onItemSelected = { item -> backStack.add(item.route) }
                             )
                         }
