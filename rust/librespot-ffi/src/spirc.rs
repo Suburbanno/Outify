@@ -268,7 +268,7 @@ pub async fn initialize_spirc() -> Result<(), librespot_core::Error> {
         let read_guard = lock.read().unwrap();
         if read_guard.is_some() {
             warn!("Spirc already initialized!");
-            return Err(librespot_core::Error::internal("Spirc already initialized"));
+            // return Err(librespot_core::Error::internal("Spirc already initialized"));
         }
     }
 
@@ -279,9 +279,6 @@ pub async fn initialize_spirc() -> Result<(), librespot_core::Error> {
             return Err(librespot_core::Error::internal("Failed to get session"));
         }
     };
-
-    info!("session id 2: {}", session.session_id());
-    info!("session con 2: {}", session.connection_id());
 
     if session.cache().is_none() {
         error!("Cannot initialize SpircRuntime as session cache is none!");

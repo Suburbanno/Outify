@@ -24,7 +24,7 @@ pub async fn initialize_session() {
         let guard = container.read().unwrap();
         if guard.is_some() {
             warn!("Session already exists!");
-            return;
+            // return;
         }
     }
 
@@ -109,6 +109,10 @@ fn start_shutdown_listener(session: Session) {
 
         initialize_session().await;
         crate::spirc::initialize_spirc().await;
+        crate::spirc::with_spirc(|spirc| {
+            spirc.activate();
+            spirc.transfer();
+        });
     });
 }
 
