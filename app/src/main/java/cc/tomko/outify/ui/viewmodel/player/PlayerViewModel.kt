@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
@@ -84,9 +85,19 @@ class PlayerViewModel @Inject constructor(
      */
     fun onAction(action: PlayerAction) {
         when (action) {
-            PlayerAction.PlayPause -> spirc.playerPlayPause()
+            PlayerAction.PlayPause -> {
+                spirc.playerPlayPause()
+                viewModelScope.launch {
+                    playbackStateHolder.setPlaying(!playbackStateHolder.state.value.isPlaying)
+                }
+            }
             PlayerAction.Next -> spirc.playerNext()
-            PlayerAction.Previous -> spirc.playerPrevious()
+            PlayerAction.Previous -> {
+                spirc.playerPrevious()
+                viewModelScope.launch {
+                    playbackStateHolder.seekTo(Duration.ZERO)
+                }
+            }
             is PlayerAction.SeekTo -> {
                 viewModelScope.launch {
                     spirc.seekTo(action.position)

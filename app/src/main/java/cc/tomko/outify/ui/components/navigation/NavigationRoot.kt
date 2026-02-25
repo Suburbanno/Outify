@@ -92,7 +92,7 @@ fun SharedTransitionScope.NavigationRoot(
                                 backStack.removeAt(backStack.lastIndex)
                             },
                             onArtworkClick = {
-                                backStack.add(Route.AlbumScreenFromTrackUri(it.uri))
+                                backStack.add(Route.AlbumScreenFromAlbumUri(it.uri))
                             },
                             onArtistClick = {
                                 backStack.add(Route.ArtistScreen(it.uri))
