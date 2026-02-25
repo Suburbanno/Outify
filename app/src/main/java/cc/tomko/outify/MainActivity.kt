@@ -101,8 +101,6 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        requestNotifications()
-
         if(!handleAuth()){
             return;
         }
@@ -210,32 +208,6 @@ class MainActivity : ComponentActivity() {
         return true;
     }
 
-    fun requestNotifications(){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                Toast.makeText(this, "Permission already granted!", Toast.LENGTH_SHORT).show()
-            } else {
-                // Ask for permission
-                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        } else {
-            Toast.makeText(this, "No need to request notification permission on this Android version", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-            if (isGranted) {
-                Toast.makeText(this, "Notification permission granted!", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Notification permission denied.", Toast.LENGTH_SHORT).show()
-            }
-        }
-
 
     fun parseDeepLinkUriToNavKey(uri: Uri): NavKey? {
         // spotify:x:y (opaque)
@@ -249,6 +221,7 @@ class MainActivity : ComponentActivity() {
                     "album" -> Route.AlbumScreenFromAlbumUri(uri.toString())
                     "artist" -> Route.ArtistScreen(uri.toString())
                     "track" -> Route.AlbumScreenFromTrackUri(uri.toString())
+                    "playlist" -> Route.PlaylistScreen(uri.toString())
                     else -> null
                 }
             }
@@ -262,6 +235,7 @@ class MainActivity : ComponentActivity() {
                 "album" -> Route.AlbumScreenFromAlbumUri(internalUri)
                 "artist" -> Route.ArtistScreen(internalUri)
                 "track" -> Route.AlbumScreenFromTrackUri(internalUri)
+                "playlist" -> Route.PlaylistScreen(internalUri)
                 else -> null
             }
         }
@@ -278,6 +252,7 @@ class MainActivity : ComponentActivity() {
                     "album" -> Route.AlbumScreenFromAlbumUri(internalUri)
                     "artist" -> Route.ArtistScreen(internalUri)
                     "track" -> Route.AlbumScreenFromTrackUri(internalUri)
+                    "playlist" -> Route.PlaylistScreen(internalUri)
                     else -> null
                 }
             }

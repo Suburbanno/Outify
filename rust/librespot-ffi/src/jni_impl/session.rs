@@ -13,7 +13,7 @@ use crate::session::with_session;
 pub extern "system" fn Java_cc_tomko_outify_core_Session_initializeSession(
     env: JNIEnv,
     _this: JClass,
-    callback: JObject, // <-- Kotlin callback passed in
+    callback: JObject,
 ) -> jboolean {
     let rt = match crate::TOKIO_RUNTIME.get() {
         Some(r) => r,
