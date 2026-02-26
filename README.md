@@ -25,6 +25,16 @@ Contact us through Github:
 - via [issues](https://github.com/iTomKo/Outify/issues) for reports, feature requests, bug reports, ..
 - via [discussions](https://github.com/iTomKo/Outify/discussions) for help with the application.
 
+### Roadmap
+- [x] raw PCM streaming
+- [x] adding to queue
+- [ ] starting radio
+- [x] playlist support
+- [ ] interacting with spotify account
+    - [ ] login to Spotify Web API
+- [x] media notification
+- [x] keep alive lifecycle
+
 ### Attribution
 [librespot-org/librespot](https://github.com/librespot-org/librespot) for providing the required backend
 
