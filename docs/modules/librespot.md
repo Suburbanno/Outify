@@ -1,4 +1,4 @@
-# App Module
+# Librespot Module
 
 ## Module info
 **Languages used**:

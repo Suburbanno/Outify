@@ -1,4 +1,4 @@
-# App Module
+# Librespot FFI Module
 
 ## Module info
 **Languages used**:
