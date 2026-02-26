@@ -25,4 +25,9 @@ interface SessionCallback {
      * Called when the session shutdowns
      */
     fun onShutdown()
+
+    /**
+     * Called when the session auto restarts from shutdown
+     */
+    fun onAutoRestart()
 }

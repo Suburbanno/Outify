@@ -1,6 +1,6 @@
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, RwLock};
 
-use librespot_connect::{ConnectConfig, LoadRequest, Spirc};
+use librespot_connect::{ConnectConfig, LoadRequest, LoadRequestOptions, Spirc};
 use librespot_core::{Session, SpotifyUri, authentication::Credentials, spclient::TransferRequest};
 use librespot_playback::{
     config::{AudioFormat, PlayerConfig},
@@ -9,16 +9,27 @@ use librespot_playback::{
 };
 use once_cell::sync::OnceCell;
 use tokio::{
-    sync::{Mutex, broadcast, mpsc, watch},
+    sync::{broadcast, mpsc, watch},
     task::JoinHandle,
 };
 
 use crate::session::with_session;
 
 static SPIRC_RUNTIME: OnceCell<RwLock<Option<SpircRuntime>>> = OnceCell::new();
+static CURRENT_TRACK: OnceCell<Mutex<Option<String>>> = OnceCell::new();
+
+static CURRENT_CONTEXT: OnceCell<Mutex<Option<CurrentContext>>> = OnceCell::new();
+
+#[derive(Clone)]
+struct CurrentContext {
+    uri: String, // Context uri
+    options: LoadRequestOptions,
+}
 
 pub fn init_spirc_container() {
     SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
+    CURRENT_TRACK.get_or_init(|| Mutex::new(None));
+    CURRENT_CONTEXT.get_or_init(|| Mutex::new(None));
 }
 
 pub struct SpircRuntime {
@@ -112,7 +123,19 @@ impl SpircRuntime {
         self.spirc.prev()
     }
 
-    pub fn load(&self, req: LoadRequest) -> Result<(), librespot_core::Error> {
+    pub fn load(&self,uri: String, options: LoadRequestOptions) -> Result<(), librespot_core::Error> {
+        let req = LoadRequest::from_context_uri(uri.clone(), options.clone());
+
+        let context = CurrentContext {
+            uri,
+            options
+        };
+
+        if let Some(mutex) = CURRENT_CONTEXT.get() {
+            let mut guard = mutex.lock().unwrap();
+            *guard = Some(context);
+        }
+
         self.spirc.load(req)
     }
 
@@ -173,6 +196,41 @@ impl SpircRuntime {
             .ok_or_else(|| librespot_core::Error::internal("Spirc task not available"))
     }
 
+    // Resumes last played context after Spirc shutdown
+    pub fn resume_playback(&self) {
+        let context = match CURRENT_CONTEXT.get() {
+            Some(c) => {
+                match c.lock().unwrap().clone() {
+                    Some(c) => c,
+                    None => return,
+                }
+            },
+            None => return,
+        };
+
+        info!("Resuming playback!");
+
+        // Starting from latest recorded track
+        let last_uri = match current_track(){
+            Some(l) => l,
+            None => {
+                // Using the context default
+                context.uri.clone()
+            },
+        };
+
+        // TODO: implement seek_to
+        let options = LoadRequestOptions {
+            context_options: context.options.context_options,
+            playing_track: Some(librespot_connect::PlayingTrack::Uri(last_uri)),
+            start_playing: context.options.start_playing,
+            ..Default::default()
+        };
+
+        let req = LoadRequest::from_context_uri(context.uri.to_string(), options);
+        self.spirc.load(req);
+    }
+
     pub fn cleanup(&self) {
         self.shutdown();
 
@@ -192,6 +250,8 @@ fn handle_event(event: PlayerEvent) {
             ref track_id,
             position_ms,
         } => {
+            update_current_track(track_id.clone());
+
             crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
             crate::jni_utils::playback::on_player_status(true);
         }
@@ -205,6 +265,8 @@ fn handle_event(event: PlayerEvent) {
             ref track_id,
             position_ms,
         } => {
+            update_current_track(track_id.clone());
+
             crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
             crate::jni_utils::playback::on_player_status(false);
         }
@@ -214,6 +276,7 @@ fn handle_event(event: PlayerEvent) {
             track_id,
             position_ms,
         } => {
+            update_current_track(track_id.clone());
             crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
         }
 
@@ -222,6 +285,7 @@ fn handle_event(event: PlayerEvent) {
             track_id,
             position_ms,
         } => {
+            update_current_track(track_id.clone());
             crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
         }
 
@@ -256,6 +320,13 @@ fn handle_event(event: PlayerEvent) {
         _ => {
             // Not yet implemented
         }
+    }
+}
+
+fn update_current_track(uri: SpotifyUri) {
+    if let Some(mutex) = CURRENT_TRACK.get() {
+        let mut guard = mutex.lock().unwrap();
+        *guard = Some(uri.to_string());
     }
 }
 
@@ -346,6 +417,13 @@ fn notify_buffer_state(method: String) {
             log::error!("Failed to call buffer callback: {e}");
         }
     }
+}
+
+pub fn current_track() -> Option<String> {
+    if let Some(uri) = CURRENT_TRACK.get() {
+        return uri.lock().unwrap().clone();
+    }
+    None
 }
 
 pub fn with_spirc<F, R>(f: F) -> Result<R, librespot_core::Error>

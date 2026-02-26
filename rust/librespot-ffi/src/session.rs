@@ -103,6 +103,7 @@ fn start_shutdown_listener(session: Session) {
         let mut shutdown_rx = session.subscribe_shutdown();
         shutdown_rx.changed().await.ok();
         notify_callback("onShutdown".to_string());
+
         cleanup();
 
         warn!("Session shutdown! Auto-restarting..");
@@ -112,7 +113,11 @@ fn start_shutdown_listener(session: Session) {
         crate::spirc::with_spirc(|spirc| {
             spirc.activate();
             spirc.transfer();
+
+            spirc.resume_playback();
         });
+
+        notify_callback("onAutoRestart".to_string());
     });
 }
 

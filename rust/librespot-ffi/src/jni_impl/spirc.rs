@@ -155,9 +155,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_load(
         ..Default::default()
     };
 
-    let req = LoadRequest::from_context_uri(uri, options);
-
-    match with_spirc(|runtime| runtime.load(req)) {
+    match with_spirc(|runtime| runtime.load(uri, options)) {
         Ok(Ok(_)) => 1 as jboolean,
         Ok(Err(e)) => {
             error!("Failed to load Spirc: {}", e);
@@ -204,9 +202,7 @@ pub extern "system" fn shuffle_load(mut env: JNIEnv, _this: JClass, juri: JStrin
         ..Default::default()
     };
 
-    let req = LoadRequest::from_context_uri(uri, options);
-
-    match with_spirc(|runtime| runtime.load(req)) {
+    match with_spirc(|runtime| runtime.load(uri, options)) {
         Ok(Ok(_)) => 1 as jboolean,
         Ok(Err(e)) => {
             error!("Failed to load Spirc: {}", e);
