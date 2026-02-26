@@ -18,7 +18,7 @@ Outify is based on librespot backend allowing us to stream Spotify audio.
 - Sleek Material 3 design
 
 ### Contributing
-Please take a look at [CONTRIBUTING.md](https://github.com/iTomKo/Outify/CONTRIBUTING.md)
+Please take a look at [CONTRIBUTING.md](https://github.com/iTomKo/Outify/blob/master/docs/CONTRIBUTING.md)
 
 ### Help & Support
 Contact us through Github:

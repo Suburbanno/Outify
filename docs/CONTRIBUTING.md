@@ -1,8 +1,10 @@
 ### Modules
 Outify composes of these modules:
-- app: the UI itself, written in Kotlin.
-- rust/librespot-ffi: Rust backend utilizing JNI to bridge librespot with the UI
-- rust/librespot: fork of [librespot-org/librespot](https://github.com/librespot-org/librespot), serves as the main backend
+- [app](https://github.com/iTomKo/Outify/tree/master/docs/modules/app.md): the UI itself, written in Kotlin.
+- [rust/librespot-ffi](https://github.com/iTomKo/Outify/tree/master/docs/modules/ffi.md): Rust backend utilizing JNI to bridge librespot with the UI
+- [rust/librespot](https://github.com/iTomKo/Outify/tree/master/docs/modules/librespot.md): fork of [librespot-org/librespot](https://github.com/librespot-org/librespot), serves as the main backend
+
+For more information about the modules take a look at their docs.
 
 ### Building from source
 Prerequisites:
