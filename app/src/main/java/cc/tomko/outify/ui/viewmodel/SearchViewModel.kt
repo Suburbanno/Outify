@@ -12,9 +12,9 @@ import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Playlist
-import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.model.search.SearchResultType
 import cc.tomko.outify.ui.repository.SearchRepository
@@ -29,13 +29,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import kotlin.collections.emptyList
-import kotlin.collections.mapNotNull
 
 @OptIn(FlowPreview::class)
 @HiltViewModel

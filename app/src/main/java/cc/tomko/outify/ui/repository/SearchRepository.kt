@@ -1,6 +1,5 @@
 package cc.tomko.outify.ui.repository
 
-import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.ui.model.search.SearchResult
 import cc.tomko.outify.ui.model.search.SearchResultType

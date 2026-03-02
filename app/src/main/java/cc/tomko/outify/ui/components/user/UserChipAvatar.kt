@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.data.Profile
 import coil3.compose.AsyncImage
 

@@ -1,6 +1,5 @@
 package cc.tomko.outify.data.database.playlist
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index

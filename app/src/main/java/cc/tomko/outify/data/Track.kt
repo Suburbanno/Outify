@@ -1,16 +1,11 @@
 package cc.tomko.outify.data
 
-import android.media.browse.MediaBrowser
 import androidx.compose.runtime.Immutable
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.database.ArtistEntity
 import cc.tomko.outify.data.database.TrackArtistEntity
 import cc.tomko.outify.data.database.TrackEntity
 import cc.tomko.outify.utils.canonicalIdFromUri
 import kotlinx.serialization.Serializable
-import androidx.core.net.toUri
 
 /**
  * Contains information about single Track.

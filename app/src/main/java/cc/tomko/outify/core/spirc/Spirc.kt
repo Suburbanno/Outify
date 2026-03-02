@@ -1,8 +1,5 @@
 package cc.tomko.outify.core.spirc
 
-import android.util.Log
-import cc.tomko.outify.OutifyApplication
-
 interface SpircInitializationCallback {
     /**
      * Called when Spirc initializes

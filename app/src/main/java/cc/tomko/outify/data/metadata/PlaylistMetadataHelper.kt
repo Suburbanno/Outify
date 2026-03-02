@@ -2,7 +2,6 @@ package cc.tomko.outify.data.metadata
 
 import android.util.Log
 import androidx.room.withTransaction
-import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.data.PlaylistDiff
 import cc.tomko.outify.data.PlaylistItem
@@ -10,7 +9,6 @@ import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.data.database.PlaylistEntity
 import cc.tomko.outify.data.database.dao.PlaylistDao
 import cc.tomko.outify.data.database.playlist.PlaylistItemEntity
-import cc.tomko.outify.data.database.playlist.PlaylistOperationDto
 import cc.tomko.outify.data.database.playlist.PlaylistWithItems
 import cc.tomko.outify.data.database.playlist.toDomain
 import cc.tomko.outify.data.database.playlist.toDomainOrNull

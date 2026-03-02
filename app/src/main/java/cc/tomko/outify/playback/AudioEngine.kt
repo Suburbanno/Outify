@@ -4,9 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioTrack
-import android.os.Build
 import android.util.Log
-import cc.tomko.outify.data.Track
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

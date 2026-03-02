@@ -5,10 +5,11 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
-import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.ui.theme.OutifyTheme
 import dagger.hilt.android.AndroidEntryPoint

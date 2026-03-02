@@ -1,7 +1,5 @@
 package cc.tomko.outify.core
 
-import android.util.Log
-import cc.tomko.outify.core.spirc.Spirc
 import javax.inject.Inject
 import javax.inject.Singleton
 

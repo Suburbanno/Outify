@@ -34,7 +34,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
-import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.ui.theme.OutifyTheme
 import jakarta.inject.Inject

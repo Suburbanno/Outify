@@ -1,8 +1,6 @@
 package cc.tomko.outify.ui.components.navigation
 
-import android.net.Uri
 import androidx.navigation3.runtime.NavKey
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
 @Serializable

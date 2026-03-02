@@ -12,7 +12,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize

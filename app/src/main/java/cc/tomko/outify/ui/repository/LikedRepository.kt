@@ -3,7 +3,6 @@ package cc.tomko.outify.ui.repository
 import android.util.Log
 import androidx.room.withTransaction
 import cc.tomko.outify.data.database.AppDatabase
-import cc.tomko.outify.data.database.LikedTrackWithTrack
 import cc.tomko.outify.data.database.TrackWithArtists
 import cc.tomko.outify.data.database.album.AlbumWithArtists
 import cc.tomko.outify.data.database.dao.AlbumDao
@@ -12,7 +11,6 @@ import cc.tomko.outify.data.database.impl.LikedTrackEntity
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 

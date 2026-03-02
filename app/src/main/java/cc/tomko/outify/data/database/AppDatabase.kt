@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import cc.tomko.outify.data.PlaylistOperation
 import cc.tomko.outify.data.database.album.AlbumArtistEntity
 import cc.tomko.outify.data.database.album.AlbumTrackCrossRef
 import cc.tomko.outify.data.database.dao.AlbumArtistDao
@@ -19,7 +18,6 @@ import cc.tomko.outify.data.database.impl.LikedTrackEntity
 import cc.tomko.outify.data.database.impl.PlaylistTrackEntity
 import cc.tomko.outify.data.database.playlist.PlaylistDiffEntity
 import cc.tomko.outify.data.database.playlist.PlaylistItemEntity
-import cc.tomko.outify.data.database.playlist.PlaylistWithItems
 
 @Database(
     entities = [

@@ -1,13 +1,10 @@
 package cc.tomko.outify.playback
 
-import android.os.SystemClock
-import androidx.media3.common.MediaItem
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.playback.model.PlayState
 import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.playback.model.PositionInfo
 import cc.tomko.outify.playback.model.RepeatMode
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

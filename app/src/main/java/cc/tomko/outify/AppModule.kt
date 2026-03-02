@@ -1,8 +1,6 @@
 package cc.tomko.outify
 
 import android.content.Context
-import cc.tomko.outify.core.Session
-import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.data.database.dao.AlbumArtistDao
 import cc.tomko.outify.data.database.dao.AlbumDao
@@ -12,7 +10,6 @@ import cc.tomko.outify.data.database.dao.LikedDao
 import cc.tomko.outify.data.database.dao.PlaylistDao
 import cc.tomko.outify.data.database.dao.TrackArtistDao
 import cc.tomko.outify.data.database.dao.TrackDao
-import cc.tomko.outify.data.metadata.Metadata
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

@@ -3,15 +3,15 @@ package cc.tomko.outify.data.metadata
 import android.util.Log
 import androidx.room.withTransaction
 import cc.tomko.outify.data.Album
-import cc.tomko.outify.data.database.album.AlbumArtistEntity
 import cc.tomko.outify.data.database.AlbumEntity
+import cc.tomko.outify.data.database.AppDatabase
+import cc.tomko.outify.data.database.album.AlbumArtistEntity
 import cc.tomko.outify.data.database.album.AlbumTrackCrossRef
 import cc.tomko.outify.data.database.album.AlbumWithArtists
-import cc.tomko.outify.data.database.AppDatabase
+import cc.tomko.outify.data.database.album.toDomain
 import cc.tomko.outify.data.database.dao.AlbumArtistDao
 import cc.tomko.outify.data.database.dao.AlbumDao
 import cc.tomko.outify.data.database.dao.AlbumTrackDao
-import cc.tomko.outify.data.database.album.toDomain
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.supervisorScope
@@ -19,7 +19,6 @@ import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
-import kotlin.collections.forEach
 
 @Singleton
 class AlbumMetadataHelper @Inject constructor(
