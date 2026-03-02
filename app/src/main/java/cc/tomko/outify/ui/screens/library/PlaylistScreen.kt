@@ -147,8 +147,6 @@ fun SharedTransitionScope.PlaylistScreen(
                     state = lazyList,
                     contentPadding = PaddingValues(
                         top = currentTopBarHeightDp,
-                        start = 16.dp,
-                        end = if ((lazyList.canScrollForward || lazyList.canScrollBackward) && collapsingState.collapseFraction > 0.95f) 24.dp else 16.dp,
                     ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize()

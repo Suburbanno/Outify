@@ -143,8 +143,6 @@ fun SharedTransitionScope.LikedScreen(
             state = listState,
             contentPadding = PaddingValues(
                 top = currentTopBarHeightDp,
-                start = 16.dp,
-                end = if ((listState.canScrollForward || listState.canScrollBackward) && collapsingState.collapseFraction > 0.95f) 24.dp else 16.dp,
             ),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxSize()

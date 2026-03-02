@@ -163,8 +163,6 @@ fun SharedTransitionScope.ArtistLikedTracksScreen(
                     state = lazyList,
                     contentPadding = PaddingValues(
                         top = topPadding,
-                        start = 16.dp,
-                        end = if ((lazyList.canScrollForward || lazyList.canScrollBackward) && collapsingState.collapseFraction > 0.95f) 24.dp else 16.dp,
                     ),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier

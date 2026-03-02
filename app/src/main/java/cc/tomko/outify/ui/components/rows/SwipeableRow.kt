@@ -1,7 +1,9 @@
 package cc.tomko.outify.ui.components.rows
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -41,8 +43,8 @@ data class SwipeGesture(
 @Composable
 fun SwipeableRowWithGestures(
     modifier: Modifier = Modifier,
-    startGestures: List<SwipeGesture> = emptyList(), // swipe LEFT (content moves left, reveal start)
-    endGestures: List<SwipeGesture> = emptyList(),   // swipe RIGHT (content moves right, reveal end)
+    startGestures: List<SwipeGesture> = emptyList(),
+    endGestures: List<SwipeGesture> = emptyList(),
     minIconSize: Dp = 14.dp,
     iconMaxSizeFraction: Float = 0.5f, // max icon size relative to content height
     content: @Composable () -> Unit
@@ -129,7 +131,7 @@ fun SwipeableRowWithGestures(
                 // past maxRightPx — dampen the extra movement
                 val extra = absRaw - maxRightPx
                 maxRightPx + extra * 0.35f
-            } * sign // sign is +1 so ok
+            } * sign
         } else {
             if (absRaw <= maxLeftPx) raw
             else {
@@ -168,15 +170,32 @@ fun SwipeableRowWithGestures(
                 )
 
                 // Icon container
+                val visibleWidthPx = abs(offsetX.value)
+                val iconCenterOffsetPx = visibleWidthPx / 2f
+
                 Box(
                     modifier = Modifier
-                        .size(animatedIconDpFinal)
-                        .then(
-                            if (isRightSwipe) Modifier.align(Alignment.CenterStart).padding(start = 8.dp) else Modifier.align(Alignment.CenterEnd).padding(end = 8.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .height(contentHeightDp)
                 ) {
-                    activeGesture.icon(this)
+                    Box(
+                        modifier = Modifier
+                            .size(animatedIconDpFinal)
+                            .offset {
+                                val iconHalf = animatedIconDp / 2f
+                                val x = if (isRightSwipe) {
+                                    iconCenterOffsetPx - iconHalf
+                                } else {
+                                    // from right side
+                                    (containerWidthPx - iconCenterOffsetPx - iconHalf)
+                                }
+                                IntOffset(x.roundToInt(), 0)
+                            }
+                            .align(Alignment.CenterStart),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        activeGesture.icon(this)
+                    }
                 }
             }
         }
@@ -188,7 +207,6 @@ fun SwipeableRowWithGestures(
                 .pointerInput(sortedStart, sortedEnd, containerWidthPx) {
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { change, dragAmount ->
-                            // we compute a raw new offset and apply resistance
                             val rawNew = offsetX.value + dragAmount
                             val resisted = applyResistance(rawNew)
                             scope.launch { offsetX.snapTo(resisted) }
@@ -198,49 +216,52 @@ fun SwipeableRowWithGestures(
                                 val final = offsetX.value
                                 if (final == 0f) return@launch
 
-                                // determine which gesture should fire
-                                if (final > 0f && sortedEnd.isNotEmpty()) {
-                                    val chosen = sortedEnd
-                                        .filter { it.thresholdFraction * widthPx <= final }
-                                        .maxByOrNull { it.thresholdFraction }
+                                val sign = sign(final)
+                                val absFinal = abs(final)
 
-                                    if (chosen != null) {
-                                        if (chosen.dismissOnTrigger) {
-                                            // animate off-screen then call action
-                                            offsetX.animateTo(widthPx, animationSpec = tween(180))
-                                            chosen.onTrigger()
-                                            offsetX.snapTo(0f)
-                                        } else {
-                                            val target = chosen.thresholdFraction * widthPx
-                                            offsetX.animateTo(target, animationSpec = tween(120))
-                                            chosen.onTrigger()
-                                            offsetX.animateTo(0f, animationSpec = tween(250))
-                                        }
-                                    } else {
-                                        offsetX.animateTo(0f, animationSpec = tween(220))
-                                    }
+                                // helper: find chosen gesture (same logic as you already have)
+                                val chosen = if (final > 0f && sortedEnd.isNotEmpty()) {
+                                    sortedEnd.filter { it.thresholdFraction * widthPx <= final }
+                                        .maxByOrNull { it.thresholdFraction }
                                 } else if (final < 0f && sortedStart.isNotEmpty()) {
-                                    val absFinal = abs(final)
-                                    val chosen = sortedStart
-                                        .filter { it.thresholdFraction * widthPx <= absFinal }
+                                    sortedStart.filter { it.thresholdFraction * widthPx <= absFinal }
                                         .maxByOrNull { it.thresholdFraction }
+                                } else null
 
-                                    if (chosen != null) {
-                                        if (chosen.dismissOnTrigger) {
-                                            offsetX.animateTo(-widthPx, animationSpec = tween(180))
-                                            chosen.onTrigger()
-                                            offsetX.snapTo(0f)
-                                        } else {
-                                            val target = -chosen.thresholdFraction * widthPx
-                                            offsetX.animateTo(target, animationSpec = tween(120))
-                                            chosen.onTrigger()
-                                            offsetX.animateTo(0f, animationSpec = tween(250))
-                                        }
+                                val overshootFraction = 0.12f
+                                val overshootAmount = widthPx * overshootFraction
+
+                                // bouncy spring (feel free to tune damping/stiffness)
+                                val enterSpring = spring<Float>(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                )
+
+                                val settleSpring = spring<Float>(
+                                    dampingRatio = Spring.DampingRatioNoBouncy,
+                                    stiffness = Spring.StiffnessMedium
+                                )
+
+                                if (chosen != null) {
+                                    // There is a gesture that was crossed
+                                    if (chosen.dismissOnTrigger) {
+                                        val offScreen = sign * widthPx
+                                        offsetX.animateTo(offScreen, animationSpec = enterSpring)
+                                        chosen.onTrigger()
+                                        offsetX.snapTo(0f)
                                     } else {
-                                        offsetX.animateTo(0f, animationSpec = tween(220))
+                                        val target = chosen.thresholdFraction * widthPx * sign
+                                        val overshootTarget = target + sign * overshootAmount
+                                        offsetX.animateTo(overshootTarget, animationSpec = enterSpring)
+                                        chosen.onTrigger()
+                                        offsetX.animateTo(0f, animationSpec = settleSpring)
                                     }
                                 } else {
-                                    offsetX.animateTo(0f, animationSpec = tween(220))
+                                    val dynamicOvershoot = minOf(overshootAmount, absFinal * 0.35f)
+                                    val overshootTarget = final + sign * dynamicOvershoot
+
+                                    offsetX.animateTo(overshootTarget, animationSpec = enterSpring)
+                                    offsetX.animateTo(0f, animationSpec = settleSpring)
                                 }
                             }
                         },
