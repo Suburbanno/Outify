@@ -4,7 +4,9 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -14,6 +16,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import cc.tomko.outify.ui.screens.HomeScreen
@@ -58,168 +61,161 @@ fun SharedTransitionScope.NavigationRoot(
             slideInHorizontally { -it } + fadeIn() togetherWith
                     slideOutHorizontally { it } + fadeOut()
         },
-        entryProvider = { key ->
-            when (key) {
-                is Route.HomeScreen -> {
-                    NavEntry(key) {
-                        HomeScreen(
-                            backStack
-                        )
+        entryProvider = entryProvider {
+            entry<Route.HomeScreen> {
+                HomeScreen(
+                    backStack
+                )
+            }
+            entry<Route.PlayerScreen>(
+                metadata = verticalTransition()
+            ) {
+                val viewModel: PlayerViewModel = hiltViewModel()
+
+                PlayerScreen(
+                    viewModel = viewModel,
+                    onArtistClick = {
+                        backStack.add(Route.ArtistScreen(it.uri))
                     }
-                }
-                is Route.PlayerScreen -> {
-                    NavEntry(key) {
-                        val viewModel: PlayerViewModel = hiltViewModel()
+                )
+            }
 
-                        PlayerScreen(
-                            viewModel = viewModel,
-                            onArtistClick = {
-                                backStack.add(Route.ArtistScreen(it.uri))
-                            }
-                        )
+            entry<Route.LikedScreen>  {
+                val viewModel: LikedViewModel = hiltViewModel()
+                val listState = rememberLazyListState()
+
+                LikedScreen(
+                    viewModel = viewModel,
+                    listState = listState,
+                    onBack = {
+                        backStack.removeAt(backStack.lastIndex)
+                    },
+                    onArtworkClick = {
+                        backStack.add(Route.AlbumScreenFromAlbumUri(it.uri))
+                    },
+                    onArtistClick = {
+                        backStack.add(Route.ArtistScreen(it.uri))
                     }
-                }
+                )
+            }
 
-                is Route.LikedScreen -> {
-                    NavEntry(key) {
-                        val viewModel: LikedViewModel = hiltViewModel()
-                        val listState = rememberLazyListState()
+            entry<Route.LibraryScreen> {
+                val viewModel: LibraryViewModel = hiltViewModel()
 
-                        LikedScreen(
-                            viewModel = viewModel,
-                            listState = listState,
-                            onBack = {
-                                backStack.removeAt(backStack.lastIndex)
-                            },
-                            onArtworkClick = {
-                                backStack.add(Route.AlbumScreenFromAlbumUri(it.uri))
-                            },
-                            onArtistClick = {
-                                backStack.add(Route.ArtistScreen(it.uri))
-                            }
-                        )
-                    }
-                }
+                LibraryScreen(viewModel, backStack)
+            }
 
-                is Route.LibraryScreen -> {
-                    NavEntry(key) {
-                        val viewModel: LibraryViewModel = hiltViewModel()
+            entry<Route.SearchScreen> {
+                val viewModel = hiltViewModel<SearchViewModel>()
+                SearchScreen(backStack,viewModel)
+            }
 
-                        LibraryScreen(viewModel, backStack)
-                    }
-                }
+            entry<Route.AlbumScreenFromTrackUri> {
+                val viewModel: AlbumViewModel = hiltViewModel()
 
-                is Route.SearchScreen -> {
-                    NavEntry(key) {
-                        val viewModel = hiltViewModel<SearchViewModel>()
-                        SearchScreen(backStack,viewModel)
-                    }
+                LaunchedEffect(it.trackUri) {
+                    viewModel.loadAlbumFromTrackUri(it.trackUri)
                 }
 
-                is Route.AlbumScreenFromTrackUri -> {
-                    NavEntry(key) {
-                        val viewModel: AlbumViewModel = hiltViewModel()
-
-                        LaunchedEffect(key.trackUri) {
-                            viewModel.loadAlbumFromTrackUri(key.trackUri)
-                        }
-
-                        AlbumDetailScreen(
-                            viewModel = viewModel,
-                            onBack = {
-                                backStack.removeAt(backStack.lastIndex)
-                            },
-                            artistClick = { uri ->
-                                backStack.add(Route.ArtistScreen(uri))
-                            }
-                        )
+                AlbumDetailScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        backStack.removeAt(backStack.lastIndex)
+                    },
+                    artistClick = { uri ->
+                        backStack.add(Route.ArtistScreen(uri))
                     }
+                )
+            }
+
+            entry<Route.AlbumScreenFromAlbumUri> {
+                val viewModel: AlbumViewModel = hiltViewModel()
+
+                LaunchedEffect(it.albumUri) {
+                    viewModel.loadAlbum(it.albumUri)
                 }
 
-                is Route.AlbumScreenFromAlbumUri -> {
-                    NavEntry(key) {
-                        val viewModel: AlbumViewModel = hiltViewModel()
-
-                        LaunchedEffect(key.albumUri) {
-                            viewModel.loadAlbum(key.albumUri)
-                        }
-
-                        AlbumDetailScreen(
-                            viewModel = viewModel,
-                            onBack = {
-                                backStack.removeAt(backStack.lastIndex)
-                            },
-                            artistClick = { uri ->
-                                backStack.add(Route.ArtistScreen(uri))
-                            }
-                        )
+                AlbumDetailScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        backStack.removeAt(backStack.lastIndex)
+                    },
+                    artistClick = { uri ->
+                        backStack.add(Route.ArtistScreen(uri))
                     }
+                )
+            }
+
+            entry<Route.ArtistScreen> {
+                val viewModel: ArtistViewModel = hiltViewModel()
+                LaunchedEffect(viewModel) {
+                    viewModel.loadArtist(it.artistUri)
                 }
 
-                is Route.ArtistScreen -> {
-                    NavEntry(key) {
-                        val viewModel: ArtistViewModel = hiltViewModel()
-                        LaunchedEffect(viewModel) {
-                            viewModel.loadArtist(key.artistUri)
-                        }
+                ArtistDetailScreen(
+                    viewModel,
+                    onArtworkClick = { track ->
+                        backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
+                    },
+                    onLikedTracksClick = {
+                        backStack.add(Route.ArtistLikedTracksScreen(it.artistUri))
+                    },
+                    onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) }
+                ) { }
+            }
 
-                        ArtistDetailScreen(
-                            viewModel,
-                            onArtworkClick = { track ->
-                                backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
-                            },
-                            onLikedTracksClick = {
-                                backStack.add(Route.ArtistLikedTracksScreen(key.artistUri))
-                            },
-                            onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) }
-                        ) { }
-                    }
+            entry<Route.ArtistLikedTracksScreen> {
+                val viewModel: ArtistViewModel = hiltViewModel()
+                LaunchedEffect(viewModel) {
+                    viewModel.loadArtist(it.artistUri)
                 }
 
-                is Route.ArtistLikedTracksScreen -> {
-                    NavEntry(key) {
-                        val viewModel: ArtistViewModel = hiltViewModel()
-                        LaunchedEffect(viewModel) {
-                            viewModel.loadArtist(key.artistUri)
-                        }
+                ArtistLikedTracksScreen(
+                    viewModel,
+                    onArtworkClick = { track ->
+                        backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
+                    },
+                ) { }
+            }
 
-                        ArtistLikedTracksScreen(
-                            viewModel,
-                            onArtworkClick = { track ->
-                                backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
-                            },
-                        ) { }
-                    }
-                }
+            entry<Route.PlaylistScreen> {
+                val viewModel: PlaylistViewModel = hiltViewModel()
+                viewModel.loadPlaylist(it.playlistUri)
 
-                is Route.PlaylistScreen -> {
-                    NavEntry(key) {
-                        val viewModel: PlaylistViewModel = hiltViewModel()
-                        viewModel.loadPlaylist(key.playlistUri)
+                PlaylistScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        backStack.removeAt(backStack.lastIndex)
+                    },
+                    onArtworkClick = { track ->
+                        backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
+                    },
+                    onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) }
+                )
+            }
 
-                        PlaylistScreen(
-                            viewModel = viewModel,
-                            onBack = {
-                                backStack.removeAt(backStack.lastIndex)
-                            },
-                            onArtworkClick = { track ->
-                                backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
-                            },
-                            onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) }
-                        )
-                    }
-                }
+            entry<Route.SettingsScreen> {
+                val viewModel: SettingsViewModel = hiltViewModel()
 
-                is Route.SettingsScreen -> {
-                    NavEntry(key) {
-                        val viewModel: SettingsViewModel = hiltViewModel()
-
-                        SettingsScreen(viewModel)
-                    }
-                }
-
-                else -> error("Unknown NavKey: $key")
+                SettingsScreen(viewModel)
             }
         }
     )
+}
+
+fun verticalTransition() = NavDisplay.transitionSpec {
+    val enter = slideInVertically(initialOffsetY = { fullHeight -> fullHeight }) + fadeIn()
+    val exit = slideOutVertically(targetOffsetY = { fullHeight -> -fullHeight }) + fadeOut()
+
+    enter togetherWith exit
+} + NavDisplay.popTransitionSpec {
+    val enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight }) + fadeIn()
+    val exit = slideOutVertically(targetOffsetY = { fullHeight -> fullHeight }) + fadeOut()
+
+    enter togetherWith exit
+} + NavDisplay.predictivePopTransitionSpec {
+    val enter = slideInVertically(initialOffsetY = { fullHeight -> -fullHeight }) + fadeIn()
+    val exit = slideOutVertically(targetOffsetY = { fullHeight -> fullHeight }) + fadeOut()
+
+    enter togetherWith exit
 }
