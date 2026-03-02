@@ -53,9 +53,10 @@ class MusicService @Inject constructor() : MediaSessionService() {
     @Inject
     lateinit var playbackStateHolder: PlaybackStateHolder
 
-    private val CHANNEL_ID = "outify_playback"
-    private val notificationId: Int
-        get() = CHANNEL_ID.hashCode()
+    companion object {
+        private const val CHANNEL_ID = "outify_playback"
+        private const val notificationId: Int = 1001
+    }
 
     private lateinit var mediaSession: MediaSession
 

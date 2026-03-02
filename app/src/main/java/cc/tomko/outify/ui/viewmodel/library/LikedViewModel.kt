@@ -67,7 +67,6 @@ class LikedViewModel @Inject constructor(
     fun refresh() {
         if(spirc.isUsable) {
             viewModelScope.launch {
-                // Sync URI list first; the Flow will fire once liked_songs is updated
                 isRefreshing.value = true
                 likedRepository.syncLikedUris()
                 isRefreshing.value = false
