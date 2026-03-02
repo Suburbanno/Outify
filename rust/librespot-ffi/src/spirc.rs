@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{atomic::{AtomicBool, AtomicU32}, Arc, Mutex, RwLock};
 
 use librespot_connect::{ConnectConfig, LoadRequest, LoadRequestOptions, Spirc};
 use librespot_core::{Session, SpotifyUri, authentication::Credentials, spclient::TransferRequest};
@@ -19,6 +19,8 @@ static SPIRC_RUNTIME: OnceCell<RwLock<Option<SpircRuntime>>> = OnceCell::new();
 static CURRENT_TRACK: OnceCell<Mutex<Option<String>>> = OnceCell::new();
 
 static CURRENT_CONTEXT: OnceCell<Mutex<Option<CurrentContext>>> = OnceCell::new();
+static IS_PLAYING: AtomicBool = AtomicBool::new(false);
+static LAST_POSITION: AtomicU32 = AtomicU32::new(0);
 
 #[derive(Clone)]
 struct CurrentContext {
@@ -128,7 +130,7 @@ impl SpircRuntime {
 
         let context = CurrentContext {
             uri,
-            options
+            options,
         };
 
         if let Some(mutex) = CURRENT_CONTEXT.get() {
@@ -219,12 +221,14 @@ impl SpircRuntime {
             },
         };
 
-        // TODO: implement seek_to
+        let start_playing = IS_PLAYING.load(std::sync::atomic::Ordering::Relaxed) && context.options.start_playing;
+        let seek_to = LAST_POSITION.load(std::sync::atomic::Ordering::Relaxed);
+
         let options = LoadRequestOptions {
             context_options: context.options.context_options,
             playing_track: Some(librespot_connect::PlayingTrack::Uri(last_uri)),
-            start_playing: context.options.start_playing,
-            ..Default::default()
+            start_playing,
+            seek_to,
         };
 
         let req = LoadRequest::from_context_uri(context.uri.to_string(), options);
@@ -250,6 +254,9 @@ fn handle_event(event: PlayerEvent) {
             ref track_id,
             position_ms,
         } => {
+            IS_PLAYING.store(true, std::sync::atomic::Ordering::Relaxed);
+            LAST_POSITION.store(position_ms, std::sync::atomic::Ordering::Relaxed);
+
             update_current_track(track_id.clone());
 
             crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
@@ -257,6 +264,7 @@ fn handle_event(event: PlayerEvent) {
         }
 
         PlayerEvent::TrackChanged { audio_item } => {
+            LAST_POSITION.store(0, std::sync::atomic::Ordering::Relaxed);
             crate::jni_utils::playback::on_player_track_update(audio_item.track_id.clone());
         }
 
@@ -265,6 +273,9 @@ fn handle_event(event: PlayerEvent) {
             ref track_id,
             position_ms,
         } => {
+            IS_PLAYING.store(false, std::sync::atomic::Ordering::Relaxed);
+            LAST_POSITION.store(position_ms, std::sync::atomic::Ordering::Relaxed);
+
             update_current_track(track_id.clone());
 
             crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
@@ -276,6 +287,8 @@ fn handle_event(event: PlayerEvent) {
             track_id,
             position_ms,
         } => {
+            LAST_POSITION.store(position_ms, std::sync::atomic::Ordering::Relaxed);
+
             update_current_track(track_id.clone());
             crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
         }
@@ -285,6 +298,8 @@ fn handle_event(event: PlayerEvent) {
             track_id,
             position_ms,
         } => {
+            LAST_POSITION.store(position_ms, std::sync::atomic::Ordering::Relaxed);
+
             update_current_track(track_id.clone());
             crate::jni_utils::playback::on_player_position_update(position_ms, track_id.clone());
         }
