@@ -23,7 +23,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -43,6 +45,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
@@ -63,6 +66,7 @@ import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.player.MiniPlayer
 import cc.tomko.outify.ui.components.player.QueueBottomSheet
 import cc.tomko.outify.ui.components.player.rememberQueueBottomSheetState
+import cc.tomko.outify.ui.notifications.InAppNotificationHost
 import cc.tomko.outify.ui.screens.auth.AuthActivity
 import cc.tomko.outify.ui.theme.OutifyTheme
 import cc.tomko.outify.ui.viewmodel.MainViewModel
@@ -72,6 +76,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableSharedFlow
 import javax.inject.Inject
 import kotlin.math.exp
+import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -162,8 +167,7 @@ class MainActivity : ComponentActivity() {
                             val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
 
                             AnimatedVisibility(
-                                visible = currentTrack != null,
-//                                visible = true,
+                                visible = currentTrack != null && backStack.last() != Route.PlayerScreen,
                                 enter = slideInVertically(
                                     initialOffsetY = { fullHeight -> fullHeight }
                                 ) + fadeIn(),
@@ -189,10 +193,17 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 ) { innerPadding ->
-                    NavigationRoot(
-                        backStack,
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                        NavigationRoot(
+                            backStack,
+                            modifier = Modifier.matchParentSize()
+                        )
+
+                        InAppNotificationHost(
+                            modifier = Modifier.matchParentSize(),
+                            maxWidthFraction = 0.92f
+                        )
+                    }
                 }
 
                 if(sheetState.visible.value) {

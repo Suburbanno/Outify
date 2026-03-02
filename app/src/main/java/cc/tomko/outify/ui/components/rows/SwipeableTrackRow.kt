@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.AddToPhotos
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -17,6 +18,8 @@ import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.ui.notifications.InAppNotificationController
+import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.utils.SharedElementKey
 
 @Composable
@@ -45,6 +48,14 @@ fun SharedTransitionScope.SwipeableTrackRow(
                     )
                 },
                 onTrigger = {
+                    InAppNotificationController.show(
+                        NotificationSpec(
+                            message = "Added to queue",
+                            icon = {
+                                Icon( Icons.Default.Queue, contentDescription = "Queue")
+                            }
+                        )
+                    )
                     Spirc.addToQueue(track.uri)
                 },
                 backgroundColor = Color(0xC43C8C52)
