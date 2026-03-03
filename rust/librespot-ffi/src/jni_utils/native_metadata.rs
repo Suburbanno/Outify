@@ -51,6 +51,7 @@ pub struct ArtistJson {
     portraits: Vec<ImageJson>,
     tracks: Vec<String>, // Just raw SpotifyUris
     covers: Vec<ImageJson>,
+    albums: Vec<String>,
 }
 
 impl From<&Artist> for ArtistJson {
@@ -71,6 +72,13 @@ impl From<&Artist> for ArtistJson {
             portraits: artist.portraits.iter().map(ImageJson::from).collect(),
             tracks: tracks,
             covers: artist.portrait_group.iter().map(ImageJson::from).collect(),
+            albums: artist
+                .albums
+                .0
+                .iter()
+                .flat_map(|group| group.0.0.iter())
+                .map(|uri| uri.to_uri())
+                .collect(),
         }
     }
 }

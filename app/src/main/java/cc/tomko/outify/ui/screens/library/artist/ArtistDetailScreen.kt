@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.screens.library.artist
 
+import android.R
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,7 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,33 +43,45 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
+import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.data.sharedTransitionKey
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
+import cc.tomko.outify.ui.components.bottomsheet.ArtistLikedTracksBottomSheet
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
 import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
+import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.allowHardware
 
 /**
  * Shout out to PixelPlay.
@@ -76,14 +91,16 @@ import coil3.compose.AsyncImage
 fun SharedTransitionScope.ArtistDetailScreen(
     viewModel: ArtistViewModel,
     onArtworkClick: (Track) -> Unit,
+    onAlbumClick: (Album) -> Unit,
     onArtistClick: (Artist) -> Unit,
-    onLikedTracksClick: () -> Unit, // When user click on the x liked tracks widget
     onBack: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
+
+    var showLikedSheet by remember { mutableStateOf(false) }
 
     when (uiState) {
         ArtistUiState.Loading -> {
@@ -117,6 +134,8 @@ fun SharedTransitionScope.ArtistDetailScreen(
 
             val likedTracks by viewModel.likedTracks.collectAsState()
             val likedTrackCount = likedTracks.size
+
+            val albums by viewModel.albums.collectAsState()
 
             val popularTracks by viewModel.popularTracks.collectAsState()
 
@@ -164,7 +183,10 @@ fun SharedTransitionScope.ArtistDetailScreen(
                             ArtistTracksHeader(
                                 likedCount = likedTrackCount,
                                 artworkUrl = artworkUrl,
-                                onClick = onLikedTracksClick
+                                onClick = {
+                                    showLikedSheet = true
+                                },
+                                previewTracks = likedTracks
                             )
                         }
                     }
@@ -210,6 +232,50 @@ fun SharedTransitionScope.ArtistDetailScreen(
                             }
                         )
                     }
+
+                    item {
+                        Spacer(modifier = Modifier.height(48.dp))
+
+                        Text(
+                            text = "Albums",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                        )
+
+                        val albumImageSize = 84.dp
+                        val albumRowHeight = albumImageSize + 56.dp
+
+                        LazyRow(
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(albumRowHeight)
+                        ) {
+                            items(
+                                items = albums,
+                                key = { album -> "artist_album_${album.uri}" }
+                            ) { album ->
+                                AlbumCard(
+                                    album = album,
+                                    size = albumImageSize,
+                                    onClick = {
+                                        onAlbumClick(album)
+                                    }
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+
+                if (showLikedSheet) {
+                    ArtistLikedTracksBottomSheet(
+                        viewModel = viewModel,
+                        onArtworkClick = onArtworkClick,
+                        onDismiss = { showLikedSheet = false }
+                    )
                 }
 
                 CollapsingHeader(
@@ -255,8 +321,12 @@ fun ArtistTracksHeader(
     artworkUrl: String?,
     modifier: Modifier = Modifier,
     imageSize: Dp = 48.dp,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    previewTracks: List<Track> = emptyList(),
 ){
+    val previewSize = 36.dp
+    val previewsToShow = previewTracks.take(3)
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -340,12 +410,185 @@ fun ArtistTracksHeader(
                 )
             }
 
+            if (previewsToShow.isNotEmpty()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    previewsToShow.forEach { track ->
+                        val previewArtwork = ALBUM_COVER_URL + (track.album?.getCover(CoverSize.SMALL)?.uri ?: "")
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            tonalElevation = 2.dp,
+                            modifier = Modifier
+                                .size(previewSize)
+                        ) {
+                            if (previewArtwork.isNotBlank()) {
+                                AsyncImage(
+                                    model = previewArtwork,
+                                    contentDescription = "Preview artwork",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(MaterialTheme.colorScheme.surfaceVariant),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.MusicNote,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // trailing arrow
             IconButton(onClick = onClick) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "Open liked songs"
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun SharedTransitionScope.AlbumCard(
+    album: Album,
+    size: Dp,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
+) {
+    val context = LocalContext.current
+    val imageLoader = (context.applicationContext as OutifyApplication).imageLoader
+
+    val artworkUri = remember(album) {
+        ALBUM_COVER_URL + (album.getCover(CoverSize.MEDIUM)?.uri ?: "")
+    }
+
+    val imageSizePx = with(LocalDensity.current) { size.roundToPx() }
+    val imageRequest = remember(artworkUri, imageSizePx) {
+        ImageRequest.Builder(context)
+            .data(artworkUri)
+            .size(imageSizePx)
+            .allowHardware(true)
+            .build()
+    }
+
+    Column(
+        modifier = modifier
+            .width(size)
+            .clickable(onClick = onClick)
+    ) {
+        Surface(
+            tonalElevation = 4.dp,
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier
+                .size(width = size, height = size)
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (artworkUri.isNotBlank()) {
+                    AsyncImage(
+                        model = imageRequest,
+                        imageLoader = imageLoader,
+                        contentDescription = "Album artwork",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(8.dp))
+                            .sharedBounds(
+                                rememberSharedContentState(album.sharedTransitionKey()),
+                                LocalNavAnimatedContentScope.current
+                            ),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    // placeholder
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.MusicNote,
+                            contentDescription = null
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.08f)
+                                )
+                            )
+                        )
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = album.name,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            val artistsText = album.artists.joinToString { it.name }
+            Text(
+                text = artistsText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+
+            // small chip with track count
+            val trackCount = try { album.tracks.size } catch (_: Exception) { 10 }
+            if (trackCount > 0) {
+                Surface(
+                    tonalElevation = 0.dp,
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier
+                        .wrapContentWidth()
+                        .height(20.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "$trackCount",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }

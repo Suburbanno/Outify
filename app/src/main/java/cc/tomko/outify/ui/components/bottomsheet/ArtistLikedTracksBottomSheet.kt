@@ -1,0 +1,217 @@
+package cc.tomko.outify.ui.components.bottomsheet
+
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Queue
+import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Divider
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import cc.tomko.outify.ALBUM_COVER_URL
+import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.getCover
+import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
+import cc.tomko.outify.ui.notifications.InAppNotificationController
+import cc.tomko.outify.ui.notifications.NotificationSpec
+import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
+import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
+import coil3.compose.AsyncImage
+import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SharedTransitionScope.ArtistLikedTracksBottomSheet(
+    viewModel: ArtistViewModel,
+    onArtworkClick: (Track) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = false,
+    )
+
+    val coroutineScope = rememberCoroutineScope()
+
+    ModalBottomSheet(
+        onDismissRequest = {
+            coroutineScope.launch {
+                onDismiss()
+                sheetState.hide()
+            }
+        },
+        sheetState = sheetState,
+        modifier = modifier,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+    ) {
+        when (uiState) {
+            ArtistUiState.Loading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            is ArtistUiState.Error -> {
+                val msg = (uiState as ArtistUiState.Error).message
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(text = "Error", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = msg, color = MaterialTheme.colorScheme.error)
+                }
+            }
+            is ArtistUiState.Success -> {
+                val artistState = (uiState as ArtistUiState.Success).artist
+                val artworkUrl = ALBUM_COVER_URL + (artistState.getCover(CoverSize.LARGE)?.uri ?: "")
+                val likedTracks by viewModel.likedTracks.collectAsState()
+                val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+                val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
+                val spirc = viewModel.spirc
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
+                    // Header row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                if (artworkUrl.isNotBlank()) {
+                                    AsyncImage(
+                                        model = artworkUrl,
+                                        contentDescription = "Artist artwork",
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column {
+                                Text(
+                                    text = artistState.name,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    text = "• ${likedTracks.size} liked songs",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { spirc.shuffleLoad(artistState.uri) }) {
+                                Icon(Icons.Rounded.Shuffle, contentDescription = "Shuffle")
+                            }
+                            IconButton(onClick = { spirc.load(artistState.uri) }) {
+                                Icon(Icons.Rounded.PlayArrow, contentDescription = "Play in order")
+                            }
+                        }
+                    }
+
+                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    // Track list
+                    val listState = rememberLazyListState()
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        items(likedTracks, key = { t -> "liked_song_${t.uri}" }) { track ->
+                            SwipeableTrackRow(
+                                track = track,
+                                currentTrack = currentTrack,
+                                isPlaybackPlaying = isPlaybackPlaying,
+                                onRowClick = remember(track.uri) {
+                                    {
+                                        viewModel.setTrack(track)
+                                        spirc.load(track.uri)
+                                    }
+                                },
+                                onArtworkClick = { onArtworkClick(track) },
+                                onAddToQueue = { t ->
+                                    InAppNotificationController.show(
+                                        NotificationSpec(
+                                            message = "Added to queue",
+                                            icon = { Icon(Icons.Filled.Queue, contentDescription = "Queue") }
+                                        )
+                                    )
+                                    spirc.addToQueue(t.uri)
+                                },
+                                onStartRadio = { t ->
+                                    InAppNotificationController.show(
+                                        NotificationSpec(
+                                            message = "Radio started",
+                                            icon = { Icon(Icons.Filled.Radio, contentDescription = "Radio") }
+                                        )
+                                    )
+                                    spirc.startRadio(t.uri, false)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

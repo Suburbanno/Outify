@@ -1,5 +1,6 @@
 package cc.tomko.outify.data
 
+import cc.tomko.outify.utils.SharedElementKey
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,4 +23,8 @@ data class Album(
 
 fun Album.getCover(size: CoverSize): Cover? {
     return covers.firstOrNull { it.size == size.asInt() }
+}
+
+fun Album.sharedTransitionKey(): String {
+    return "${SharedElementKey.ALBUM_ARTWORK}_$id"
 }

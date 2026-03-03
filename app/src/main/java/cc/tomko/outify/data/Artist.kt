@@ -15,6 +15,7 @@ data class Artist(
     val portraits: List<String> = emptyList(),
     val tracks: List<String> = emptyList(), // Just track uris
     val covers: List<Cover> = emptyList(),
+    val albums: List<String> = emptyList(), // Just album uris
 )
 
 fun Artist.getCover(size: CoverSize): Cover? {

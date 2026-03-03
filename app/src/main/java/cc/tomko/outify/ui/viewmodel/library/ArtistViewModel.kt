@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
+import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.metadata.Metadata
@@ -36,6 +37,7 @@ class ArtistViewModel @Inject constructor(
 
     private val likedTrackUris = MutableStateFlow<List<String>>(emptyList())
     private val popularTrackUris = MutableStateFlow<List<String>>(emptyList())
+    private val albumUris = MutableStateFlow<List<String>>(emptyList())
 
     fun currentTrack(): Flow<Track?> =
         playbackStateHolder.state.map { it.currentTrack }
@@ -67,6 +69,18 @@ class ArtistViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val albums: StateFlow<List<Album>> = albumUris
+        .flatMapLatest { uris ->
+            if(uris.isEmpty()) flowOf(emptyList())
+            else metadata.observeAlbums(uris)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
     fun loadArtist(artistUri: String) {
         viewModelScope.launch {
             try {
@@ -81,6 +95,7 @@ class ArtistViewModel @Inject constructor(
 
                 likedTrackUris.value = likedSongsUris
                 popularTrackUris.value = artist.tracks
+                albumUris.value = artist.albums
 
                 _uiState.value = ArtistUiState.Success(artist, likedSongsUris)
             } catch (e: Exception) {

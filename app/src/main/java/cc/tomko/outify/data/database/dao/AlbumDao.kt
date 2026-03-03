@@ -8,11 +8,16 @@ import androidx.room.Transaction
 import cc.tomko.outify.data.database.AlbumEntity
 import cc.tomko.outify.data.database.album.AlbumWithArtists
 import cc.tomko.outify.data.database.album.AlbumWithTracks
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Singleton
 
 @Dao
 @Singleton
 interface AlbumDao {
+    @Transaction
+    @Query("SELECT * FROM albums WHERE albumId IN (:albumIds)")
+    fun observeAlbumsWithArtists(albumIds: List<String>): Flow<List<AlbumWithArtists>>
+
     @Transaction
     @Query("SELECT * FROM albums WHERE albumId = :albumId")
     suspend fun getAlbumWithArtists(albumId: String): AlbumWithArtists?

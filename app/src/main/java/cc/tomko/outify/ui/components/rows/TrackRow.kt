@@ -104,7 +104,6 @@ fun SharedTransitionScope.TrackRow(
 
     val imageLoader = (LocalContext.current.applicationContext as OutifyApplication).imageLoader
 
-    // Morphing the album cover only if sharedTransitionKey != null
     val modifierWithSharedBounds = if (sharedTransitionKey != null) {
         modifier.sharedBounds(
             rememberSharedContentState(sharedTransitionKey),

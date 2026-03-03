@@ -26,6 +26,10 @@ class Metadata @Inject constructor(
         return trackMetadataHelper.observeTracks(uris)
     }
 
+    fun observeAlbums(uris: List<String>): Flow<List<Album>> {
+        return albumMetadataHelper.observeAlbums(uris)
+    }
+
     /**
      * Returns list of Tracks with their metadata
      */
@@ -56,6 +60,7 @@ class Metadata @Inject constructor(
     suspend fun getArtistMetadata(uri: String): Artist? {
         try {
             val raw = nativeMetadata.getNativeMetadata(uri)
+            println(raw)
             return json.decodeFromString<Artist>(raw)
         } catch (e: Exception) {
             Log.e("Metadata", "fetchAlbums: failed for $uri", e)

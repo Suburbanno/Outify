@@ -14,6 +14,10 @@ import cc.tomko.outify.data.database.dao.AlbumDao
 import cc.tomko.outify.data.database.dao.AlbumTrackDao
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.supervisorScope
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -30,6 +34,23 @@ class AlbumMetadataHelper @Inject constructor(
     private val json: Json,
     @Named("metadataConcurrency") private val concurrency: Int,
 ) {
+
+    fun observeAlbums(uris: List<String>): Flow<List<Album>> {
+        if (uris.isEmpty()) return flowOf(emptyList())
+
+        val cleanedIds = uris.map { it.removePrefix("spotify:album:") }
+
+        return albumDao
+            .observeAlbumsWithArtists(cleanedIds)
+            .map { entities ->
+                val byUri: Map<String, Album> = entities
+                    .associateBy { it.album.uri }
+                    .mapValues { (_, v) -> v.toDomain() }
+
+                uris.mapNotNull { uri -> byUri[uri] }
+            }
+            .distinctUntilChanged()
+    }
 
     /**
      * Returns the cached album with its tracks (ordered URIs).

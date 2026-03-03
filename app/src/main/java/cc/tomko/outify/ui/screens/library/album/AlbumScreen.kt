@@ -34,9 +34,11 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.data.sharedTransitionKey
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
@@ -170,6 +172,11 @@ fun SharedTransitionScope.AlbumDetailScreen(
                     backgroundContent = {
                         ArtworkBackground(
                             artworkUrl = artworkUrl,
+                            modifier = Modifier
+                                .sharedBounds(
+                                    rememberSharedContentState(album.sharedTransitionKey()),
+                                    LocalNavAnimatedContentScope.current
+                                )
                         )
                     },
                     titleContent = {

@@ -18,6 +18,7 @@ import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.data.sharedTransitionKey
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.utils.SharedElementKey
@@ -102,7 +103,7 @@ fun SharedTransitionScope.SwipeableTrackRow(
             onTitleClick = onTitleClick,
             onArtistClick = onArtistClick,
             sharedTransitionKey = if (isTransitioning)
-                "${SharedElementKey.ALBUM_ARTWORK}_${track.uri}" else null
+                track.album?.sharedTransitionKey() else null
         )
     }
 }

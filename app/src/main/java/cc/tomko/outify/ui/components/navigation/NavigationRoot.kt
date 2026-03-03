@@ -18,6 +18,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import cc.tomko.outify.ui.components.bottomsheet.ArtistLikedTracksBottomSheet
 import cc.tomko.outify.ui.screens.HomeScreen
 import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.screens.library.LibraryScreen
@@ -25,7 +26,6 @@ import cc.tomko.outify.ui.screens.library.LikedScreen
 import cc.tomko.outify.ui.screens.library.PlaylistScreen
 import cc.tomko.outify.ui.screens.library.album.AlbumDetailScreen
 import cc.tomko.outify.ui.screens.library.artist.ArtistDetailScreen
-import cc.tomko.outify.ui.screens.library.artist.ArtistLikedTracksScreen
 import cc.tomko.outify.ui.screens.search.SearchScreen
 import cc.tomko.outify.ui.screens.settings.SettingsScreen
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
@@ -156,24 +156,10 @@ fun SharedTransitionScope.NavigationRoot(
                     onArtworkClick = { track ->
                         backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
                     },
-                    onLikedTracksClick = {
-                        backStack.add(Route.ArtistLikedTracksScreen(it.artistUri))
+                    onAlbumClick = { album ->
+                        backStack.add(Route.AlbumScreenFromAlbumUri(album.uri))
                     },
                     onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) }
-                ) { }
-            }
-
-            entry<Route.ArtistLikedTracksScreen> {
-                val viewModel: ArtistViewModel = hiltViewModel()
-                LaunchedEffect(viewModel) {
-                    viewModel.loadArtist(it.artistUri)
-                }
-
-                ArtistLikedTracksScreen(
-                    viewModel,
-                    onArtworkClick = { track ->
-                        backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
-                    },
                 ) { }
             }
 
