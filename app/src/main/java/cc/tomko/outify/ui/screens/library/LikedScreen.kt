@@ -40,8 +40,10 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Artist
+import cc.tomko.outify.data.Track
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
+import cc.tomko.outify.ui.components.bottomsheet.TrackInfoBottomSheet
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
 import cc.tomko.outify.ui.notifications.InAppNotificationController
@@ -108,6 +110,8 @@ fun SharedTransitionScope.LikedScreen(
     val collapsingState = rememberCollapsingHeaderState()
     val scope = rememberCoroutineScope()
 
+    var selectedTrack by remember { mutableStateOf<Track?>(null) }
+
     LaunchedEffect(listState.isScrollInProgress) {
         if (!listState.isScrollInProgress) {
             val canExpand =
@@ -161,6 +165,7 @@ fun SharedTransitionScope.LikedScreen(
                         }
                     },
                     onRowLongClick = {
+                        selectedTrack = track
                     },
                     onArtworkClick = {
                         transitioningTrackUri = track.uri
@@ -196,6 +201,36 @@ fun SharedTransitionScope.LikedScreen(
                     }
                 )
             }
+        }
+
+        selectedTrack?.let { sheetTrack ->
+            TrackInfoBottomSheet(
+                track = sheetTrack,
+                onDismiss = {
+                    selectedTrack = null
+                },
+                onArtworkClick = {
+                    onArtworkClick(sheetTrack.album!!)
+                },
+                onArtistClick = { artist ->
+                    onArtistClick(artist)
+                },
+                onOpenAlbum = {
+                    onArtworkClick(sheetTrack.album!!)
+                },
+                onAddToQueue = {
+                    spirc.addToQueue(sheetTrack.uri)
+                },
+                onSaveToPlaylist = {
+                    // TODO
+                },
+                onToggleLike = {
+                    // TODO
+                },
+                onStartRadio = {
+                    spirc.startRadio(sheetTrack.uri, false)
+                },
+            )
         }
 
         CollapsingHeader(
