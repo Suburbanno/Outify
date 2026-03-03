@@ -48,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -283,12 +284,17 @@ fun PlaybackControls(
         // Shuffle button
         IconButton(
             onClick = onShuffleChange,
-            modifier = Modifier.size(42.dp),
+            modifier = Modifier
+                .size(42.dp)
+                .background(
+                    color = if (isShuffling)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    else Color.Transparent,
+                    shape = MaterialShapes.Square.toShape()
+                )
         ) {
             Icon(
-                imageVector = if (isShuffling)
-                    Icons.Outlined.Shuffle
-                else Icons.AutoMirrored.Outlined.Forward,
+                imageVector = Icons.Outlined.Shuffle,
                 contentDescription = "Shuffle mode",
                 tint = if (isShuffling)
                     MaterialTheme.colorScheme.primary
@@ -362,6 +368,13 @@ fun PlaybackControls(
         IconButton(
             onClick = onRepeatMode,
             modifier = Modifier.size(42.dp)
+                .size(42.dp)
+                .background(
+                    color = if (isRepeating)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    else Color.Transparent,
+                    shape = MaterialShapes.Square.toShape()
+                )
         ) {
             Icon(
                 imageVector = if(isRepeating)
