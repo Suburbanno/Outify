@@ -1,6 +1,11 @@
-use std::sync::{atomic::{AtomicBool, AtomicU32}, Arc, Mutex, RwLock};
+use std::sync::{
+    Arc, Mutex, RwLock,
+    atomic::{AtomicBool, AtomicU32},
+};
 
-use librespot_connect::{ConnectConfig, LoadRequest, LoadRequestOptions, Spirc};
+use librespot_connect::{
+    ConnectConfig, LoadContextOptions, LoadRequest, LoadRequestOptions, Options, Spirc,
+};
 use librespot_core::{Session, SpotifyUri, authentication::Credentials, spclient::TransferRequest};
 use librespot_playback::{
     config::{AudioFormat, PlayerConfig},
@@ -20,6 +25,8 @@ static CURRENT_TRACK: OnceCell<Mutex<Option<String>>> = OnceCell::new();
 
 static CURRENT_CONTEXT: OnceCell<Mutex<Option<CurrentContext>>> = OnceCell::new();
 static IS_PLAYING: AtomicBool = AtomicBool::new(false);
+static IS_SHUFFLING: AtomicBool = AtomicBool::new(false);
+static IS_REPEATING: AtomicBool = AtomicBool::new(false);
 static LAST_POSITION: AtomicU32 = AtomicU32::new(0);
 
 #[derive(Clone)]
@@ -125,12 +132,32 @@ impl SpircRuntime {
         self.spirc.prev()
     }
 
-    pub fn load(&self,uri: String, options: LoadRequestOptions) -> Result<(), librespot_core::Error> {
-        let req = LoadRequest::from_context_uri(uri.clone(), options.clone());
+    pub fn load(
+        &self,
+        uri: String,
+        options: LoadRequestOptions,
+    ) -> Result<(), librespot_core::Error> {
+        let shuffle = IS_SHUFFLING.load(std::sync::atomic::Ordering::Relaxed);
+        let repeat = IS_REPEATING.load(std::sync::atomic::Ordering::Relaxed);
+
+        let context_options = LoadContextOptions::Options(Options {
+            shuffle,
+            repeat,
+            repeat_track: false,
+        });
+
+        let modified_options = LoadRequestOptions {
+            context_options: Some(context_options),
+            start_playing: options.start_playing,
+            seek_to: options.seek_to,
+            playing_track: options.playing_track,
+        };
+
+        let req = LoadRequest::from_context_uri(uri.clone(), modified_options.clone());
 
         let context = CurrentContext {
             uri,
-            options,
+            options: modified_options,
         };
 
         if let Some(mutex) = CURRENT_CONTEXT.get() {
@@ -173,10 +200,12 @@ impl SpircRuntime {
     }
 
     pub fn shuffle(&self, enabled: bool) -> Result<(), librespot_core::Error> {
+        IS_SHUFFLING.store(enabled, std::sync::atomic::Ordering::Relaxed);
         self.spirc.shuffle(enabled)
     }
 
     pub fn repeat(&self, enabled: bool) -> Result<(), librespot_core::Error> {
+        IS_REPEATING.store(enabled, std::sync::atomic::Ordering::Relaxed);
         self.spirc.repeat(enabled)
     }
 
@@ -201,11 +230,9 @@ impl SpircRuntime {
     // Resumes last played context after Spirc shutdown
     pub fn resume_playback(&self) {
         let context = match CURRENT_CONTEXT.get() {
-            Some(c) => {
-                match c.lock().unwrap().clone() {
-                    Some(c) => c,
-                    None => return,
-                }
+            Some(c) => match c.lock().unwrap().clone() {
+                Some(c) => c,
+                None => return,
             },
             None => return,
         };
@@ -213,19 +240,27 @@ impl SpircRuntime {
         info!("Resuming playback!");
 
         // Starting from latest recorded track
-        let last_uri = match current_track(){
+        let last_uri = match current_track() {
             Some(l) => l,
             None => {
                 // Using the context default
                 context.uri.clone()
-            },
+            }
         };
 
-        let start_playing = IS_PLAYING.load(std::sync::atomic::Ordering::Relaxed) && context.options.start_playing;
+        let start_playing =
+            IS_PLAYING.load(std::sync::atomic::Ordering::Relaxed) && context.options.start_playing;
         let seek_to = LAST_POSITION.load(std::sync::atomic::Ordering::Relaxed);
+        let shuffle = IS_SHUFFLING.load(std::sync::atomic::Ordering::Relaxed);
+        let repeat = IS_REPEATING.load(std::sync::atomic::Ordering::Relaxed);
 
+        let context_options = LoadContextOptions::Options(Options {
+            shuffle,
+            repeat,
+            repeat_track: false,
+        });
         let options = LoadRequestOptions {
-            context_options: context.options.context_options,
+            context_options: Some(context_options),
             playing_track: Some(librespot_connect::PlayingTrack::Uri(last_uri)),
             start_playing,
             seek_to,

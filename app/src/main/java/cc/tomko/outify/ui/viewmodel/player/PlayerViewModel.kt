@@ -10,6 +10,7 @@ import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.model.player.PlayerUIState
+import cc.tomko.outify.ui.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -28,6 +29,7 @@ import kotlin.time.Duration
 class PlayerViewModel @Inject constructor(
     val spirc: SpircWrapper,
     private val playbackStateHolder: PlaybackStateHolder,
+    private val settingsRepository: SettingsRepository,
 ): ViewModel() {
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
@@ -35,10 +37,11 @@ class PlayerViewModel @Inject constructor(
     private val _positionMs = MutableStateFlow(playbackStateHolder.estimatePosition().inWholeMilliseconds)
     val positionMs = _positionMs.asStateFlow()
 
-    private val _isShuffling = MutableStateFlow(false)
-    val isShuffling = _isShuffling.asStateFlow()
-    private val _isRepeating = MutableStateFlow(false)
-    val isRepeating = _isRepeating.asStateFlow()
+    val isShuffling = settingsRepository.shuffleEnabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val isRepeating = settingsRepository.repeatEnabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     init {
         viewModelScope.launch {
@@ -97,12 +100,18 @@ class PlayerViewModel @Inject constructor(
                 }
             }
             PlayerAction.RepeatToggle -> {
-                _isRepeating.value = !spirc.isRepeating
-                spirc.repeat(!spirc.isRepeating)
+                val newValue = !isRepeating.value
+                viewModelScope.launch {
+                    settingsRepository.setRepeat(newValue)
+                    spirc.repeat(newValue)
+                }
             }
             PlayerAction.ShuffleToggle -> {
-                _isShuffling.value = !spirc.isShuffling
-                spirc.shuffle(!spirc.isShuffling)
+                val newValue = !isShuffling.value
+                viewModelScope.launch {
+                    settingsRepository.setShuffle(newValue)
+                    spirc.shuffle(newValue)
+                }
             }
         }
     }

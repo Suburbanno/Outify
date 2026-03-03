@@ -28,7 +28,7 @@ Contact us through Github:
 ### Roadmap
 - [x] raw PCM streaming
 - [x] adding to queue
-- [ ] starting radio
+- [x] starting radio
 - [x] playlist support
 - [ ] interacting with spotify account
     - [ ] login to Spotify Web API

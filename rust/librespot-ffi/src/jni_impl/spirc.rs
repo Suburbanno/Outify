@@ -110,86 +110,30 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_load(
     juri: JString,
     jplaying_track: JString,
 ) -> jboolean {
-    // If uri is not present - set to users liked collection
-    // If uri is present - use that uri
-    let uri = if juri.is_null() {
-        let user_id = match with_session(|session| session.username()) {
-            Ok(u) => u,
-            Err(e) => {
-                error!("Failed to get user_id: {e}");
-                return 0;
-            }
-        };
-
-        format!("spotify:user:{}:collection", user_id)
-    } else {
-        match env.get_string(&juri) {
-            Ok(u) => u.into(),
-            Err(e) => {
-                warn!("Failed to get URI from JNI juri: {}", e);
-                return 0;
-            }
-        }
+    let uri = match resolve_uri_or_collection(&mut env, juri) {
+        Ok(u) => u,
+        Err(()) => return 0 as jboolean,
     };
 
-    let track_uri: Option<String> = if jplaying_track.is_null() {
-        None
-    } else {
-        match env.get_string(&jplaying_track) {
-            Ok(js) => Some(js.into()),
-            Err(e) => {
-                error!("failed to get playing track uri: {}", e);
-                return 0;
-            }
-        }
-    };
-
-    let track = match track_uri {
-        Some(uri) => Some(PlayingTrack::Uri(uri)),
-        None => None,
+    let playing_track = match jstring_to_option(&mut env, jplaying_track) {
+        Ok(opt) => opt.map(PlayingTrack::Uri),
+        Err(()) => return 0 as jboolean,
     };
 
     let options = LoadRequestOptions {
         start_playing: true,
-        playing_track: track,
+        playing_track,
         ..Default::default()
     };
 
-    match with_spirc(|runtime| runtime.load(uri, options)) {
-        Ok(Ok(_)) => 1 as jboolean,
-        Ok(Err(e)) => {
-            error!("Failed to load Spirc: {}", e);
-            0 as jboolean
-        }
-        Err(e) => {
-            error!("Spirc not available: {}", e);
-            0 as jboolean
-        }
-    }
+    call_spirc_load(uri, options)
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_shuffleLoad")]
 pub extern "system" fn shuffle_load(mut env: JNIEnv, _this: JClass, juri: JString) -> jboolean {
-    // If uri is not present - set to users liked collection
-    // If uri is present - use that uri
-    let uri = if juri.is_null() {
-        let user_id = match with_session(|session| session.username()) {
-            Ok(u) => u,
-            Err(e) => {
-                error!("Failed to get user_id: {e}");
-                return 0;
-            }
-        };
-
-        format!("spotify:user:{}:collection", user_id)
-    } else {
-        match env.get_string(&juri) {
-            Ok(u) => u.into(),
-            Err(e) => {
-                warn!("Failed to get URI from JNI juri: {}", e);
-                return 0;
-            }
-        }
+    let uri = match resolve_uri_or_collection(&mut env, juri) {
+        Ok(u) => u,
+        Err(()) => return 0 as jboolean,
     };
 
     let options = LoadRequestOptions {
@@ -202,17 +146,7 @@ pub extern "system" fn shuffle_load(mut env: JNIEnv, _this: JClass, juri: JStrin
         ..Default::default()
     };
 
-    match with_spirc(|runtime| runtime.load(uri, options)) {
-        Ok(Ok(_)) => 1 as jboolean,
-        Ok(Err(e)) => {
-            error!("Failed to load Spirc: {}", e);
-            0 as jboolean
-        }
-        Err(e) => {
-            error!("Spirc not available: {}", e);
-            0 as jboolean
-        }
-    }
+    call_spirc_load(uri, options)
 }
 
 // Adds a Spotify URI to queue
@@ -524,6 +458,56 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_nextTracks(
         Err(e) => {
             error!("failed to convert json into json: {}", e);
             std::ptr::null_mut()
+        }
+    }
+}
+
+// Resolves passed in JString or fallbacks to users collection
+fn resolve_uri_or_collection(env: &mut JNIEnv, juri: JString) -> Result<String, ()> {
+    if juri.is_null() {
+        match with_session(|session| session.username()) {
+            Ok(user) => Ok(format!("spotify:user:{}:collection", user)),
+            Err(e) => {
+                error!("Failed to get user_id: {e}");
+                Err(())
+            }
+        }
+    } else {
+        match env.get_string(&juri) {
+            Ok(js) => Ok(js.into()),
+            Err(e) => {
+                warn!("Failed to get URI from JNI juri: {}", e);
+                Err(())
+            }
+        }
+    }
+}
+
+// Optional JString
+fn jstring_to_option(env: &mut JNIEnv, js: JString) -> Result<Option<String>, ()> {
+    if js.is_null() {
+        Ok(None)
+    } else {
+        match env.get_string(&js) {
+            Ok(s) => Ok(Some(s.into())),
+            Err(e) => {
+                error!("failed to get jstring: {}", e);
+                Err(())
+            }
+        }
+    }
+}
+
+fn call_spirc_load(uri: String, options: LoadRequestOptions) -> jboolean {
+    match with_spirc(|runtime| runtime.load(uri, options)) {
+        Ok(Ok(_)) => 1 as jboolean,
+        Ok(Err(e)) => {
+            error!("Failed to load Spirc: {}", e);
+            0 as jboolean
+        }
+        Err(e) => {
+            error!("Spirc not available: {}", e);
+            0 as jboolean
         }
     }
 }

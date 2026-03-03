@@ -81,6 +81,9 @@ dependencies {
     implementation(libs.navigation3.runtime)
     implementation(libs.adaptive.navigation3)
 
+    // Preferences
+    implementation(libs.androidx.datastore.preferences)
+
     // Hilt
     implementation("com.google.dagger:hilt-android:2.59.1")
     implementation(libs.androidx.lifecycle.service)

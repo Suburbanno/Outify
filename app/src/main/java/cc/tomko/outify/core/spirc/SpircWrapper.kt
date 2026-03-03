@@ -11,7 +11,12 @@ import cc.tomko.outify.core.spirc.ISpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.services.MusicService
+import cc.tomko.outify.ui.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,10 +28,12 @@ class SpircWrapper @Inject constructor(
     @ApplicationContext val context: Context,
     private val playbackStateHolder: PlaybackStateHolder,
     private val spClient: SpClient,
+    private val settingsRepository: SettingsRepository,
     private val json: Json,
 ): ISpircWrapper{
-    var isShuffling = false
-    var isRepeating = false
+    val scope = CoroutineScope(
+        Dispatchers.Main.immediate
+    )
 
     /**
      * Whether Spirc is in usable state, so we can query it
@@ -75,7 +82,9 @@ class SpircWrapper @Inject constructor(
      * @return <code>true</code> if success
      */
     override fun shuffle(enabled: Boolean): Boolean {
-        isShuffling = enabled
+        scope.launch {
+            settingsRepository.setShuffle(enabled)
+        }
         return Spirc.shuffle(enabled)
     }
 
@@ -84,7 +93,9 @@ class SpircWrapper @Inject constructor(
      * @return <code>true</code> if success
      */
     override fun repeat(enabled: Boolean): Boolean {
-        isRepeating = enabled
+        scope.launch {
+            settingsRepository.setRepeat(enabled)
+        }
         return Spirc.repeat(enabled)
     }
 
@@ -102,6 +113,7 @@ class SpircWrapper @Inject constructor(
      * @return `true` if loaded successfully
      */
     override fun addToQueue(spotifyUri: String?): Boolean {
+        // TODO: cache in kotlin, so we can have faster UX
         return Spirc.addToQueue(spotifyUri)
     }
 

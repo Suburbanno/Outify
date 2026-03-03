@@ -1,10 +1,17 @@
 package cc.tomko.outify.core.spirc
 
 import android.util.Log
+import androidx.compose.runtime.collectAsState
 import cc.tomko.outify.core.Session
 import cc.tomko.outify.core.SessionCallback
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.ui.repository.SettingsRepository
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -12,7 +19,8 @@ import javax.inject.Singleton
 class SpircController @Inject constructor(
     private val session: Session,
     private val spirc: SpircWrapper,
-    private val playbackStateHolder: PlaybackStateHolder
+    private val playbackStateHolder: PlaybackStateHolder,
+    private val settingsRepository: SettingsRepository,
 ) {
     fun start() {
         session.initializeSession(object : SessionCallback {
@@ -65,6 +73,14 @@ class SpircController @Inject constructor(
         }
 
         spirc.isUsable = true
+
+        spirc.scope.launch {
+            val shuffle = settingsRepository.shuffleEnabled.first()
+            val repeat = settingsRepository.repeatEnabled.first()
+
+            spirc.shuffle(shuffle)
+            spirc.repeat(repeat)
+        }
     }
 
     private fun handleSessionShutdown() {

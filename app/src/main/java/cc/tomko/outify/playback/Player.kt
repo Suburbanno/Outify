@@ -168,7 +168,7 @@ class Player @Inject constructor(
     }
 
     override fun handleSetShuffleModeEnabled(shuffleModeEnabled: Boolean): ListenableFuture<*> {
-//        spirc.setShuffle(shuffleModeEnabled)
+        spirc.shuffle(shuffleModeEnabled)
         return com.google.common.util.concurrent.Futures.immediateVoidFuture()
     }
 
