@@ -176,14 +176,15 @@ fun SharedTransitionScope.ArtistDetailScreen(
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
+                    item {
+                        Text(
+                            text = "Popular tracks",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                        )
+                    }
+
                     if (likedTrackCount > 0) {
-                        item {
-                            Text(
-                                text = "Popular tracks",
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-                            )
-                        }
                         item {
                             ArtistTracksHeader(
                                 likedCount = likedTrackCount,
