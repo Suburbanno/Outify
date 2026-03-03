@@ -28,3 +28,16 @@ pub async fn get_rootlist() -> SpClientResult {
     let spclient = session.spclient();
     spclient.get_rootlist(0, None).await
 }
+
+pub async fn get_radio_for_track(track_uri: &SpotifyUri) -> SpClientResult {
+    let session = match with_session(|s| s.clone()) {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Failed to get session: {}", e);
+            return Err(librespot_core::Error::internal("Failed to get session"));
+        }
+    };
+
+    let spclient = session.spclient();
+    spclient.get_radio_for_track(track_uri).await
+}

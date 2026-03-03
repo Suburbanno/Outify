@@ -11,6 +11,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Queue
+import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -39,6 +41,8 @@ import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
+import cc.tomko.outify.ui.notifications.InAppNotificationController
+import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModel
 
 /**
@@ -129,6 +133,30 @@ fun SharedTransitionScope.AlbumDetailScreen(
                                 spirc.load(album.uri,track.uri)
                             } },
                             onArtistClick = { artistClick(it.uri) },
+                            onAddToQueue = { track ->
+                                InAppNotificationController.show(
+                                    NotificationSpec(
+                                        message = "Added to queue",
+                                        icon = {
+                                            Icon( Icons.Default.Queue, contentDescription = "Queue")
+                                        }
+                                    )
+                                )
+
+                                spirc.addToQueue(track.uri)
+                            },
+                            onStartRadio = { track ->
+                                InAppNotificationController.show(
+                                    NotificationSpec(
+                                        message = "Radio started",
+                                        icon = {
+                                            Icon( Icons.Default.Radio, contentDescription = "Radio")
+                                        }
+                                    )
+                                )
+
+                                spirc.startRadio(track.uri, false)
+                            }
                         )
                     }
                 }

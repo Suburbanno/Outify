@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Queue
+import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.ContainedLoadingIndicator
@@ -60,6 +62,8 @@ import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
+import cc.tomko.outify.ui.notifications.InAppNotificationController
+import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
 import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
 import coil3.compose.AsyncImage
@@ -178,6 +182,30 @@ fun SharedTransitionScope.ArtistDetailScreen(
                             } },
                             onArtistClick = { onArtistClick(it) },
                             onArtworkClick = {onArtworkClick(track)},
+                            onAddToQueue = { track ->
+                                InAppNotificationController.show(
+                                    NotificationSpec(
+                                        message = "Added to queue",
+                                        icon = {
+                                            Icon( Icons.Default.Queue, contentDescription = "Queue")
+                                        }
+                                    )
+                                )
+
+                                spirc.addToQueue(track.uri)
+                            },
+                            onStartRadio = { track ->
+                                InAppNotificationController.show(
+                                    NotificationSpec(
+                                        message = "Radio started",
+                                        icon = {
+                                            Icon( Icons.Default.Radio, contentDescription = "Radio")
+                                        }
+                                    )
+                                )
+
+                                spirc.startRadio(track.uri, false)
+                            }
                         )
                     }
                 }

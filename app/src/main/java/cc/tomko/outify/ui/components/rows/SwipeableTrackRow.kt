@@ -7,6 +7,7 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.AddToPhotos
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Queue
+import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -34,6 +35,9 @@ fun SharedTransitionScope.SwipeableTrackRow(
     onArtistClick: ((Artist) -> Unit)? = null,
     favoriteTrack: ((String) -> Unit)? = null,
     trailingContent: @Composable (() -> Unit)? = null,
+
+    onAddToQueue: ((Track) -> Unit)? = null,
+    onStartRadio: ((Track) -> Unit)? = null,
 ) {
     SwipeableRowWithGestures(
         endGestures = listOf(
@@ -47,15 +51,7 @@ fun SharedTransitionScope.SwipeableTrackRow(
                     )
                 },
                 onTrigger = {
-                    InAppNotificationController.show(
-                        NotificationSpec(
-                            message = "Added to queue",
-                            icon = {
-                                Icon( Icons.Default.Queue, contentDescription = "Queue")
-                            }
-                        )
-                    )
-                    Spirc.addToQueue(track.uri)
+                    onAddToQueue?.invoke(track)
                 },
                 backgroundColor = Color(0xC43C8C52)
             ),
@@ -63,12 +59,14 @@ fun SharedTransitionScope.SwipeableTrackRow(
                 thresholdFraction = 0.45f,
                 icon = {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
-                        contentDescription = "Add to playlist",
+                        imageVector = Icons.Default.Radio,
+                        contentDescription = "Start radio",
                         modifier = Modifier.fillMaxSize()
                     )
                 },
-                onTrigger = {  },
+                onTrigger = {
+                    onStartRadio?.invoke(track)
+                },
             ),
         ),
         startGestures = listOf(

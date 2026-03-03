@@ -204,6 +204,12 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    fun startRadio(uri: String) {
+        viewModelScope.launch {
+            spirc.startRadio(uri, false)
+        }
+    }
+
     fun setTrack(track: Track) {
         playbackStateHolder.setTrack(track)
     }

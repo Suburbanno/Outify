@@ -5,11 +5,14 @@ import android.content.Intent
 import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
+import cc.tomko.outify.core.RadioResult
+import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.ISpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.services.MusicService
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.DurationUnit
@@ -19,6 +22,8 @@ import kotlin.time.toDuration
 class SpircWrapper @Inject constructor(
     @ApplicationContext val context: Context,
     private val playbackStateHolder: PlaybackStateHolder,
+    private val spClient: SpClient,
+    private val json: Json,
 ): ISpircWrapper{
     var isShuffling = false
     var isRepeating = false
@@ -27,6 +32,25 @@ class SpircWrapper @Inject constructor(
      * Whether Spirc is in usable state, so we can query it
      */
     var isUsable = false
+
+    override fun startRadio(trackUri: String, shuffle: Boolean): Boolean {
+        val jsonResult = spClient.getRadioForTrack(trackUri)
+        val result: RadioResult = json.decodeFromString(jsonResult)
+
+        if(result.total == 0 || result.mediaItems.isEmpty()){
+            return false
+        }
+
+        val playlistUri = result.mediaItems.first().uri
+
+        if(shuffle) {
+            shuffleLoad(playlistUri)
+        } else {
+            load(playlistUri, trackUri)
+        }
+
+        return true
+    }
 
     @OptIn(UnstableApi::class)
     private fun ensureServiceRunning() {

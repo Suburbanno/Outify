@@ -294,3 +294,59 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_getRootlist(
 
     array.into_raw()
 }
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getRadioForTrack")]
+pub extern "system" fn get_radio_for_track(mut env: JNIEnv, _class: JClass, track_uri: JString) -> jstring {
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let track_uri_raw: String = match env.get_string(&track_uri) {
+        Ok(js) => js.into(),
+        Err(e) => {
+            error!("failed to get track_uri: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let track_uri = match SpotifyUri::from_uri(&track_uri_raw.as_str()) {
+        Ok(u) => u,
+        Err(e) => {
+            error!("failed to convert uri: {e}");
+            return std::ptr::null_mut();
+        },
+    };
+
+    let json_opt = rt.block_on(async {
+        match crate::spclient::get_radio_for_track(&track_uri).await {
+            Ok(bytes) => match String::from_utf8(bytes.to_vec()) {
+                Ok(s) => Some(s),
+                Err(e) => {
+                    error!("failed to convert to string: {}", e);
+                    None
+                }
+            },
+            Err(e) => {
+                error!("request failed: {}", e);
+                None
+            }
+        }
+    });
+
+    let json = match json_opt {
+        Some(s) => s,
+        None => return std::ptr::null_mut(),
+    };
+
+    match env.new_string(json) {
+        Ok(j) => j.into_raw(),
+        Err(e) => {
+            error!("failed to convert to jstring: {}", e);
+            std::ptr::null_mut()
+        }
+    }
+}
