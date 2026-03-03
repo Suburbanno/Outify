@@ -27,7 +27,10 @@ fun SharedTransitionScope.SwipeableTrackRow(
     track: Track,
     modifier: Modifier = Modifier,
     currentTrack: Track? = null,
+
+    isPlaybackPlaying: Boolean = false,
     isTransitioning: Boolean = false,
+
     onRowClick: (() -> Unit)? = null,
     onRowLongClick: (() -> Unit)? = null,
     onArtworkClick: (() -> Unit)? = null,
@@ -89,7 +92,8 @@ fun SharedTransitionScope.SwipeableTrackRow(
             title = track.name,
             artists = track.artists,
             artworkUrl = (ALBUM_COVER_URL + track.album?.getCover(CoverSize.SMALL)?.uri),
-            isPlaying = currentTrack?.uri.equals(track.uri),
+            isLoaded = currentTrack?.uri.equals(track.uri),
+            isPlaying = isPlaybackPlaying,
             isSelected = false,
             trailingContent = trailingContent,
             onRowClick = onRowClick,

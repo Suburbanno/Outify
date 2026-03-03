@@ -115,4 +115,7 @@ class LikedViewModel @Inject constructor(
 
     fun currentTrack(): Flow<Track?> =
         playbackStateHolder.state.map { it.currentTrack }
+
+    fun isPlaying(): Flow<Boolean> =
+        playbackStateHolder.state.map { it.isPlaying }
 }

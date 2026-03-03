@@ -100,6 +100,7 @@ fun SharedTransitionScope.PlaylistScreen(
 
             val lazyList = rememberLazyListState()
             val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+            val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
             val spirc = viewModel.spirc
 
             var artworkUrl by remember { mutableStateOf("") }
@@ -149,6 +150,7 @@ fun SharedTransitionScope.PlaylistScreen(
                             SwipeableTrackRow(
                                 track = track!!,
                                 currentTrack = currentTrack,
+                                isPlaybackPlaying = isPlaybackPlaying,
                                 onRowClick = remember(playlistItem.uri) { {
                                     spirc.load(playlist.uri, playlistItem.uri)
                                     viewModel.setTrack(track!!)

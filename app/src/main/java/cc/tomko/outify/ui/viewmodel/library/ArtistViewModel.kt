@@ -40,6 +40,9 @@ class ArtistViewModel @Inject constructor(
     fun currentTrack(): Flow<Track?> =
         playbackStateHolder.state.map { it.currentTrack }
 
+    fun isPlaying(): Flow<Boolean> =
+        playbackStateHolder.state.map { it.isPlaying }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val likedTracks: StateFlow<List<Track>> = likedTrackUris
         .flatMapLatest { uris ->

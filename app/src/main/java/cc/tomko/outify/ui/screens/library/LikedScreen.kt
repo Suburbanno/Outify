@@ -99,6 +99,7 @@ fun SharedTransitionScope.LikedScreen(
     }
 
     val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+    val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
     val totalCount by viewModel.totalCount.collectAsState()
 
     var transitioningTrackUri by remember { mutableStateOf<String?>(null) }
@@ -149,6 +150,7 @@ fun SharedTransitionScope.LikedScreen(
                 SwipeableTrackRow(
                     track,
                     currentTrack = currentTrack,
+                    isPlaybackPlaying = isPlaybackPlaying,
                     isTransitioning = transitioningTrackUri == track.uri,
                     onRowClick = remember(track.uri) {
                         {

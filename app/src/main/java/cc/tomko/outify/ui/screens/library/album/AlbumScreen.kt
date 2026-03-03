@@ -90,6 +90,7 @@ fun SharedTransitionScope.AlbumDetailScreen(
             val tracks = uiState.tracks
             val artworkUrl = ALBUM_COVER_URL + album.getCover(CoverSize.LARGE)?.uri
             val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+            val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
             val spirc = viewModel.spirc
 
             val lazyList = rememberLazyListState()
@@ -128,6 +129,7 @@ fun SharedTransitionScope.AlbumDetailScreen(
                         SwipeableTrackRow(
                             track = track,
                             currentTrack = currentTrack,
+                            isPlaybackPlaying = isPlaybackPlaying,
                             onRowClick = remember(track.uri) { {
                                 viewModel.setTrack(track)
                                 spirc.load(album.uri,track.uri)

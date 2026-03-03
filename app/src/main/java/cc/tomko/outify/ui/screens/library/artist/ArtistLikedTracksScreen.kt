@@ -95,6 +95,7 @@ fun SharedTransitionScope.ArtistLikedTracksScreen(
             val likedTrackCount = likedTracks.size
 
             val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+            val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
 
             val lazyList = rememberLazyListState()
 
@@ -133,6 +134,7 @@ fun SharedTransitionScope.ArtistLikedTracksScreen(
                         SwipeableTrackRow(
                             track = track,
                             currentTrack = currentTrack,
+                            isPlaybackPlaying = isPlaybackPlaying,
                             onRowClick = remember(track.uri) { {
                                 viewModel.setTrack(track)
                                 spirc.load(track.uri)

@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Artist
+import cc.tomko.outify.ui.components.AudioBarsIndicator
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
@@ -54,6 +56,7 @@ fun SharedTransitionScope.TrackRow(
     artworkUrl: String?,
 
     modifier: Modifier = Modifier,
+    isLoaded: Boolean = false,
     isPlaying: Boolean = false,
     isSelected: Boolean = false,
     density: TrackRowDensity = TrackRowDensity.Default,
@@ -213,24 +216,32 @@ fun SharedTransitionScope.TrackRow(
                 }
             }
 
-            if (trailingContent != null) {
-                Box(
-                    modifier = Modifier.wrapContentWidth(Alignment.End),
-                    contentAlignment = Alignment.CenterEnd
-                ) {
-                    trailingContent()
-                }
-            } else {
-                if (isPlaying) {
-                    // Playing indicator
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Playing",
-                        modifier = Modifier.size(20.dp)
+            Row(
+                modifier = Modifier
+                    .padding(end = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                if (isLoaded) {
+                    AudioBarsIndicator(
+                        isPlaying = isPlaying,
+                        barCount = 4,
+                        barWidth = 3.dp,
+                        barHeight = 12.dp,
+                        spacing = 3.dp,
+                        color = LocalContentColor.current
                     )
-                } else if (isSelected) {
-                    Checkbox(checked = true, onCheckedChange = null)
                 }
+
+                if (isSelected) {
+                    Checkbox(
+                        checked = true,
+                        onCheckedChange = null
+                    )
+                }
+
+                trailingContent?.invoke()
             }
         }
     }

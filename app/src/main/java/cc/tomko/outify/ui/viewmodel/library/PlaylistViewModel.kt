@@ -127,6 +127,9 @@ class PlaylistViewModel @Inject constructor(
     fun setTrack(track: Track) {
         playbackStateHolder.setTrack(track)
     }
+
+    fun isPlaying(): Flow<Boolean> =
+        playbackStateHolder.state.map { it.isPlaying }
 }
 
 sealed interface PlaylistUiState {
