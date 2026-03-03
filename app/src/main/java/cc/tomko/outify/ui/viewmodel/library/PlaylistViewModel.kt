@@ -111,13 +111,21 @@ class PlaylistViewModel @Inject constructor(
 
         ids.map { id ->
             async(Dispatchers.IO) {
-                val cached = _authors.value[id] ?: _authors.value[id]
-                if (cached != null) return@async cached
+                _authors.value[id]?.let { return@async it }
 
-                val jsonRaw = userProfile.getUserProfile(id)
-                val profile = json.decodeFromString<Profile>(jsonRaw)
+                val jsonRaw = try {
+                    userProfile.getUserProfile(id)
+                } catch (e: Exception) {
+                    throw e
+                }
 
-                _authors.update { current -> current + (profile.name!! to profile) }
+                val profile = try {
+                    json.decodeFromString<Profile>(jsonRaw)
+                } catch (e: Exception) {
+                    throw e
+                }
+
+                _authors.update { current -> current + (id to profile) }
 
                 profile
             }

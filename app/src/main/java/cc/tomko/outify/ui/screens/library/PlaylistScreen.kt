@@ -160,9 +160,7 @@ fun SharedTransitionScope.PlaylistScreen(
                                     onArtistClick(artist)
                                 },
                                 trailingContent = {
-                                    val author by produceState<Profile?>(initialValue = null, key1 = playlistItem.attributes.addedBy) {
-                                        value = authorMap[playlistItem.attributes.addedBy ]
-                                    }
+                                    val author = authorMap[playlistItem.attributes.addedBy]
 
                                     author?.let {
                                         UserChipAvatar(it)
