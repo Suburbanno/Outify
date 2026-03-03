@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.viewmodel.library
 
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
@@ -35,7 +36,7 @@ class ArtistViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<ArtistUiState>(ArtistUiState.Loading)
     val uiState: StateFlow<ArtistUiState> = _uiState
 
-    private val likedTrackUris = MutableStateFlow<List<String>>(emptyList())
+    val likedTrackUris = MutableStateFlow<List<String>>(emptyList())
     private val popularTrackUris = MutableStateFlow<List<String>>(emptyList())
     private val albumUris = MutableStateFlow<List<String>>(emptyList())
 

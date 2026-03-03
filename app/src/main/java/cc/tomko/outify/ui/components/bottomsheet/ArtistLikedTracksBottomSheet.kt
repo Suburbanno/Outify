@@ -32,7 +32,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -167,7 +167,8 @@ fun SharedTransitionScope.ArtistLikedTracksBottomSheet(
                         }
                     }
 
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider(thickness = 2.dp)
 
                     // Track list
                     val listState = rememberLazyListState()

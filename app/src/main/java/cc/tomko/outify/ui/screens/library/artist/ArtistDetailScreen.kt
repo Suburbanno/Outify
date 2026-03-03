@@ -134,6 +134,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
 
             val likedTracks by viewModel.likedTracks.collectAsState()
             val likedTrackCount = likedTracks.size
+            val likedTrackUris by viewModel.likedTrackUris.collectAsState()
 
             val albums by viewModel.albums.collectAsState()
 
@@ -177,7 +178,11 @@ fun SharedTransitionScope.ArtistDetailScreen(
                 ) {
                     if (likedTrackCount > 0) {
                         item {
-                            Spacer(modifier = Modifier.height(48.dp))
+                            Text(
+                                text = "Popular tracks",
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                            )
                         }
                         item {
                             ArtistTracksHeader(
@@ -192,14 +197,11 @@ fun SharedTransitionScope.ArtistDetailScreen(
                     }
 
                     items(popularTracks, key = { track -> "artist_song_${track.uri}" }) { track ->
-                        val trackArtworkUrl: String = remember(track.album?.uri) {
-                            track.album?.getCover(CoverSize.MEDIUM)?.uri.let { ALBUM_COVER_URL + it }
-                        }
-
                         SwipeableTrackRow(
                             track = track,
                             currentTrack = currentTrack,
                             isPlaybackPlaying = isPlaybackPlaying,
+                            isLiked = likedTrackUris.contains(track.uri),
                             onRowClick = remember(track.uri) { {
                                 viewModel.setTrack(track)
                                 spirc.load(artist.uri, track.uri)
@@ -238,19 +240,17 @@ fun SharedTransitionScope.ArtistDetailScreen(
 
                         Text(
                             text = "Albums",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                         )
 
                         val albumImageSize = 84.dp
-                        val albumRowHeight = albumImageSize + 56.dp
 
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(albumRowHeight)
                         ) {
                             items(
                                 items = albums,
@@ -266,7 +266,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(48.dp))
                     }
                 }
 
@@ -490,10 +490,11 @@ fun SharedTransitionScope.AlbumCard(
             tonalElevation = 4.dp,
             shape = RoundedCornerShape(8.dp),
             color = MaterialTheme.colorScheme.surfaceVariant,
-            modifier = Modifier
-                .size(width = size, height = size)
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .size(size)
+            ) {
                 if (artworkUri.isNotBlank()) {
                     AsyncImage(
                         model = imageRequest,
@@ -509,7 +510,6 @@ fun SharedTransitionScope.AlbumCard(
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    // placeholder
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -543,53 +543,11 @@ fun SharedTransitionScope.AlbumCard(
         Text(
             text = album.name,
             style = MaterialTheme.typography.bodyMedium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier
-                .fillMaxWidth()
+            maxLines = Int.MAX_VALUE,
+            overflow = TextOverflow.Clip,
+            modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(4.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            val artistsText = album.artists.joinToString { it.name }
-            Text(
-                text = artistsText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-
-            // small chip with track count
-            val trackCount = try { album.tracks.size } catch (_: Exception) { 10 }
-            if (trackCount > 0) {
-                Surface(
-                    tonalElevation = 0.dp,
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier
-                        .wrapContentWidth()
-                        .height(20.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = "$trackCount",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
     }
 }

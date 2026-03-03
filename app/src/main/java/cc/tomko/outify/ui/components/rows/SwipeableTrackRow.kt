@@ -29,6 +29,7 @@ fun SharedTransitionScope.SwipeableTrackRow(
     modifier: Modifier = Modifier,
     currentTrack: Track? = null,
 
+    isLiked: Boolean = false,
     isPlaybackPlaying: Boolean = false,
     isTransitioning: Boolean = false,
 
@@ -96,7 +97,17 @@ fun SharedTransitionScope.SwipeableTrackRow(
             isLoaded = currentTrack?.uri.equals(track.uri),
             isPlaying = isPlaybackPlaying,
             isSelected = false,
-            trailingContent = trailingContent,
+            trailingContent = {
+                trailingContent?.invoke()
+
+                // Liked indicator
+                if(isLiked){
+                    Icon(
+                        Icons.Default.Favorite,
+                        contentDescription = "Liked"
+                    )
+                }
+            },
             onRowClick = onRowClick,
             onRowLongClick = onRowLongClick,
             onArtworkClick = onArtworkClick,
