@@ -129,51 +129,57 @@ fun SharedTransitionScope.PlayerScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(horizontal = 16.dp),
             ) {
-                if(uiState.isExplicit) {
-                    Icon(
-                        imageVector = Icons.Filled.Explicit,
-                        contentDescription = "Explicit",
-                        modifier = Modifier.size(32.dp),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if(uiState.isExplicit) {
+                        Icon(
+                            imageVector = Icons.Filled.Explicit,
+                            contentDescription = "Explicit",
+                            modifier = Modifier.size(32.dp),
+                        )
+                    }
+
+                    Text(
+                        text = uiState.title,
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 2,
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
-                Text(
-                    text = uiState.title,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-
-            Row {
-                uiState.artists.forEachIndexed { index, artist ->
-                    Text(
-                        text = artist.name,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .then(
-                                Modifier.combinedClickable(
-                                    onClick = { onArtistClick(artist) },
-                                    onLongClick = {}
-                                )
-                            )
-                    )
-
-                    // Add comma separator except after last
-                    if (index < uiState.artists.lastIndex) {
+                Row {
+                    uiState.artists.forEachIndexed { index, artist ->
                         Text(
-                            text = ", ",
+                            text = artist.name,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .then(
+                                    Modifier.combinedClickable(
+                                        onClick = { onArtistClick(artist) },
+                                        onLongClick = {}
+                                    )
+                                )
                         )
+
+                        // Add comma separator except after last
+                        if (index < uiState.artists.lastIndex) {
+                            Text(
+                                text = ", ",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }

@@ -30,8 +30,12 @@ Contact us through Github:
 - [x] adding to queue
 - [x] starting radio
 - [x] playlist support
+    - [x] playing and viewing playlist
+    - [ ] modifying playlist
 - [ ] interacting with spotify account
     - [ ] login to Spotify Web API
+- [ ] jams
+- [ ] offline support
 - [x] media notification
 - [x] keep alive lifecycle
 

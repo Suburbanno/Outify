@@ -235,38 +235,40 @@ fun SharedTransitionScope.ArtistDetailScreen(
                         )
                     }
 
-                    item {
-                        Spacer(modifier = Modifier.height(48.dp))
+                    if(albums.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(48.dp))
 
-                        Text(
-                            text = "Albums",
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-                        )
+                            Text(
+                                text = "Albums",
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
+                            )
 
-                        val albumImageSize = 84.dp
+                            val albumImageSize = 84.dp
 
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                        ) {
-                            items(
-                                items = albums,
-                                key = { album -> "artist_album_${album.uri}" }
-                            ) { album ->
-                                AlbumCard(
-                                    album = album,
-                                    size = albumImageSize,
-                                    onClick = {
-                                        onAlbumClick(album)
-                                    }
-                                )
+                            LazyRow(
+                                contentPadding = PaddingValues(horizontal = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            ) {
+                                items(
+                                    items = albums,
+                                    key = { album -> "artist_album_${album.uri}" }
+                                ) { album ->
+                                    AlbumCard(
+                                        album = album,
+                                        size = albumImageSize,
+                                        onClick = {
+                                            onAlbumClick(album)
+                                        }
+                                    )
+                                }
                             }
-                        }
 
-                        Spacer(modifier = Modifier.height(48.dp))
+                            Spacer(modifier = Modifier.height(48.dp))
+                        }
                     }
                 }
 
