@@ -77,6 +77,11 @@ class SpircWrapper @Inject constructor(
         return Spirc.load(context, playingTrackUri)
     }
 
+    override fun localLoad(uri: String): Boolean {
+        ensureServiceRunning()
+        return Spirc.localLoad(uri)
+    }
+
     /**
      * Shuffles the playback
      * @return <code>true</code> if success

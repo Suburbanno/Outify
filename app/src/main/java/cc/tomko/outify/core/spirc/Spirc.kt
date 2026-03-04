@@ -46,6 +46,9 @@ object Spirc {
     @JvmStatic
     external fun load(context: String? = null, playingTrackUri: String? = null): Boolean
 
+    @JvmStatic
+    external fun localLoad(uri: String): Boolean
+
     /**
      * Loads the context URI and starts playing randomly within it
      */

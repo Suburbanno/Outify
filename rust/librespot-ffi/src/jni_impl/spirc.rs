@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::{sync::Mutex, time::Duration};
 
 use jni::{
     JNIEnv,
@@ -135,6 +135,23 @@ pub extern "system" fn shuffle_load(mut env: JNIEnv, _this: JClass, juri: JStrin
         Ok(u) => u,
         Err(()) => return 0 as jboolean,
     };
+
+    let options = LoadRequestOptions {
+        start_playing: true,
+        context_options: Some(LoadContextOptions::Options(librespot_connect::Options {
+            shuffle: true,
+            repeat: true,
+            repeat_track: false,
+        })),
+        ..Default::default()
+    };
+
+    call_spirc_load(uri, options)
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_localLoad")]
+pub extern "system" fn local_load(mut env: JNIEnv, _this: JClass, juri: JString) -> jboolean {
+    let uri = SpotifyUri::Local { artist: "Linkin+Park".to_string(), album_title: "From+Zero".to_string(), track_title: "Cut+the+Bridge".to_string(), duration: Duration::from_secs(209) }.to_uri();
 
     let options = LoadRequestOptions {
         start_playing: true,

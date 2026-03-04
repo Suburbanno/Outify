@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
+import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -80,6 +81,19 @@ fun SettingsScreen(
                     Icon(Icons.Default.RestartAlt, contentDescription = "Restart sesson")
                     Text(
                         text = "Reset session",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.localLoad() }
+                        .padding(horizontal = 24.dp, vertical = 12.dp)
+                ) {
+                    Icon(Icons.Default.AudioFile, contentDescription = "Local load")
+                    Text(
+                        text = "Local load",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
