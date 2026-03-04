@@ -22,7 +22,11 @@ data class Track(
     val popularity: Int = 0,
     val duration: Long = 0,
     val explicit: Boolean = false,
+    val files: List<FileId>,
 )
+
+fun Track.getFileId(format: FileType = FileType.OGG_VORBIS_320): String =
+    files.first { it.type == format }.id
 
 fun Track.toEntities(now: Long): Triple<TrackEntity, List<ArtistEntity>, List<TrackArtistEntity>> {
     val canonicalId = canonicalIdFromUri(id.ifBlank { uri })

@@ -4,12 +4,20 @@ import androidx.room.Embedded
 import androidx.room.Junction
 import androidx.room.Relation
 import cc.tomko.outify.data.Album
+import cc.tomko.outify.data.FileId
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.database.album.AlbumWithArtists
 import cc.tomko.outify.data.database.album.toDomain
 
-data class TrackWithArtists(
+data class TrackFull(
     @Embedded val track: TrackEntity,
+
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "trackId"
+    )
+    val files: List<TrackFileEntity>,
+
     @Relation(
         parentColumn = "id",
         entityColumn = "artistId",
@@ -19,20 +27,34 @@ data class TrackWithArtists(
             entityColumn = "artistId"
         )
     )
-    val artists: List<ArtistEntity>
+    val artists: List<ArtistEntity>,
+
+    @Relation(
+        parentColumn = "albumId",
+        entityColumn = "albumId",
+        entity = AlbumEntity::class
+    )
+    val albumWithArtists: AlbumWithArtists?
 )
 
-fun TrackWithArtists.toDomain(albumWithArtists: AlbumWithArtists? = null): Track {
+fun TrackFull.toDomain(): Track {
     val domainArtists = artists.map { it.toDomain() }
 
-    val albumDomain = albumWithArtists?.toDomain() ?: track.albumId?.let { albumId ->
+    val albumDomain = albumWithArtists?.toDomain() ?: track.albumId?.let {
         Album(
-            id = albumId,
-            uri = "spotify:album:$albumId",
+            id = it,
+            uri = "spotify:album:$it",
             name = track.albumName ?: "",
             artists = emptyList(),
             popularity = 0,
             covers = emptyList()
+        )
+    }
+
+    val domainFiles = files.map {
+        FileId(
+            type = it.type,
+            id = it.fileId
         )
     }
 
@@ -45,6 +67,6 @@ fun TrackWithArtists.toDomain(albumWithArtists: AlbumWithArtists? = null): Track
         popularity = track.popularity,
         duration = track.durationMs,
         explicit = track.explicit,
-        files = emptyList()
+        files = domainFiles
     )
 }

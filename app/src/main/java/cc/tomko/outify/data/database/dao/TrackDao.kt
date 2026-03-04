@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import cc.tomko.outify.data.database.TrackEntity
+import cc.tomko.outify.data.database.TrackFull
 import cc.tomko.outify.data.database.TrackWithArtists
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Singleton
@@ -40,16 +41,19 @@ interface TrackDao {
     suspend fun getAlbumIdForTrack(uri: String): String?
 
     @Transaction
-    @Query("SELECT * FROM tracks WHERE trackUri = :trackUri")
-    suspend fun getTrackWithArtists(trackUri: String): TrackWithArtists?
-
-    @Transaction
-    @Query("SELECT * FROM tracks WHERE trackUri IN (:trackUris)")
-    suspend fun getTracksWithArtists(trackUris: List<String>): List<TrackWithArtists>
+    @Query("SELECT * FROM tracks WHERE id = :id")
+    suspend fun getTrackFull(id: String): TrackFull?
 
     @Transaction
     @Query("SELECT * FROM tracks WHERE trackUri IN (:uris)")
-    fun getTracksWithArtistsFlow(uris: List<String>): Flow<List<TrackWithArtists>>
+    suspend fun getTracksFull(uris: List<String>): List<TrackFull>
+    @Transaction
+    @Query("SELECT * FROM tracks WHERE id = :id")
+    fun observeTrackFull(id: String): Flow<TrackFull?>
+
+    @Transaction
+    @Query("SELECT * FROM tracks WHERE trackUri IN (:uris)")
+    fun observeTracksFullFlow(uris: List<String>): Flow<List<TrackFull>>
 
     /**
      * Update the lastAccessed value of TrackEntity

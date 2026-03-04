@@ -8,6 +8,8 @@ import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.data.database.ArtistEntity
 import cc.tomko.outify.data.database.TrackArtistEntity
 import cc.tomko.outify.data.database.TrackEntity
+import cc.tomko.outify.data.database.TrackFileEntity
+import cc.tomko.outify.data.database.TrackFull
 import cc.tomko.outify.data.database.TrackWithArtists
 import cc.tomko.outify.data.database.album.AlbumArtistEntity
 import cc.tomko.outify.data.database.album.AlbumTrackCrossRef
@@ -17,8 +19,10 @@ import cc.tomko.outify.data.database.dao.AlbumDao
 import cc.tomko.outify.data.database.dao.ArtistDao
 import cc.tomko.outify.data.database.dao.TrackArtistDao
 import cc.tomko.outify.data.database.dao.TrackDao
+import cc.tomko.outify.data.database.dao.TrackFileDao
 import cc.tomko.outify.data.database.toDomain
 import cc.tomko.outify.data.toEntities
+import cc.tomko.outify.data.toEntity
 import cc.tomko.outify.ui.repository.TrackRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -48,6 +52,7 @@ class TrackMetadataHelper @Inject constructor(
     private val trackArtistDao: TrackArtistDao,
     private val albumDao: AlbumDao,
     private val albumArtistDao: AlbumArtistDao,
+    private val trackFileDao: TrackFileDao,
     private val nativeMetadata: NativeMetadata,
     private val json: Json,
     @Named("metadataConcurrency") private val concurrency: Int,
@@ -100,19 +105,11 @@ class TrackMetadataHelper @Inject constructor(
 
         tracksWithArtists = loadCachedTracks(uris)
 
-        val finalAlbumIds = tracksWithArtists.values.mapNotNull { it.track.albumId }.distinct()
-        val finalAlbums = loadAlbums(finalAlbumIds)
-
-        // Convert to domain Tracks in the same order as uris
         val result = uris.map { uri ->
             val twa = tracksWithArtists[uri]
                 ?: throw RuntimeException("Missing track metadata after fetch/persist for: $uri")
 
-            val albumId = twa.track.albumId ?: ""
-            val albumWithArtists = finalAlbums[albumId]
-                ?: throw RuntimeException("Missing album metadata for albumId=$albumId (track=$uri)")
-
-            twa.toDomain(albumWithArtists)
+            twa.toDomain()
         }
 
         try {
@@ -148,29 +145,25 @@ class TrackMetadataHelper @Inject constructor(
                 }
             }
 
+            // Now emit DB-backed flow — Room will re-emit when rows change
             emitAll(
-                trackDao.getTracksWithArtistsFlow(uris)
-                    .mapLatest { rows ->
-
+                trackDao.observeTracksFullFlow(uris)
+                    .mapLatest { rows: List<TrackFull> ->
                         if (rows.isEmpty()) return@mapLatest emptyList()
 
+                        // we need album data for domain mapping — collect all albumIds and load them
                         val albumIds = rows.mapNotNull { it.track.albumId }.distinct()
+                        val albumsMap = loadAlbums(albumIds) // returns Map<albumId, AlbumWithArtists>
 
-                        val albumsMap = loadAlbums(albumIds)
-
-                        // Map rows by trackUri for ordering
+                        // preserve requested order and skip missing items
                         val rowsByUri = rows.associateBy { it.track.trackUri }
 
-                        // Preserve requested order; skip missing entries
                         uris.mapNotNull { uri ->
-                            val twa = rowsByUri[uri] ?: return@mapNotNull null
-                            val albumId = twa.track.albumId ?: ""
-                            val albumWithArtists =
-                                albumsMap[albumId]
+                            val tf = rowsByUri[uri] ?: return@mapNotNull null
                             try {
-                                twa.toDomain(albumWithArtists)
+                                tf.toDomain()
                             } catch (e: Exception) {
-                                // If domain mapping fails, skip that track
+                                Log.w("Metadata", "observeTracks: mapping failed for $uri", e)
                                 null
                             }
                         }
@@ -196,6 +189,7 @@ class TrackMetadataHelper @Inject constructor(
                             val raw = nativeMetadata.retryOnRateLimit {
                                 nativeMetadata.fetchMetadata(uri)
                             }
+                            println(raw)
 
                             val t = json.decodeFromString<Track>(raw.toString())
                             uri to t
@@ -216,9 +210,14 @@ class TrackMetadataHelper @Inject constructor(
     /**
      * Loads tracks by given URI
      */
-    private suspend fun loadCachedTracks(uris: List<String>): Map<String, TrackWithArtists> {
-        if(uris.isEmpty()) return emptyMap()
-        return trackDao.getTracksWithArtists(uris).associateBy { it.track.trackUri }
+    private suspend fun loadCachedTracks(
+        uris: List<String>
+    ): Map<String, TrackFull> {
+        if (uris.isEmpty()) return emptyMap()
+
+        return trackDao
+            .getTracksFull(uris)
+            .associateBy { it.track.trackUri }
     }
 
     /**
@@ -244,6 +243,7 @@ class TrackMetadataHelper @Inject constructor(
         val albumEntities = mutableListOf<AlbumEntity>()
         val albumArtistJoins = mutableListOf<AlbumArtistEntity>()
         val albumTrackJoins = mutableListOf<AlbumTrackCrossRef>()
+        val trackFileEntities = mutableListOf<TrackFileEntity>()
 
         metadata.forEach { (_, domainTrack) ->
             val (tEntity, aEntities, joins) = domainTrack.toEntities(now)
@@ -290,6 +290,10 @@ class TrackMetadataHelper @Inject constructor(
                     )
                 }
             }
+
+            domainTrack.files.forEach { file ->
+                trackFileEntities += file.toEntity(tEntity.id)
+            }
         }
 
         db.withTransaction {
@@ -299,6 +303,12 @@ class TrackMetadataHelper @Inject constructor(
             if (trackEntities.isNotEmpty()) trackRepo.upsertTracks(trackEntities, isLibrary = true)
             if (trackArtistJoins.isNotEmpty()) trackArtistDao.insertAll(trackArtistJoins)
             if (trackArtistJoins.isNotEmpty()) trackArtistDao.insertAll(trackArtistJoins)
+
+            if(trackFileEntities.isNotEmpty()) {
+                val trackIds = trackEntities.map { it.id }
+                trackFileDao.deleteFilesForTracks(trackIds)
+                trackFileDao.insertTrackFiles(trackFileEntities)
+            }
         }
     }
 

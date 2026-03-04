@@ -10,6 +10,7 @@ import cc.tomko.outify.data.database.dao.LikedDao
 import cc.tomko.outify.data.database.dao.PlaylistDao
 import cc.tomko.outify.data.database.dao.TrackArtistDao
 import cc.tomko.outify.data.database.dao.TrackDao
+import cc.tomko.outify.data.database.dao.TrackFileDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -66,6 +67,12 @@ object AppModule {
     @Singleton
     fun provideTrackArtistDao(database: AppDatabase): TrackArtistDao {
         return database.trackArtistDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideTrackFileDao(database: AppDatabase): TrackFileDao {
+        return database.trackFileDao()
     }
 
     @Provides

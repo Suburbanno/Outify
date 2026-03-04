@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+
+use base64::{engine::general_purpose, Engine};
 use jni::{
     JNIEnv,
     objects::{GlobalRef, JClass, JMethodID, JObject, JValue},
@@ -24,10 +27,18 @@ pub struct TrackJson {
     popularity: i32,
     duration: i32,
     explicit: bool,
+    files: Vec<FileJson>,
 }
 
 impl From<&Track> for TrackJson {
     fn from(track: &Track) -> Self {
+        let files = track.files.0.iter().map(|(format, file_id)| {
+            FileJson {
+                r#type: format!("{:?}", format),
+                id: file_id.to_base16(),
+            }
+        }).collect();
+
         Self {
             id: track.id.to_id(),
             uri: track.id.to_uri(),
@@ -37,8 +48,15 @@ impl From<&Track> for TrackJson {
             popularity: track.popularity,
             duration: track.duration,
             explicit: track.is_explicit,
+            files,
         }
     }
+}
+
+#[derive(Serialize)]
+pub struct FileJson {
+    r#type: String,
+    id: String,
 }
 
 // Serializable Artist object
