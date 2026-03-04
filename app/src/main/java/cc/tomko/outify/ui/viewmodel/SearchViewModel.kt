@@ -187,16 +187,8 @@ class SearchViewModel @Inject constructor(
         queryFlow.value = query
     }
 
-    suspend fun getArtworkUrl(playlist: Playlist): String {
-        if(playlist.attributes.pictureId.isNotEmpty()) {
-            return ALBUM_COVER_URL + playlist.attributes.pictureId
-        }
-
-        // Getting first track
-        val trackUri: String = playlist.contents.firstOrNull()?.uri ?: ""
-        val track = metadata.getTrackMetadata(listOf(trackUri)).firstOrNull()
-
-        return (ALBUM_COVER_URL + track?.album?.getCover(CoverSize.MEDIUM)?.uri)
+    suspend fun getArtworkUrl(playlist: Playlist): String? {
+        return playlist.getCover(metadata)
     }
 
     fun saveItem(uri: String) {

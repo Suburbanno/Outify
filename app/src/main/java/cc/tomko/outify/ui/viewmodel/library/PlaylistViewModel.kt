@@ -81,27 +81,8 @@ class PlaylistViewModel @Inject constructor(
         return fetched
     }
 
-    fun loadMetadataIfNeeded(uris: List<String>) {
-        val missing = uris.filterNot { _trackMetadata.value.containsKey(it) }
-        if (missing.isEmpty()) return
-
-        viewModelScope.launch(Dispatchers.IO) {
-            val tracks = metadata.getTrackMetadata(missing)
-            val results = tracks.associateBy { it.uri }
-            _trackMetadata.update { current -> current + results }
-        }
-    }
-
     suspend fun getArtworkUrl(playlist: Playlist): String {
-        if(playlist.attributes.pictureId.isNotEmpty()) {
-            return ALBUM_COVER_URL + playlist.attributes.pictureId
-        }
-
-        // Getting first track
-        val trackUri: String = playlist.contents.firstOrNull()?.uri ?: ""
-        val track = metadata.getTrackMetadata(listOf(trackUri)).firstOrNull()
-
-        return (ALBUM_COVER_URL + track?.album?.getCover(CoverSize.MEDIUM)?.uri)
+        return playlist.getCover(metadata) ?: "unknown cover"
     }
 
     suspend fun getAuthors(playlist: Playlist): List<Profile> = coroutineScope {

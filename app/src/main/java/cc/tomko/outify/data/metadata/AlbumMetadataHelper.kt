@@ -3,6 +3,10 @@ package cc.tomko.outify.data.metadata
 import android.util.Log
 import androidx.room.withTransaction
 import cc.tomko.outify.data.Album
+import cc.tomko.outify.data.Cover
+import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.asInt
+import cc.tomko.outify.data.asSize
 import cc.tomko.outify.data.database.AlbumEntity
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.data.database.album.AlbumArtistEntity
@@ -12,6 +16,7 @@ import cc.tomko.outify.data.database.album.toDomain
 import cc.tomko.outify.data.database.dao.AlbumArtistDao
 import cc.tomko.outify.data.database.dao.AlbumDao
 import cc.tomko.outify.data.database.dao.AlbumTrackDao
+import cc.tomko.outify.data.getCover
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
@@ -31,6 +36,7 @@ class AlbumMetadataHelper @Inject constructor(
     private val albumArtistDao: AlbumArtistDao,
     private val albumTrackDao: AlbumTrackDao,
     private val nativeMetadata: NativeMetadata,
+    private val trackMetadataHelper: TrackMetadataHelper,
     private val json: Json,
     @Named("metadataConcurrency") private val concurrency: Int,
 ) {
@@ -133,6 +139,51 @@ class AlbumMetadataHelper @Inject constructor(
             persistAlbumMetadata(listOf(remoteAlbum))
             remoteAlbum
         }
+    }
+
+    /**
+     * Gets the cover by album ID with given CoverSize
+     * Fetches the album if not cached
+     */
+    suspend fun getCoverByAlbumId(albumId: String, size: CoverSize): Cover? {
+        if (albumId.isBlank()) return null
+
+        val cover = albumDao.getCoverUris(albumId)
+        if (cover != null) {
+            val url: String? = when (size) {
+                CoverSize.LARGE -> cover.largeCoverUri
+                CoverSize.SMALL -> cover.smallCoverUri
+                CoverSize.MEDIUM -> cover.mediumCoverUri
+            }
+
+            if(url != null)
+                return Cover(url, size.asSize(), size.asSize(), size.asInt())
+        }
+
+        val albumUri = "spotify:album:$albumId"
+        val fetched = try {
+            getAlbumMetadata(albumUri)
+        } catch (e: Exception) {
+            Log.w("Metadata", "Failed to fetch album for cover retrieval: $albumUri", e)
+            null
+        }
+
+        fetched?.let { album ->
+            return album.getCover(size)
+        }
+
+        return null
+    }
+
+    suspend fun getCoverByTrackId(trackId: String, size: CoverSize): Cover? {
+        if (trackId.isBlank()) return null
+        var albumId = albumTrackDao.getAlbumIdForTrack(trackId)
+        if(albumId == null){
+            albumId = trackMetadataHelper.getTrackMetadata(listOf("spotify:track:$trackId")).firstOrNull()?.album?.id
+            if (albumId == null) return null
+        }
+
+        return getCoverByAlbumId(albumId, size)
     }
 
     /**

@@ -14,6 +14,14 @@ import javax.inject.Singleton
 @Dao
 @Singleton
 interface AlbumDao {
+    data class CoverUris(val smallCoverUri: String?, val mediumCoverUri: String?, val largeCoverUri: String?)
+
+    @Query("SELECT smallCoverUri, mediumCoverUri, largeCoverUri FROM albums WHERE albumId = :albumId LIMIT 1")
+    suspend fun getCoverUris(albumId: String): CoverUris?
+
+    @Query("SELECT smallCoverUri, mediumCoverUri, largeCoverUri FROM albums WHERE albumId = :albumId LIMIT 1")
+    fun observeCoverUris(albumId: String): Flow<CoverUris?>
+
     @Transaction
     @Query("SELECT * FROM albums WHERE albumId IN (:albumIds)")
     fun observeAlbumsWithArtists(albumIds: List<String>): Flow<List<AlbumWithArtists>>

@@ -36,3 +36,10 @@ fun CoverSize.asInt(): Int =
         CoverSize.MEDIUM -> 0
         CoverSize.LARGE -> 2
     }
+
+fun CoverSize.asSize(): Int =
+    when (this) {
+        CoverSize.SMALL -> 60
+        CoverSize.MEDIUM -> 300
+        CoverSize.LARGE -> 640
+    }

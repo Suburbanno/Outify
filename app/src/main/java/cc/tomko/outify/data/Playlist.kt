@@ -1,9 +1,11 @@
 package cc.tomko.outify.data
 
 import android.util.Base64
+import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.data.database.PlaylistEntity
 import cc.tomko.outify.data.database.playlist.PlaylistItemDto
 import cc.tomko.outify.data.database.playlist.PlaylistItemEntity
+import cc.tomko.outify.data.metadata.Metadata
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -148,6 +150,18 @@ fun PlaylistItem.toDto(): PlaylistItemDto {
     return PlaylistItemDto(
         trackUri = uri
     )
+}
+
+suspend fun Playlist.getCover(metadata: Metadata, size: CoverSize = CoverSize.MEDIUM): String? {
+    if(attributes.pictureId.isNotEmpty()) {
+        return ALBUM_COVER_URL + attributes.pictureId
+    }
+
+    // Getting based on the first track
+    val trackId: String = contents.firstOrNull()?.id ?: return null
+    val cover = metadata.getAlbumCoverByTrackId(trackId, size) ?: return null
+
+    return ALBUM_COVER_URL + cover.uri
 }
 
 fun Playlist.toEntity(): PlaylistEntity =

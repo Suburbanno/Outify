@@ -30,4 +30,7 @@ interface AlbumTrackDao {
 
     @Query("SELECT trackId FROM album_tracks WHERE albumId = :albumId ORDER BY position ASC")
     suspend fun getTrackIdsForAlbum(albumId: String): List<String>
+
+    @Query("SELECT albumId FROM album_tracks WHERE trackId = :trackId LIMIT 1")
+    suspend fun getAlbumIdForTrack(trackId: String): String?
 }

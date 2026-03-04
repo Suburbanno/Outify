@@ -4,6 +4,8 @@ import android.util.Log
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Artist
+import cc.tomko.outify.data.Cover
+import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.data.Track
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -55,6 +57,14 @@ class Metadata @Inject constructor(
      */
     suspend fun getAlbumMetadata(uri: String): Album? {
         return albumMetadataHelper.getAlbumMetadata(uri)
+    }
+
+    suspend fun getAlbumCover(albumId: String, size: CoverSize): Cover? {
+        return albumMetadataHelper.getCoverByAlbumId(albumId, size)
+    }
+
+    suspend fun getAlbumCoverByTrackId(trackId: String, size: CoverSize): Cover? {
+        return albumMetadataHelper.getCoverByTrackId(trackId, size)
     }
 
     suspend fun getArtistMetadata(uri: String): Artist? {
