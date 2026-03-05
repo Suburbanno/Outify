@@ -46,6 +46,7 @@ import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.bottomsheet.TrackInfoBottomSheet
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
+import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
@@ -151,11 +152,8 @@ fun SharedTransitionScope.LikedScreen(
                 key = { it.uri },
                 contentType = { "track" }
             ) { track ->
-                SwipeableTrackRow(
-                    track,
-                    currentTrack = currentTrack,
-                    isPlaybackPlaying = isPlaybackPlaying,
-                    isTransitioning = transitioningTrackUri == track.uri,
+                SwipeableTrackRowConfigured(
+                    track = track,
                     onRowClick = remember(track.uri) {
                         {
                             transitioningTrackUri = track.uri
@@ -175,30 +173,6 @@ fun SharedTransitionScope.LikedScreen(
                         transitioningTrackUri = track.uri
                         onArtistClick(artist)
                     },
-                    onAddToQueue = { track ->
-                        InAppNotificationController.show(
-                            NotificationSpec(
-                                message = "Added to queue",
-                                icon = {
-                                    Icon( Icons.Default.Queue, contentDescription = "Queue")
-                                }
-                            )
-                        )
-
-                        spirc.addToQueue(track.uri)
-                    },
-                    onStartRadio = { track ->
-                        InAppNotificationController.show(
-                            NotificationSpec(
-                                message = "Radio started",
-                                icon = {
-                                    Icon( Icons.Default.Radio, contentDescription = "Radio")
-                                }
-                            )
-                        )
-
-                        spirc.startRadio(track.uri, false)
-                    }
                 )
             }
         }

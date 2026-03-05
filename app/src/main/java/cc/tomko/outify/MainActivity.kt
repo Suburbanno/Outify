@@ -38,6 +38,12 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
 import cc.tomko.outify.core.AuthManager
+import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.setting.GestureSetting
+import cc.tomko.outify.data.setting.LocalSwipeActionHandler
+import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
+import cc.tomko.outify.data.setting.Side
+import cc.tomko.outify.data.setting.SwipeActionHandler
 import cc.tomko.outify.ui.components.navigation.NavDestination
 import cc.tomko.outify.ui.components.navigation.NavigationRoot
 import cc.tomko.outify.ui.components.navigation.OutifyBottomNav
@@ -46,13 +52,16 @@ import cc.tomko.outify.ui.components.player.MiniPlayer
 import cc.tomko.outify.ui.components.player.QueueBottomSheet
 import cc.tomko.outify.ui.components.player.rememberQueueBottomSheetState
 import cc.tomko.outify.ui.notifications.InAppNotificationHost
+import cc.tomko.outify.ui.repository.InterfaceSettings
 import cc.tomko.outify.ui.screens.auth.AuthActivity
 import cc.tomko.outify.ui.theme.OutifyTheme
 import cc.tomko.outify.ui.viewmodel.MainViewModel
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -63,8 +72,8 @@ class MainActivity : ComponentActivity() {
     private val deepLinkFlow = MutableSharedFlow<Uri>(extraBufferCapacity = 1)
 
     data object MainActivity {
-        var LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope> { error("No scope provided") }
-        var LocalAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope> { error("No scope provided") }
+        val LocalSharedTransitionScope = compositionLocalOf<SharedTransitionScope> { error("No scope provided") }
+        val LocalAnimatedVisibilityScope = compositionLocalOf<AnimatedVisibilityScope> { error("No scope provided") }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -100,7 +109,7 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun App(
-        viewModel: MainViewModel
+        viewModel: MainViewModel,
     ){
         val backStack = rememberNavBackStack(Route.HomeScreen)
 
@@ -134,9 +143,13 @@ class MainActivity : ComponentActivity() {
         val queueViewModel: QueueViewModel = hiltViewModel()
         val miniPlayerViewModel: MiniPlayerViewModel = hiltViewModel()
 
+        val swipeSettings by viewModel.swipeSettings.collectAsState(initial = InterfaceSettings().gestureSettings)
+
         SharedTransitionLayout {
             CompositionLocalProvider(
-                LocalSharedTransitionScope provides this
+                LocalSharedTransitionScope provides this,
+                LocalSwipeGestureSettings provides swipeSettings,
+                LocalSwipeActionHandler provides viewModel.swipeActionHandler
             ) {
                 Scaffold(
                     bottomBar = {
@@ -205,7 +218,6 @@ class MainActivity : ComponentActivity() {
         }
         return true;
     }
-
 
     fun parseDeepLinkUriToNavKey(uri: Uri): NavKey? {
         // spotify:x:y (opaque)

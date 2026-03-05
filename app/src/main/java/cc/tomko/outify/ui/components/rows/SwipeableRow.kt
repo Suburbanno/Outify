@@ -217,9 +217,15 @@ fun SwipeableRowWithGestures(
                 .pointerInput(sortedStart, sortedEnd, containerWidthPx) {
                     detectHorizontalDragGestures(
                         onHorizontalDrag = { change, dragAmount ->
-                            val rawNew = offsetX.value + dragAmount
-                            val resisted = applyResistance(rawNew)
-                            scope.launch { offsetX.snapTo(resisted) }
+                            val proposed = offsetX.value + dragAmount
+
+                            val allowed = when {
+                                proposed > 0f && sortedEnd.isEmpty() -> offsetX.value
+                                proposed < 0f && sortedStart.isEmpty() -> offsetX.value
+                                else -> applyResistance(proposed)
+                            }
+
+                            scope.launch { offsetX.snapTo(allowed) }
                         },
                         onDragEnd = {
                             scope.launch {
@@ -229,7 +235,17 @@ fun SwipeableRowWithGestures(
                                 val sign = sign(final)
                                 val absFinal = abs(final)
 
-                                // helper: find chosen gesture (same logic as you already have)
+                                val smallestThresholdPx = when {
+                                    final > 0f && sortedEnd.isNotEmpty() -> sortedEnd.first().thresholdFraction * widthPx
+                                    final < 0f && sortedStart.isNotEmpty() -> sortedStart.first().thresholdFraction * widthPx
+                                    else -> Float.MAX_VALUE
+                                }
+
+                                if (absFinal < smallestThresholdPx) {
+                                    offsetX.animateTo(0f, animationSpec = tween(durationMillis = 120))
+                                    return@launch
+                                }
+
                                 val chosen = if (final > 0f && sortedEnd.isNotEmpty()) {
                                     sortedEnd.filter { it.thresholdFraction * widthPx <= final }
                                         .maxByOrNull { it.thresholdFraction }
@@ -241,7 +257,7 @@ fun SwipeableRowWithGestures(
                                 val overshootFraction = 0.12f
                                 val overshootAmount = widthPx * overshootFraction
 
-                                // bouncy spring (feel free to tune damping/stiffness)
+                                // bouncy spring
                                 val enterSpring = spring<Float>(
                                     dampingRatio = Spring.DampingRatioMediumBouncy,
                                     stiffness = Spring.StiffnessLow
