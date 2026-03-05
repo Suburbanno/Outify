@@ -28,6 +28,7 @@ pub struct UserJson {
 #[derive(Serialize, Deserialize)]
 pub struct UserPublicPlaylistJson {
     pub uri: String,
+    #[serde(default)]
     pub name: String,
     #[serde(default)]
     pub image_url: String,

@@ -176,24 +176,26 @@ fun SharedTransitionScope.PlaylistRow(
                         .testTag("playlistrow.title")
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
+                if(playlist.attributes.description.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(2.dp))
 
-                Text(
-                    text = playlist.attributes.description,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .then(
-                            if (onArtistClick != null) {
-                                Modifier.combinedClickable(
-                                    onClick = { onArtistClick() },
-                                    onLongClick = {}
-                                )
-                            } else Modifier
-                        )
-                        .testTag("playlistrow.artist")
-                )
+                    Text(
+                        text = playlist.attributes.description,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier
+                            .then(
+                                if (onArtistClick != null) {
+                                    Modifier.combinedClickable(
+                                        onClick = { onArtistClick() },
+                                        onLongClick = {}
+                                    )
+                                } else Modifier
+                            )
+                            .testTag("playlistrow.artist")
+                    )
+                }
             }
 
             if (trailingContent != null) {
