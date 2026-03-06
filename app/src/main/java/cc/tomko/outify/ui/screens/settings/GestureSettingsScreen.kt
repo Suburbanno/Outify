@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,12 +24,9 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Divider
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -67,36 +65,44 @@ fun GestureSettingsScreen(
     val swipeEnabled by viewModel.swipeEnabled.collectAsState()
     val scope = rememberCoroutineScope()
 
-    LazyColumn(modifier = modifier.fillMaxWidth()) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         item {
-            SettingsGroup(title = "Left - Right swipe") {
-                ListItem(
-                    headlineContent = { Text("Enable swipe gestures") },
-                    supportingContent = { Text("Quick actions on track rows") },
-                    trailingContent = {
-                        Switch(checked = swipeEnabled, onCheckedChange = { viewModel.setGesturesEnabled(it) })
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-                )
+            // Settings header group
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    ListItem(
+                        headlineContent = { Text("Enable swipe gestures") },
+                        supportingContent = { Text("Quick actions on track rows") },
+                        trailingContent = {
+                            Switch(checked = swipeEnabled, onCheckedChange = { viewModel.setGesturesEnabled(it) })
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                ) {
-                    Button(onClick = { viewModel.addGesture() }) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text("Add gesture")
-                    }
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    // save button if you want to persist entire list at once
-                    Button(onClick = {
-                        scope.launch { viewModel.saveGestures(gestures) }
-                    }) {
-                        Text("Save")
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        Button(onClick = { viewModel.addGesture() }) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text("Add gesture")
+                        }
+
+                        Button(onClick = {
+                            scope.launch { viewModel.saveGestures(gestures) }
+                        }) {
+                            Text("Save")
+                        }
                     }
                 }
             }
@@ -116,7 +122,9 @@ fun GestureSettingsScreen(
                 onMoveDown = { viewModel.moveDown(index) },
                 onRemove = { viewModel.removeGesture(index) }
             )
-            HorizontalDivider()
+
+            // optional thin divider between cards (spacedBy already gives vertical space)
+            Divider()
         }
 
         item {
@@ -126,6 +134,7 @@ fun GestureSettingsScreen(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("DefaultLocale")
 @Composable
 private fun GestureEditorCard(
     gesture: GestureSetting,
@@ -145,7 +154,6 @@ private fun GestureEditorCard(
 
     Card(modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -193,7 +201,7 @@ private fun GestureEditorCard(
                         onDismissRequest = { actionMenuExpanded = false }
                     ) {
                         actions.forEach { act ->
-                            DropdownMenuItem(text = { Text(act.name) }, onClick = {
+                            androidx.compose.material3.DropdownMenuItem(text = { Text(act.name) }, onClick = {
                                 onActionSelected(act)
                                 actionMenuExpanded = false
                             })

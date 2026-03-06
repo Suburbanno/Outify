@@ -5,10 +5,12 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +18,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Forward
@@ -57,7 +62,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.data.Artist
+import cc.tomko.outify.data.SyncedLyric
+import cc.tomko.outify.data.Track
 import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
@@ -78,6 +86,10 @@ fun SharedTransitionScope.PlayerScreen(
     val uiState by viewModel.uiState.collectAsState()
     val artworkUrl = uiState.albumArt?.let { ALBUM_COVER_URL + it }
     val positionMs by viewModel.positionMs.collectAsState()
+    val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+
+    val lyrics by viewModel.lyrics.collectAsState()
+    val currentLyric by viewModel.currentLyric.collectAsState()
 
     val isShuffling by viewModel.isShuffling.collectAsState()
     val isRepeating by viewModel.isRepeating.collectAsState()
@@ -208,6 +220,17 @@ fun SharedTransitionScope.PlayerScreen(
                 onPreviousTrack = { viewModel.onAction(PlayerAction.Previous) },
                 onShuffleChange = { viewModel.onAction(PlayerAction.ShuffleToggle) },
                 onRepeatMode = { viewModel.onAction(PlayerAction.RepeatToggle) },
+            )
+
+            LyricsScreen(
+                vm = viewModel,
+                track = currentTrack,
+                lyrics = lyrics,
+                currentLyric = currentLyric,
+                seekTo = {
+                    viewModel.onAction(PlayerAction.SeekTo(it))
+                },
+                modifier = Modifier.weight(1f)
             )
         }
     }
@@ -390,6 +413,56 @@ fun PlaybackControls(
                 tint = if (isRepeating)
                     MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun LyricsScreen(
+    vm: PlayerViewModel,
+    track: Track?,
+    lyrics: List<SyncedLyric>,
+    currentLyric: SyncedLyric?,
+    seekTo: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    LaunchedEffect(track) {
+        vm.loadLyrics()
+    }
+
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(currentLyric) {
+        val index = lyrics.indexOf(currentLyric)
+        if (index >= 0) {
+            listState.animateScrollToItem(index)
+        }
+    }
+
+    LazyColumn(
+        state = listState,
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(vertical = 120.dp)
+    ) {
+        items(lyrics) { line ->
+
+            val isActive = line == currentLyric
+
+            Text(
+                text = line.text,
+                style = if (isActive)
+                    MaterialTheme.typography.headlineMedium
+                else
+                    MaterialTheme.typography.bodyLarge,
+                color = if (isActive)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .clickable {
+                        seekTo(line.timeMs)
+                    }
             )
         }
     }

@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Explicit
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -56,6 +57,7 @@ fun SharedTransitionScope.TrackRow(
     artworkUrl: String?,
 
     modifier: Modifier = Modifier,
+    isExplicit: Boolean = false,
     isLoaded: Boolean = false,
     isPlaying: Boolean = false,
     isSelected: Boolean = false,

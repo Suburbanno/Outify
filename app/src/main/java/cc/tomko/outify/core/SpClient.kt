@@ -26,6 +26,11 @@ class SpClient @Inject constructor() {
      * Returns JSON of `total` and `mediaItems` - containing object of `uri` holding URI to the radio playlist
      */
     external fun getRadioForTrack(trackUri: String): String
+
+    /**
+     * Returns lyrics for track id
+     */
+    external fun getLyrics(trackId: String): String
 }
 
 @Serializable

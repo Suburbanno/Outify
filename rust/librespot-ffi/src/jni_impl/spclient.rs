@@ -3,7 +3,7 @@ use jni::{
     objects::{JClass, JObject, JObjectArray, JString},
     sys::{jboolean, jint, jobjectArray, jstring},
 };
-use librespot_core::{SpotifyUri, spclient::SpClient};
+use librespot_core::{spclient::SpClient, SpotifyId, SpotifyUri};
 use librespot_metadata::{Metadata, Track};
 use oauth2::reqwest;
 use regex::Regex;
@@ -323,6 +323,62 @@ pub extern "system" fn get_radio_for_track(mut env: JNIEnv, _class: JClass, trac
 
     let json_opt = rt.block_on(async {
         match crate::spclient::get_radio_for_track(&track_uri).await {
+            Ok(bytes) => match String::from_utf8(bytes.to_vec()) {
+                Ok(s) => Some(s),
+                Err(e) => {
+                    error!("failed to convert to string: {}", e);
+                    None
+                }
+            },
+            Err(e) => {
+                error!("request failed: {}", e);
+                None
+            }
+        }
+    });
+
+    let json = match json_opt {
+        Some(s) => s,
+        None => return std::ptr::null_mut(),
+    };
+
+    match env.new_string(json) {
+        Ok(j) => j.into_raw(),
+        Err(e) => {
+            error!("failed to convert to jstring: {}", e);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getLyrics")]
+pub extern "system" fn get_lyrics_for_track(mut env: JNIEnv, _class: JClass, track_id: JString) -> jstring {
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let track_id_raw: String = match env.get_string(&track_id) {
+        Ok(js) => js.into(),
+        Err(e) => {
+            error!("failed to get track_id: {}", e);
+            return std::ptr::null_mut();
+        }
+    };
+
+    let track_id = match SpotifyId::from_base62(&track_id_raw.as_str()) {
+        Ok(u) => u,
+        Err(e) => {
+            error!("failed to convert uri: {e}");
+            return std::ptr::null_mut();
+        },
+    };
+
+    let json_opt = rt.block_on(async {
+        match crate::spclient::get_lyrics(&track_id).await {
             Ok(bytes) => match String::from_utf8(bytes.to_vec()) {
                 Ok(s) => Some(s),
                 Err(e) => {

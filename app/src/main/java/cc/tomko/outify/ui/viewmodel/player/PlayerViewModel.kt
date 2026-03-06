@@ -2,14 +2,18 @@ package cc.tomko.outify.ui.viewmodel.player
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.Lyrics
+import cc.tomko.outify.data.SyncedLyric
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.model.player.PlayerUIState
+import cc.tomko.outify.ui.repository.PlayerRepository
 import cc.tomko.outify.ui.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
@@ -18,21 +22,31 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     val spirc: SpircWrapper,
+    private val playerRepository: PlayerRepository,
     private val playbackStateHolder: PlaybackStateHolder,
     private val settingsRepository: SettingsRepository,
+    private val spClient: SpClient,
+    private val json: Json,
 ): ViewModel() {
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
+
+    private val _lyrics = MutableStateFlow<List<SyncedLyric>>(emptyList())
+    val lyrics: StateFlow<List<SyncedLyric>> = _lyrics
 
     private val _positionMs = MutableStateFlow(playbackStateHolder.estimatePosition().inWholeMilliseconds)
     val positionMs = _positionMs.asStateFlow()
@@ -96,6 +110,7 @@ class PlayerViewModel @Inject constructor(
             }
             is PlayerAction.SeekTo -> {
                 viewModelScope.launch {
+                    playbackStateHolder.seekTo(action.position.toDuration(DurationUnit.MILLISECONDS))
                     spirc.seekTo(action.position)
                 }
             }
@@ -118,4 +133,22 @@ class PlayerViewModel @Inject constructor(
 
     fun currentTrack(): Flow<Track?> =
         playbackStateHolder.state.map { it.currentTrack }
+
+    fun loadLyrics(){
+        viewModelScope.launch {
+            val track = playbackStateHolder.state.value.currentTrack
+            val result = playerRepository.getLyrics(track)
+            _lyrics.value = result
+        }
+    }
+
+    val currentLyric: StateFlow<SyncedLyric?> =
+        combine(lyrics, positionMs) { lyrics, position ->
+            lyrics.lastOrNull { it.timeMs <= position }
+
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(),
+            null
+        )
 }

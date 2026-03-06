@@ -94,6 +94,7 @@ fun SharedTransitionScope.SwipeableTrackRow(
             title = track.name,
             artists = track.artists,
             artworkUrl = (ALBUM_COVER_URL + track.album?.getCover(CoverSize.SMALL)?.uri),
+            isExplicit = track.explicit,
             isLoaded = currentTrack?.uri.equals(track.uri),
             isPlaying = isPlaybackPlaying,
             isSelected = false,
