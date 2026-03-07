@@ -1,6 +1,8 @@
 package cc.tomko.outify.playback
 
 import android.app.Application
+import android.content.Context
+import android.graphics.drawable.BitmapDrawable
 import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -16,12 +18,19 @@ import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import cc.tomko.outify.playback.model.PlayState
+import coil3.Bitmap
+import coil3.ImageLoader
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import coil3.request.allowHardware
+import coil3.toBitmap
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.DurationUnit
@@ -198,12 +207,14 @@ class Player @Inject constructor(
 }
 
 fun Track.toMediaItem(): MediaItem {
+    val artworkUrl = album?.getCover(CoverSize.LARGE)?.let { ALBUM_COVER_URL + it }
+
     val metadata = MediaMetadata.Builder()
         .setTitle(name)
         .setArtist(artists.joinToString { it.name })
         .setAlbumTitle(album?.name)
         .setTotalTrackCount(album?.tracks?.size ?: 0)
-        .setArtworkUri((ALBUM_COVER_URL + album?.getCover(CoverSize.MEDIUM)).toUri())
+        .setArtworkUri(artworkUrl?.toUri())
         .setDurationMs(duration.takeIf { it > 0 })
         .build()
 
@@ -213,4 +224,3 @@ fun Track.toMediaItem(): MediaItem {
         .setMediaMetadata(metadata)
         .build()
 }
-
