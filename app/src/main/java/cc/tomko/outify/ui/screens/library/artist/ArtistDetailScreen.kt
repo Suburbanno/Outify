@@ -74,6 +74,7 @@ import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.bottomsheet.ArtistLikedTracksBottomSheet
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
+import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
@@ -198,41 +199,19 @@ fun SharedTransitionScope.ArtistDetailScreen(
                     }
 
                     items(popularTracks, key = { track -> "artist_song_${track.uri}" }) { track ->
-                        SwipeableTrackRow(
+                        SwipeableTrackRowConfigured(
                             track = track,
                             currentTrack = currentTrack,
                             isPlaybackPlaying = isPlaybackPlaying,
-                            isLiked = likedTrackUris.contains(track.uri),
-                            onRowClick = remember(track.uri) { {
-                                viewModel.setTrack(track)
-                                spirc.load(artist.uri, track.uri)
-                            } },
+                            onRowClick = remember(track.uri) {
+                                {
+                                    spirc.load(artist.uri, track.uri)
+                                    // Optimistic UI
+                                    viewModel.setTrack(track)
+                                }
+                            },
                             onArtistClick = { onArtistClick(it) },
                             onArtworkClick = {onArtworkClick(track)},
-                            onAddToQueue = { track ->
-                                InAppNotificationController.show(
-                                    NotificationSpec(
-                                        message = "Added to queue",
-                                        icon = {
-                                            Icon( Icons.Default.Queue, contentDescription = "Queue")
-                                        }
-                                    )
-                                )
-
-                                spirc.addToQueue(track.uri)
-                            },
-                            onStartRadio = { track ->
-                                InAppNotificationController.show(
-                                    NotificationSpec(
-                                        message = "Radio started",
-                                        icon = {
-                                            Icon( Icons.Default.Radio, contentDescription = "Radio")
-                                        }
-                                    )
-                                )
-
-                                spirc.startRadio(track.uri, false)
-                            }
                         )
                     }
 

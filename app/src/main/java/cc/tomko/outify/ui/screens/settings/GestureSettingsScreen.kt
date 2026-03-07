@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.data.setting.GestureAction
 import cc.tomko.outify.data.setting.GestureSetting
+import cc.tomko.outify.data.setting.GestureTrigger
 import cc.tomko.outify.data.setting.Side
 import cc.tomko.outify.ui.components.settings.SettingsGroup
 import cc.tomko.outify.ui.components.settings.SettingItem
@@ -120,11 +121,9 @@ fun GestureSettingsScreen(
                 onColorPicked = { hex -> viewModel.updateGestureAt(index, gesture.copy(backgroundHex = hex)) },
                 onMoveUp = { viewModel.moveUp(index) },
                 onMoveDown = { viewModel.moveDown(index) },
-                onRemove = { viewModel.removeGesture(index) }
+                onRemove = { viewModel.removeGesture(index) },
+                onTriggerSelected = { newTrigger -> viewModel.updateGestureAt(index, gesture.copy(trigger = newTrigger)) }
             )
-
-            // optional thin divider between cards (spacedBy already gives vertical space)
-            Divider()
         }
 
         item {
@@ -143,6 +142,7 @@ private fun GestureEditorCard(
     onActionSelected: (GestureAction) -> Unit,
     onSideSelected: (Side) -> Unit,
     onThresholdChanged: (Float) -> Unit,
+    onTriggerSelected: (GestureTrigger) -> Unit,
     onColorPicked: (Long?) -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
@@ -205,6 +205,30 @@ private fun GestureEditorCard(
                                 onActionSelected(act)
                                 actionMenuExpanded = false
                             })
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // TRIGGER selector
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Trigger:")
+                    Spacer(modifier = Modifier.size(8.dp))
+                    val triggers = listOf(GestureTrigger.SwipeStart, GestureTrigger.SwipeEnd, GestureTrigger.LongPress)
+                    triggers.forEach { t ->
+                        Row(
+                            modifier = Modifier
+                                .clickable {
+                                    onTriggerSelected(t)
+                                }
+                                .padding(end = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = gesture.trigger == t, onClick = {
+                                onTriggerSelected(t)
+                            })
+                            Text(t.name, modifier = Modifier.padding(start = 4.dp))
                         }
                     }
                 }

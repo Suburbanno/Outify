@@ -50,6 +50,7 @@ import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
+import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.components.user.UserChipAvatar
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.ui.notifications.NotificationSpec
@@ -147,48 +148,27 @@ fun SharedTransitionScope.PlaylistScreen(
                         }.collectAsState(initial = null)
 
                         if (track != null) {
-                            SwipeableTrackRow(
+                            SwipeableTrackRowConfigured(
                                 track = track!!,
                                 currentTrack = currentTrack,
                                 isPlaybackPlaying = isPlaybackPlaying,
-                                onRowClick = remember(playlistItem.uri) { {
-                                    spirc.load(playlist.uri, playlistItem.uri)
-                                    viewModel.setTrack(track!!)
-                                } },
-                                onArtworkClick = {onArtworkClick(track!!)},
-                                onArtistClick =  { artist ->
-                                    onArtistClick(artist)
+                                onRowClick = remember(track!!.uri) {
+                                    {
+                                        spirc.load(null, track!!.uri)
+                                        // Optimistic UI
+                                        viewModel.setTrack(track!!)
+                                    }
                                 },
+                                onArtworkClick = {
+                                    onArtworkClick(track!!)
+                                },
+                                onArtistClick = onArtistClick,
                                 trailingContent = {
                                     val author = authorMap[playlistItem.attributes.addedBy]
 
                                     author?.let {
                                         UserChipAvatar(it)
                                     }
-                                },
-                                onAddToQueue = { track ->
-                                    InAppNotificationController.show(
-                                        NotificationSpec(
-                                            message = "Added to queue",
-                                            icon = {
-                                                Icon( Icons.Default.Queue, contentDescription = "Queue")
-                                            }
-                                        )
-                                    )
-
-                                    spirc.addToQueue(track.uri)
-                                },
-                                onStartRadio = { track ->
-                                    InAppNotificationController.show(
-                                        NotificationSpec(
-                                            message = "Radio started",
-                                            icon = {
-                                                Icon( Icons.Default.Radio, contentDescription = "Radio")
-                                            }
-                                        )
-                                    )
-
-                                    spirc.startRadio(track.uri, false)
                                 }
                             )
                         } else  {

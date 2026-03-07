@@ -23,6 +23,7 @@ import kotlinx.serialization.Serializable
 data class GestureSetting(
     val action: GestureAction,
     val side: Side = Side.End,
+    val trigger: GestureTrigger = GestureTrigger.SwipeEnd,
     val enabled: Boolean = true,
     val thresholdFraction: Float? = null,
     val backgroundHex: Long? = null,
@@ -34,17 +35,26 @@ enum class GestureAction {
     START_RADIO,
     ADD_TO_PLAYLIST,
     ADD_TO_FAVORITE,
+    SHOW_TRACK_INFO,
     NONE
 }
 
 @Serializable
 enum class Side { Start, End }
 
+@Serializable
+enum class GestureTrigger {
+    SwipeStart,
+    SwipeEnd,
+    LongPress
+}
+
 interface SwipeActionHandler {
     fun addToQueue(uri: String)
     fun startRadio(track: Track)
     fun favorite(trackUri: String)
     fun addToPlaylist(track: Track)
+    fun trackInfo(track: Track)
 }
 
 val LocalSwipeGestureSettings = compositionLocalOf<List<GestureSetting>> { emptyList() }
@@ -54,6 +64,7 @@ val LocalSwipeActionHandler = compositionLocalOf<SwipeActionHandler> {
         override fun startRadio(track: Track) {}
         override fun favorite(trackUri: String) {}
         override fun addToPlaylist(track: Track) {}
+        override fun trackInfo(track: Track) {}
     }
 }
 
@@ -74,6 +85,7 @@ fun buildSwipeGesturesForTrack(
             GestureAction.START_RADIO -> { { actionHandler.startRadio(track) } }
             GestureAction.ADD_TO_FAVORITE -> { { actionHandler.favorite(track.uri) } }
             GestureAction.ADD_TO_PLAYLIST -> { { actionHandler.addToPlaylist(track) } }
+            GestureAction.SHOW_TRACK_INFO -> { { actionHandler.trackInfo(track); println("track info") } }
             else -> null
         } ?: return@mapNotNull null
 
@@ -83,6 +95,7 @@ fun buildSwipeGesturesForTrack(
                 GestureAction.START_RADIO -> Icon(Icons.Default.Radio, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.ADD_TO_FAVORITE -> Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.ADD_TO_PLAYLIST -> Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, modifier = Modifier.fillMaxSize())
+                GestureAction.SHOW_TRACK_INFO -> Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.fillMaxSize())
                 else -> Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.fillMaxSize())
             }
         }
@@ -95,5 +108,24 @@ fun buildSwipeGesturesForTrack(
         )
 
         BuiltGesture(side = s.side, swipeGesture = gesture)
+    }
+}
+
+fun buildLongPressAction(
+    settings: List<GestureSetting>,
+    handler: SwipeActionHandler,
+    track: Track
+): (() -> Unit)? {
+    val setting = settings.firstOrNull {
+        it.enabled && it.trigger == GestureTrigger.LongPress
+    } ?: return null
+
+    return when (setting.action) {
+        GestureAction.ADD_TO_QUEUE -> { { handler.addToQueue(track.uri) } }
+        GestureAction.START_RADIO -> { { handler.startRadio(track) } }
+        GestureAction.ADD_TO_FAVORITE -> { { handler.favorite(track.uri) } }
+        GestureAction.ADD_TO_PLAYLIST -> { { handler.addToPlaylist(track) } }
+        GestureAction.SHOW_TRACK_INFO -> { { handler.trackInfo(track) } }
+        else -> null
     }
 }

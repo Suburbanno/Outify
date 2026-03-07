@@ -70,6 +70,7 @@ import cc.tomko.outify.ui.components.rows.AlbumRow
 import cc.tomko.outify.ui.components.rows.ArtistRow
 import cc.tomko.outify.ui.components.rows.PlaylistRow
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
+import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.viewmodel.SearchUiModel
@@ -186,45 +187,24 @@ fun SharedTransitionScope.SearchScreen(
 
                     is SearchUiModel.TrackItem -> {
                         val track = item.track
-                        SwipeableTrackRow(
+
+                        SwipeableTrackRowConfigured(
                             track = track,
                             currentTrack = currentTrack,
                             isPlaybackPlaying = isPlaybackPlaying,
-                            onRowClick = {
-                                viewModel.setTrack(track)
-                                spirc.load(item.uri)
+                            onRowClick = remember(track.uri) {
+                                {
+                                    spirc.load( item.uri) // TODO: make context be the search screen
+                                    // Optimistic UI
+                                    viewModel.setTrack(track)
+                                }
+                            },
+                            onArtistClick = {
+                                backStack.add(ArtistScreen(it.uri))
                             },
                             onArtworkClick = {
                                 backStack.add(AlbumScreenFromTrackUri(item.uri))
                             },
-                            favoriteTrack = { uri ->
-//                                viewModel.saveItem(uri)
-                                viewModel.startRadio(uri)
-                            },
-                            onAddToQueue = { track ->
-                                InAppNotificationController.show(
-                                    NotificationSpec(
-                                        message = "Added to queue",
-                                        icon = {
-                                            Icon( Icons.Default.Queue, contentDescription = "Queue")
-                                        }
-                                    )
-                                )
-
-                                spirc.addToQueue(track.uri)
-                            },
-                            onStartRadio = { track ->
-                                InAppNotificationController.show(
-                                    NotificationSpec(
-                                        message = "Radio started",
-                                        icon = {
-                                            Icon( Icons.Default.Radio, contentDescription = "Radio")
-                                        }
-                                    )
-                                )
-
-                                spirc.startRadio(track.uri, false)
-                            }
                         )
                     }
                     is SearchUiModel.AlbumItem -> {

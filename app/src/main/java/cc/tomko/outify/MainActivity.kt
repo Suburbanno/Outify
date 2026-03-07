@@ -44,6 +44,7 @@ import cc.tomko.outify.data.setting.LocalSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
 import cc.tomko.outify.data.setting.Side
 import cc.tomko.outify.data.setting.SwipeActionHandler
+import cc.tomko.outify.ui.components.GlobalPopupHost
 import cc.tomko.outify.ui.components.navigation.NavDestination
 import cc.tomko.outify.ui.components.navigation.NavigationRoot
 import cc.tomko.outify.ui.components.navigation.OutifyBottomNav
@@ -193,6 +194,8 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.matchParentSize(),
                             maxWidthFraction = 0.92f
                         )
+
+                        GlobalPopupHost()
                     }
                 }
 

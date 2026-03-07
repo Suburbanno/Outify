@@ -111,8 +111,6 @@ fun SharedTransitionScope.LikedScreen(
     val collapsingState = rememberCollapsingHeaderState()
     val scope = rememberCoroutineScope()
 
-    var selectedTrack by remember { mutableStateOf<Track?>(null) }
-
     LaunchedEffect(listState.isScrollInProgress) {
         if (!listState.isScrollInProgress) {
             val canExpand =
@@ -154,6 +152,8 @@ fun SharedTransitionScope.LikedScreen(
             ) { track ->
                 SwipeableTrackRowConfigured(
                     track = track,
+                    currentTrack = currentTrack,
+                    isPlaybackPlaying = isPlaybackPlaying,
                     onRowClick = remember(track.uri) {
                         {
                             transitioningTrackUri = track.uri
@@ -161,9 +161,6 @@ fun SharedTransitionScope.LikedScreen(
                             // Optimistic UI
                             viewModel.setTrack(track)
                         }
-                    },
-                    onRowLongClick = {
-                        selectedTrack = track
                     },
                     onArtworkClick = {
                         transitioningTrackUri = track.uri
@@ -175,36 +172,6 @@ fun SharedTransitionScope.LikedScreen(
                     },
                 )
             }
-        }
-
-        selectedTrack?.let { sheetTrack ->
-            TrackInfoBottomSheet(
-                track = sheetTrack,
-                onDismiss = {
-                    selectedTrack = null
-                },
-                onArtworkClick = {
-                    onArtworkClick(sheetTrack.album!!)
-                },
-                onArtistClick = { artist ->
-                    onArtistClick(artist)
-                },
-                onOpenAlbum = {
-                    onArtworkClick(sheetTrack.album!!)
-                },
-                onAddToQueue = {
-                    spirc.addToQueue(sheetTrack.uri)
-                },
-                onSaveToPlaylist = {
-                    // TODO
-                },
-                onToggleLike = {
-                    // TODO
-                },
-                onStartRadio = {
-                    spirc.startRadio(sheetTrack.uri, false)
-                },
-            )
         }
 
         CollapsingHeader(

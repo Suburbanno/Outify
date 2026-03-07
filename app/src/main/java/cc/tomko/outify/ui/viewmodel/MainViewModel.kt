@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.Icon
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.setting.GestureAction
@@ -12,12 +13,14 @@ import cc.tomko.outify.data.setting.GestureSetting
 import cc.tomko.outify.data.setting.Side
 import cc.tomko.outify.data.setting.SwipeActionHandler
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.ui.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -41,9 +44,15 @@ class MainViewModel @Inject constructor(
         }
         override fun favorite(trackUri: String) { }
         override fun addToPlaylist(track: Track) { }
+        override fun trackInfo(track: Track) { openTrackInfo(track) }
     }
 
     fun currentTrack(): Flow<Track?> =
         playbackStateHolder.state.map { it.currentTrack }
 
+    fun openTrackInfo(track: Track) {
+        viewModelScope.launch {
+            GlobalPopupController.showTrackPopup(track)
+        }
+    }
 }

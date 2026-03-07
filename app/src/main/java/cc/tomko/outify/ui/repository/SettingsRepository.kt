@@ -11,7 +11,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import cc.tomko.outify.data.setting.GestureAction
 import cc.tomko.outify.data.setting.GestureSetting
+import cc.tomko.outify.data.setting.GestureTrigger
 import cc.tomko.outify.data.setting.Side
+import cc.tomko.outify.ui.screens.settings.GestureSettingsScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -157,6 +159,10 @@ data class InterfaceSettings(
             side = Side.Start,
             thresholdFraction = 0.25f,
             backgroundHex = 0xC43C8C52,
+        ),
+        GestureSetting(
+            action = GestureAction.SHOW_TRACK_INFO,
+            trigger = GestureTrigger.LongPress,
         )
     )
 )

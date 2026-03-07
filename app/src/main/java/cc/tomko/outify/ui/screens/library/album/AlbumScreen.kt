@@ -63,6 +63,8 @@ import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
+import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
+import cc.tomko.outify.ui.components.user.UserChipAvatar
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.screens.library.artist.ArtistTracksHeader
@@ -173,39 +175,18 @@ fun SharedTransitionScope.AlbumDetailScreen(
                     }
 
                     items(tracks, key = { track -> "album_song_${track.uri}" }) { track ->
-                        SwipeableTrackRow(
+                        SwipeableTrackRowConfigured(
                             track = track,
                             currentTrack = currentTrack,
                             isPlaybackPlaying = isPlaybackPlaying,
-                            onRowClick = remember(track.uri) { {
-                                viewModel.setTrack(track)
-                                spirc.load(album.uri,track.uri)
-                            } },
-                            onArtistClick = { artistClick(it.uri) },
-                            onAddToQueue = { track ->
-                                InAppNotificationController.show(
-                                    NotificationSpec(
-                                        message = "Added to queue",
-                                        icon = {
-                                            Icon( Icons.Default.Queue, contentDescription = "Queue")
-                                        }
-                                    )
-                                )
-
-                                spirc.addToQueue(track.uri)
+                            onRowClick = remember(track.uri) {
+                                {
+                                    spirc.load(album.uri, track.uri)
+                                    // Optimistic UI
+                                    viewModel.setTrack(track)
+                                }
                             },
-                            onStartRadio = { track ->
-                                InAppNotificationController.show(
-                                    NotificationSpec(
-                                        message = "Radio started",
-                                        icon = {
-                                            Icon( Icons.Default.Radio, contentDescription = "Radio")
-                                        }
-                                    )
-                                )
-
-                                spirc.startRadio(track.uri, false)
-                            }
+                            onArtistClick = { artistClick(it.uri) },
                         )
                     }
                 }
