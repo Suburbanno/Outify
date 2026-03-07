@@ -14,7 +14,7 @@ import cc.tomko.outify.data.database.impl.LikedTrackEntity
 data class LikedTrackWithTrack(
     @Embedded val liked: LikedTrackEntity,
     @Relation(
-        parentColumn = "trackUri",
+        parentColumn = "trackId",
         entityColumn = "trackUri"
     )
     val track: TrackEntity?
@@ -24,7 +24,7 @@ suspend fun LikedTrackWithTrack.toDomain(
     likedDao: LikedDao,
     albumDao: AlbumDao,
 ): Track {
-    val trackEntity = track ?: throw IllegalStateException("Track missing for liked track ${liked.trackUri}")
+    val trackEntity = track ?: throw IllegalStateException("Track missing for liked track ${liked.trackId}")
 
     val trackWithArtists = likedDao.getTracksWithArtists(listOf(trackEntity.id)).firstOrNull()
         ?: throw IllegalStateException("TrackWithArtists missing for ${trackEntity.id}")

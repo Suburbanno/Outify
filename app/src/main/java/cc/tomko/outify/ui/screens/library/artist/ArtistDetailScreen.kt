@@ -135,7 +135,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
 
             val likedTracks by viewModel.likedTracks.collectAsState()
             val likedTrackCount = likedTracks.size
-            val likedTrackUris by viewModel.likedTrackUris.collectAsState()
+            val likedTrackUris by viewModel.likedTrackUris.collectAsState(initial = emptySet())
 
             val albums by viewModel.albums.collectAsState()
 
@@ -202,6 +202,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
                         SwipeableTrackRowConfigured(
                             track = track,
                             currentTrack = currentTrack,
+                            isLiked = track.uri in likedTrackUris,
                             isPlaybackPlaying = isPlaybackPlaying,
                             onRowClick = remember(track.uri) {
                                 {

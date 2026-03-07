@@ -15,8 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Queue
-import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -31,7 +29,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -49,11 +46,8 @@ import cc.tomko.outify.data.Track
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
-import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.components.user.UserChipAvatar
-import cc.tomko.outify.ui.notifications.InAppNotificationController
-import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.viewmodel.library.PlaylistUiState
 import cc.tomko.outify.ui.viewmodel.library.PlaylistViewModel
 
@@ -98,6 +92,7 @@ fun SharedTransitionScope.PlaylistScreen(
         is PlaylistUiState.Success -> {
             val playlist = (uiState as PlaylistUiState.Success).playlist!!
             val tracks = playlist.contents
+            val likedIds by viewModel.likedTrackIds.collectAsState(initial = emptySet())
 
             val lazyList = rememberLazyListState()
             val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
@@ -152,6 +147,7 @@ fun SharedTransitionScope.PlaylistScreen(
                                 track = track!!,
                                 currentTrack = currentTrack,
                                 isPlaybackPlaying = isPlaybackPlaying,
+                                isLiked = track!!.id in likedIds,
                                 onRowClick = remember(track!!.uri) {
                                     {
                                         spirc.load(null, track!!.uri)

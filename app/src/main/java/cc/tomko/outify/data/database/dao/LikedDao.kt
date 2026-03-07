@@ -18,8 +18,8 @@ interface LikedDao {
     @Query("SELECT * FROM liked_songs ORDER BY position ASC")
     fun observeLikedTracks(): Flow<List<LikedTrackWithTrack>>
 
-    @Query("SELECT EXISTS(SELECT 1 FROM liked_songs WHERE trackUri = :uri)")
-    fun containsTrack(uri: String): Boolean
+    @Query("SELECT EXISTS(SELECT 1 FROM liked_songs WHERE trackId = :id)")
+    fun containsTrack(id: String): Boolean
 
     @Transaction
     @Query("""
@@ -31,8 +31,8 @@ interface LikedDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(track: LikedTrackEntity)
 
-    @Query("DELETE FROM liked_songs WHERE trackUri = :uri")
-    suspend fun delete(uri: String)
+    @Query("DELETE FROM liked_songs WHERE trackId = :id")
+    suspend fun delete(id: String)
 
     @Query("UPDATE liked_songs SET position = position + 1 WHERE position >= :fromPosition")
     suspend fun shiftPositions(fromPosition: Double)
@@ -40,12 +40,12 @@ interface LikedDao {
     @Query("UPDATE liked_songs SET position = position - 1 WHERE position > :fromPosition")
     suspend fun shiftPositionsDown(fromPosition: Double)
 
-    @Query("UPDATE liked_songs SET position = :newPosition WHERE trackUri = :uri")
-    suspend fun updatePosition(uri: String, newPosition: Double)
+    @Query("UPDATE liked_songs SET position = :newPosition WHERE trackId = :id")
+    suspend fun updatePosition(id: String, newPosition: Double)
 
     /** Ordered URI snapshot — used for sync comparison */
-    @Query("SELECT trackUri FROM liked_songs ORDER BY position ASC")
-    suspend fun getLikedUris(): List<String>
+    @Query("SELECT trackId FROM liked_songs ORDER BY position ASC")
+    suspend fun getLikedIds(): List<String>
 
     /** Total count, even before metadata loads */
     @Query("SELECT COUNT(*) FROM liked_songs")
@@ -55,9 +55,9 @@ interface LikedDao {
     @Query("DELETE FROM liked_songs")
     suspend fun clearAll()
 
-    /** URI window for triggering metadata fetch */
-    @Query("SELECT trackUri FROM liked_songs ORDER BY position ASC LIMIT :limit OFFSET :offset")
-    suspend fun getUrisWindow(limit: Int, offset: Int): List<String>
+    /** Id window for triggering metadata fetch */
+    @Query("SELECT trackId FROM liked_songs ORDER BY position ASC LIMIT :limit OFFSET :offset")
+    suspend fun getIdsWindow(limit: Int, offset: Int): List<String>
 
     /**
      * Inner-joins liked_songs with tracks — only returns rows where metadata exists.
@@ -65,8 +65,21 @@ interface LikedDao {
     @Transaction
     @Query("""
         SELECT t.* FROM liked_songs ls
-        INNER JOIN tracks t ON ls.trackUri = t.trackUri
+        INNER JOIN tracks t ON ls.trackId = t.id
         ORDER BY ls.position ASC
     """)
     fun observeLikedTracksWithDetails(): Flow<List<TrackWithArtists>>
+
+    @Query("SELECT trackId FROM liked_songs")
+    fun observeLikedIds(): Flow<List<String>>
+
+    @Query("""
+        SELECT t.id
+        FROM liked_songs ls
+        JOIN track_artists ta ON ta.trackId = ls.trackId
+        JOIN tracks t ON t.id = ls.trackId
+        WHERE ta.artistId = :artistId
+        ORDER BY ls.position
+    """)
+    fun observeLikedUrisByArtist(artistId: String): Flow<List<String>>
 }

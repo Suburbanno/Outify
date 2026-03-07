@@ -24,6 +24,7 @@ class LikedRepository @Inject constructor(
 ) {
     companion object {
         private const val TAG = "LikedRepository"
+        private const val SUBSTRING_OFFSET = "spotify:track:".length
     }
 
     /**
@@ -32,7 +33,7 @@ class LikedRepository @Inject constructor(
      */
     suspend fun syncLikedUris(): Boolean {
         val remote = metadata.getLikedUris()
-        val cached = likedDao.getLikedUris()
+        val cached = likedDao.getLikedIds()
         if (remote == cached) return false
 
         Log.d(TAG, "Liked list changed (${cached.size} → ${remote.size}), resyncing")
@@ -42,7 +43,7 @@ class LikedRepository @Inject constructor(
             remote.forEachIndexed { i, uri ->
                 likedDao.insert(
                     LikedTrackEntity(
-                        trackUri = uri,
+                        trackId = uri.substring(SUBSTRING_OFFSET),
                         position = i.toDouble(),
                         addedAt = now,
                     )
@@ -64,9 +65,9 @@ class LikedRepository @Inject constructor(
      * Fetches (or confirms cached) metadata for a window of liked tracks.
      */
     suspend fun ensureWindowLoaded(offset: Int, size: Int) {
-        val uris = likedDao.getUrisWindow(limit = size, offset = offset)
-        if (uris.isNotEmpty()) {
-            trackMetadataHelper.getTrackMetadata(uris)
+        val ids = likedDao.getIdsWindow(limit = size, offset = offset)
+        if (ids.isNotEmpty()) {
+            trackMetadataHelper.getTrackMetadata(ids.map { "spotify:track:$it" })
         }
     }
 

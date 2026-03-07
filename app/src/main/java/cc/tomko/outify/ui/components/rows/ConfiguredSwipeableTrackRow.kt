@@ -79,8 +79,6 @@ fun SharedTransitionScope.SwipeableTrackRowConfigured(
                 onTitleClick = onTitleClick,
 
                 trailingContent = {
-                    trailingContent?.invoke()
-
                     // Liked indicator
                     if(isLiked){
                         Icon(
@@ -88,6 +86,8 @@ fun SharedTransitionScope.SwipeableTrackRowConfigured(
                             contentDescription = "Liked"
                         )
                     }
+
+                    trailingContent?.invoke()
                 },
 
                 sharedTransitionKey = if(isTransitioning)
