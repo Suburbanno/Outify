@@ -1,19 +1,15 @@
 package cc.tomko.outify.ui.repository
 
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.datastore.core.DataStore
-import androidx.datastore.dataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import cc.tomko.outify.data.setting.GestureAction
 import cc.tomko.outify.data.setting.GestureSetting
 import cc.tomko.outify.data.setting.GestureTrigger
 import cc.tomko.outify.data.setting.Side
-import cc.tomko.outify.ui.screens.settings.GestureSettingsScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -36,8 +32,13 @@ class SettingsRepository @Inject constructor(
         object Gesture {
             val ENABLED = booleanPreferencesKey("gestures_enabled")
             val GESTURES = stringPreferencesKey("gestures_json")
-            val END_1_ACTION = stringPreferencesKey("gesture_end_1_action")
-            val END_1_THRESHOLD = floatPreferencesKey("gesture_end_1_threshold")
+        }
+
+        object Lyrics {
+            /**
+             * When false, show on manual trigger
+             */
+            val SHOW_LYRICS_ALWAYS = booleanPreferencesKey("always_show_lyrics")
         }
     }
 
@@ -102,6 +103,10 @@ class SettingsRepository @Inject constructor(
 
     val normalizePlayback = dataStore.data.map {
         it[Keys.NORMALIZE_AUDIO] ?: false
+    }
+
+    val showLyricsByDefault = dataStore.data.map {
+        it[Keys.Lyrics.SHOW_LYRICS_ALWAYS] ?: true
     }
 
     suspend fun setShuffle(enabled: Boolean) {

@@ -2,6 +2,7 @@ package cc.tomko.outify.ui.screens
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,10 +22,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Forward
 import androidx.compose.material.icons.filled.Explicit
 import androidx.compose.material.icons.filled.Loop
 import androidx.compose.material.icons.outlined.Loop
@@ -50,19 +52,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.SyncedLyric
 import cc.tomko.outify.data.Track
@@ -74,6 +82,7 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -111,127 +120,183 @@ fun SharedTransitionScope.PlayerScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
     ) {
-        Column(
+        LazyColumn(
             modifier = Modifier
-                .align(Alignment.Center)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(24.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            item { Spacer(modifier = Modifier.height(16.dp)) }
 
             // Album artwork
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(6.dp),
-                modifier = Modifier
-                    .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
-                    .size(imageSize)
-                    .sharedBounds(
-                        rememberSharedContentState(SharedElementKey.PLAYER_ARTWORK),
-                        animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                    )
-            ) {
-                AsyncImage(
-                    model = imageRequest,
-                    imageLoader = imageLoader,
-                    contentDescription = "Artwork",
+            item {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(6.dp),
                     modifier = Modifier
-                )
+                        .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
+                        .size(imageSize)
+                        .sharedBounds(
+                            rememberSharedContentState(SharedElementKey.PLAYER_ARTWORK),
+                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                        )
+                ) {
+                    AsyncImage(
+                        model = imageRequest,
+                        imageLoader = imageLoader,
+                        contentDescription = "Artwork",
+                        modifier = Modifier
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            item { Spacer(modifier = Modifier.height(16.dp)) }
 
-            Column(
-                modifier = Modifier.fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(horizontal = 16.dp),
                 ) {
-                    if(uiState.isExplicit) {
-                        Icon(
-                            imageVector = Icons.Filled.Explicit,
-                            contentDescription = "Explicit",
-                            modifier = Modifier.size(32.dp),
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if(uiState.isExplicit) {
+                            Icon(
+                                imageVector = Icons.Filled.Explicit,
+                                contentDescription = "Explicit",
+                                modifier = Modifier.size(32.dp),
+                            )
+                        }
+
+                        Text(
+                            text = uiState.title,
+                            overflow = TextOverflow.Ellipsis,
+                            maxLines = 2,
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
 
-                    Text(
-                        text = uiState.title,
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = 2,
-                        style = MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
-                Row {
-                    uiState.artists.forEachIndexed { index, artist ->
-                        Text(
-                            text = artist.name,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .then(
-                                    Modifier.combinedClickable(
-                                        onClick = { onArtistClick(artist) },
-                                        onLongClick = {}
-                                    )
-                                )
-                        )
-
-                        // Add comma separator except after last
-                        if (index < uiState.artists.lastIndex) {
+                    Row {
+                        uiState.artists.forEachIndexed { index, artist ->
                             Text(
-                                text = ", ",
+                                text = artist.name,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .then(
+                                        Modifier.combinedClickable(
+                                            onClick = { onArtistClick(artist) },
+                                            onLongClick = {}
+                                        )
+                                    )
                             )
+
+                            // Add comma separator except after last
+                            if (index < uiState.artists.lastIndex) {
+                                Text(
+                                    text = ", ",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(Modifier.height(32.dp))
+            item { Spacer(Modifier.height(32.dp)) }
 
             // Time seeker
-            TrackProgressBar(
-                durationMs = uiState.totalLengthMs,
-                positionMs = positionMs,
-                isPlaying = uiState.isPlaying,
-                onSeek = { position ->
-                    viewModel.onAction(PlayerAction.SeekTo(position))
+            item {
+                TrackProgressBar(
+                    durationMs = uiState.totalLengthMs,
+                    positionMs = positionMs,
+                    isPlaying = uiState.isPlaying,
+                    onSeek = { position ->
+                        viewModel.onAction(PlayerAction.SeekTo(position))
+                    }
+                )
+            }
+
+            item { Spacer(Modifier.height(32.dp)) }
+
+            item {
+                PlaybackControls(
+                    isPlaying = uiState.isPlaying,
+                    isBuffering = uiState.isBuffering,
+                    isShuffling = isShuffling,
+                    isRepeating = isRepeating,
+                    onPlayPause = { viewModel.onAction(PlayerAction.PlayPause) },
+                    onNextTrack = { viewModel.onAction(PlayerAction.Next) },
+                    onPreviousTrack = { viewModel.onAction(PlayerAction.Previous) },
+                    onShuffleChange = { viewModel.onAction(PlayerAction.ShuffleToggle) },
+                    onRepeatMode = { viewModel.onAction(PlayerAction.RepeatToggle) },
+                )
+            }
+
+            item {
+                Surface(
+                    tonalElevation = 8.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(260.dp)
+                        .padding(top = 12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    ) {
+
+                        Lyrics(
+                            loadLyrics = { viewModel.loadLyrics() },
+                            track = currentTrack,
+                            lyrics = lyrics,
+                            currentLyric = currentLyric,
+                            seekTo = { viewModel.onAction(PlayerAction.SeekTo(it)) },
+                            modifier = Modifier.fillMaxSize()
+                        )
+
+                        // top gradient fade
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            MaterialTheme.colorScheme.surfaceContainerHigh,
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+                                .align(Alignment.TopCenter)
+                        )
+
+                        // bottom gradient fade
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(32.dp)
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            Color.Transparent,
+                                            MaterialTheme.colorScheme.surfaceContainerHigh
+                                        )
+                                    )
+                                )
+                                .align(Alignment.BottomCenter)
+                        )
+                    }
                 }
-            )
-
-            Spacer(Modifier.height(32.dp))
-
-            PlaybackControls(
-                isPlaying = uiState.isPlaying,
-                isBuffering = uiState.isBuffering,
-                isShuffling = isShuffling,
-                isRepeating = isRepeating,
-                onPlayPause = { viewModel.onAction(PlayerAction.PlayPause) },
-                onNextTrack = { viewModel.onAction(PlayerAction.Next) },
-                onPreviousTrack = { viewModel.onAction(PlayerAction.Previous) },
-                onShuffleChange = { viewModel.onAction(PlayerAction.ShuffleToggle) },
-                onRepeatMode = { viewModel.onAction(PlayerAction.RepeatToggle) },
-            )
-
-            LyricsScreen(
-                vm = viewModel,
-                track = currentTrack,
-                lyrics = lyrics,
-                currentLyric = currentLyric,
-                seekTo = {
-                    viewModel.onAction(PlayerAction.SeekTo(it))
-                },
-                modifier = Modifier.weight(1f)
-            )
+            }
         }
     }
 }
@@ -417,53 +482,89 @@ fun PlaybackControls(
         }
     }
 }
-
 @Composable
-fun LyricsScreen(
-    vm: PlayerViewModel,
+fun Lyrics(
+    loadLyrics: () -> Unit,
     track: Track?,
     lyrics: List<SyncedLyric>,
     currentLyric: SyncedLyric?,
     seekTo: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    LaunchedEffect(track) {
-        vm.loadLyrics()
+    LaunchedEffect(track?.id) {
+        loadLyrics()
     }
 
     val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
 
-    LaunchedEffect(currentLyric) {
-        val index = lyrics.indexOf(currentLyric)
-        if (index >= 0) {
-            listState.animateScrollToItem(index)
+    LaunchedEffect(currentLyric?.timeMs, lyrics.hashCode()) {
+        val idx = lyrics.indexOf(currentLyric)
+        if (idx >= 0) {
+            scope.launch {
+                listState.animateScrollToItem(idx, (0))
+            }
         }
     }
 
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(vertical = 120.dp)
+        contentPadding = PaddingValues(vertical = 120.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        items(lyrics) { line ->
-
+        itemsIndexed(lyrics, key = { _, item -> item.timeMs }) { _, line ->
             val isActive = line == currentLyric
 
-            Text(
-                text = line.text,
-                style = if (isActive)
-                    MaterialTheme.typography.headlineMedium
-                else
-                    MaterialTheme.typography.bodyLarge,
-                color = if (isActive)
-                    MaterialTheme.colorScheme.primary
-                else
-                    MaterialTheme.colorScheme.onSurfaceVariant,
+            LyricLine(
+                line = line,
+                isActive = isActive,
+                onClick = { seekTo(line.timeMs) },
+                maxLines = if (isActive) 3 else 1,
+                textAlign = TextAlign.Center,
                 modifier = Modifier
-                    .clickable {
-                        seekTo(line.timeMs)
-                    }
+                    .padding(horizontal = 16.dp, vertical = if (isActive) 6.dp else 4.dp)
             )
         }
+
+        if(lyrics.isEmpty()) {
+            item {
+                Text(
+                    text = "Lyrics unavailable",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LyricLine(
+    line: SyncedLyric,
+    isActive: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 1,
+    textAlign: TextAlign = TextAlign.Center
+) {
+    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val activeColor = MaterialTheme.colorScheme.onSurface
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = line.text,
+            style = if (isActive) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.bodyLarge,
+            color = if (isActive) activeColor else inactiveColor,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = textAlign,
+            modifier = Modifier
+                .padding(horizontal = 12.dp)
+        )
     }
 }

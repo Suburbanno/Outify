@@ -39,8 +39,6 @@ class PlayerViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
     private val playbackStateHolder: PlaybackStateHolder,
     private val settingsRepository: SettingsRepository,
-    private val spClient: SpClient,
-    private val json: Json,
 ): ViewModel() {
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
