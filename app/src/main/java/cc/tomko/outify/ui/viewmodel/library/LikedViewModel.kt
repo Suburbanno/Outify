@@ -10,6 +10,7 @@ import cc.tomko.outify.data.database.toDomain
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.repository.LikedRepository
+import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -27,6 +28,7 @@ import javax.inject.Inject
 @HiltViewModel
 class LikedViewModel @Inject constructor(
     val spirc: SpircWrapper,
+    val imageLoader: ImageLoader,
     private val likedRepository: LikedRepository,
     private val playbackStateHolder: PlaybackStateHolder,
 ) : ViewModel() {

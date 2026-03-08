@@ -11,6 +11,7 @@ import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.database.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.playback.PlaybackStateHolder
+import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +33,7 @@ class ArtistViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
     val likedDao: LikedDao,
+    val imageLoader: ImageLoader,
 ): ViewModel() {
     val json = Json { ignoreUnknownKeys = true }
 

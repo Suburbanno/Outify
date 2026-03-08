@@ -2,7 +2,6 @@ package cc.tomko.outify.ui.screens
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -10,18 +9,18 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,21 +55,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.SyncedLyric
 import cc.tomko.outify.data.Track
@@ -113,16 +107,18 @@ fun SharedTransitionScope.PlayerScreen(
             .allowHardware(true)
             .build()
     }
-    val imageLoader = (LocalContext.current.applicationContext as OutifyApplication).imageLoader
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surface)
     ) {
+        val screenHeight = maxHeight
+
         LazyColumn(
             modifier = Modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .height(screenHeight - 56.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             contentPadding = PaddingValues(24.dp)
         ) {
@@ -143,7 +139,7 @@ fun SharedTransitionScope.PlayerScreen(
                 ) {
                     AsyncImage(
                         model = imageRequest,
-                        imageLoader = imageLoader,
+                        imageLoader = viewModel.imageLoader,
                         contentDescription = "Artwork",
                         modifier = Modifier
                     )
@@ -245,8 +241,8 @@ fun SharedTransitionScope.PlayerScreen(
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(260.dp)
-                        .padding(top = 12.dp)
+                        .heightIn(max = 450.dp)
+                        .padding(top = 92.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -513,7 +509,7 @@ fun Lyrics(
         contentPadding = PaddingValues(vertical = 120.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        itemsIndexed(lyrics, key = { _, item -> item.timeMs }) { _, line ->
+        itemsIndexed(lyrics, key = { index, item -> item.timeMs.hashCode() * 31 + index }) { _, line ->
             val isActive = line == currentLyric
 
             LyricLine(

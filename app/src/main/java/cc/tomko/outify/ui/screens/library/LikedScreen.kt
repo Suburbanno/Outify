@@ -76,8 +76,6 @@ fun SharedTransitionScope.LikedScreen(
         with(density) { 56.dp.roundToPx() }
     }
 
-    val imageLoader = (context.applicationContext as OutifyApplication).imageLoader
-
     // Prefetch images for visible range and trigger viewmodel to load more when near end
     LaunchedEffect(listState, tracks) {
         snapshotFlow { listState.firstVisibleItemIndex }
@@ -87,7 +85,7 @@ fun SharedTransitionScope.LikedScreen(
                     val end = (first + 8).coerceAtMost(tracks.lastIndex)
                     for (i in first..end) {
                         tracks.getOrNull(i)?.album?.covers?.firstOrNull()?.uri?.let { url ->
-                            imageLoader.enqueue(
+                            viewModel.imageLoader.enqueue(
                                 ImageRequest.Builder(context)
                                     .data(ALBUM_COVER_URL + url)
                                     .size(imageSizePx)

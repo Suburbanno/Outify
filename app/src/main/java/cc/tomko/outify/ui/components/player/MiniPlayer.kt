@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -58,9 +60,12 @@ import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
 import cc.tomko.outify.utils.SharedElementKey
+import coil3.ImageLoader
 import coil3.compose.AsyncImage
+import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
+import kotlin.math.abs
 
 private val TAB_HEIGHT = 20.dp
 
@@ -72,6 +77,8 @@ fun SharedTransitionScope.MiniPlayer(
     showQueue: () -> Unit,
     modifier: Modifier = Modifier,
     onExpand: (() -> Unit)? = null,
+
+    imageLoader: ImageLoader = LocalContext.current.imageLoader,
 ) {
     val context = LocalContext.current
     val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
@@ -93,10 +100,31 @@ fun SharedTransitionScope.MiniPlayer(
             .allowHardware(true)
             .build()
     }
-    val imageLoader = (LocalContext.current.applicationContext as OutifyApplication).imageLoader
 
     Box(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth()
+            .pointerInput(Unit) {
+                var totalDrag = 0f
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { change, dragAmount ->
+                        totalDrag += dragAmount
+                    },
+                    onDragEnd = {
+                        val threshold = 100.dp.toPx()
+                        if (totalDrag > threshold) {
+                            // Swiped right
+                            spirc.playerPrevious()
+                        } else if (totalDrag < -threshold) {
+                            // Swiped left
+                            spirc.playerNext()
+                        }
+                        totalDrag = 0f // reset
+                    },
+                    onDragCancel = {
+                        totalDrag = 0f
+                    }
+                )
+            },
         contentAlignment = Alignment.BottomCenter,
     ) {
         AnimatedVisibility(
@@ -228,9 +256,9 @@ fun SharedTransitionScope.MiniPlayer(
                     modifier = Modifier.clip(RoundedCornerShape(10.dp))
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { spirc.playerPrevious() }) {
-                            Icon(imageVector = Icons.Default.SkipPrevious, contentDescription = null)
-                        }
+//                        IconButton(onClick = { spirc.playerPrevious() }) {
+//                            Icon(imageVector = Icons.Default.SkipPrevious, contentDescription = null)
+//                        }
 
                         IconButton(onClick = {
                             viewModel.setTrack(currentTrack)
@@ -243,9 +271,9 @@ fun SharedTransitionScope.MiniPlayer(
                             }
                         }
 
-                        IconButton(onClick = { spirc.playerNext() }) {
-                            Icon(imageVector = Icons.Default.SkipNext, contentDescription = null)
-                        }
+//                        IconButton(onClick = { spirc.playerNext() }) {
+//                            Icon(imageVector = Icons.Default.SkipNext, contentDescription = null)
+//                        }
                     }
                 }
             }

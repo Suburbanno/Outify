@@ -15,6 +15,7 @@ import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.model.player.PlayerUIState
 import cc.tomko.outify.ui.repository.PlayerRepository
 import cc.tomko.outify.ui.repository.SettingsRepository
+import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +37,7 @@ import kotlin.time.toDuration
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
     val spirc: SpircWrapper,
+    val imageLoader: ImageLoader,
     private val playerRepository: PlayerRepository,
     private val playbackStateHolder: PlaybackStateHolder,
     private val settingsRepository: SettingsRepository,

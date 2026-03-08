@@ -40,7 +40,9 @@ import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Playlist
 import cc.tomko.outify.utils.SharedElementKey
+import coil3.ImageLoader
 import coil3.compose.AsyncImage
+import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 
@@ -67,6 +69,8 @@ fun SharedTransitionScope.PlaylistRow(
 
     sharedTransitionKey: String? = "${SharedElementKey.PLAYLIST_ARTWORK}_${playlist.uri}",
     color: Color = MaterialTheme.colorScheme.surfaceVariant,
+
+    imageLoader: ImageLoader = LocalContext.current.imageLoader,
 ) {
     val context = LocalContext.current
     val imageDp: Dp = when (density) {
@@ -95,8 +99,6 @@ fun SharedTransitionScope.PlaylistRow(
     } else {
         modifier.fillMaxWidth()
     }
-
-    val imageLoader = (LocalContext.current.applicationContext as OutifyApplication).imageLoader
 
     // Morphing the album cover only if sharedTransitionKey != null
     val modifierWithSharedBounds = if (sharedTransitionKey != null) {

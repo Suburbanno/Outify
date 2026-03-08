@@ -43,7 +43,9 @@ import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.ui.components.AudioBarsIndicator
 import cc.tomko.outify.utils.SharedElementKey
+import coil3.ImageLoader
 import coil3.compose.AsyncImage
+import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 
@@ -75,6 +77,8 @@ fun SharedTransitionScope.TrackRow(
 
     sharedTransitionKey: String? = "${SharedElementKey.ALBUM_ARTWORK}_${artworkUrl}",
     color: Color = MaterialTheme.colorScheme.surfaceVariant,
+
+    imageLoader: ImageLoader = LocalContext.current.imageLoader,
 ) {
     val context = LocalContext.current
     val imageDp: Dp = when (density) {
@@ -103,8 +107,6 @@ fun SharedTransitionScope.TrackRow(
     } else {
         modifier.fillMaxWidth()
     }
-
-    val imageLoader = (LocalContext.current.applicationContext as OutifyApplication).imageLoader
 
     val modifierWithSharedBounds = if (sharedTransitionKey != null) {
         modifier.sharedBounds(

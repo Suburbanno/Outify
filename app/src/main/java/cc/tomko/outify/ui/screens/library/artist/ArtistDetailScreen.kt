@@ -80,6 +80,7 @@ import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
 import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
 import cc.tomko.outify.utils.SharedElementKey
+import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
@@ -243,7 +244,8 @@ fun SharedTransitionScope.ArtistDetailScreen(
                                         size = albumImageSize,
                                         onClick = {
                                             onAlbumClick(album)
-                                        }
+                                        },
+                                        imageLoader = viewModel.imageLoader
                                     )
                                 }
                             }
@@ -445,11 +447,11 @@ fun ArtistTracksHeader(
 fun SharedTransitionScope.AlbumCard(
     album: Album,
     size: Dp,
+    imageLoader: ImageLoader,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 ) {
     val context = LocalContext.current
-    val imageLoader = (context.applicationContext as OutifyApplication).imageLoader
 
     val artworkUri = remember(album) {
         ALBUM_COVER_URL + (album.getCover(CoverSize.MEDIUM)?.uri ?: "")

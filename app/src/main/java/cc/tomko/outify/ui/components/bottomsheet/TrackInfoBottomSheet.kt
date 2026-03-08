@@ -1,17 +1,16 @@
 package cc.tomko.outify.ui.components.bottomsheet
 
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Queue
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -23,16 +22,17 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.allowHardware
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.notifications.InAppNotificationController
+import coil3.ImageLoader
+import coil3.compose.AsyncImage
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.request.allowHardware
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +51,8 @@ fun TrackInfoBottomSheet(
     onStartRadio: (() -> Unit)? = null,
     onShare: (() -> Unit)? = null,
     onCopyUri: (() -> Unit)? = null,
+
+    imageLoader: ImageLoader = LocalContext.current.imageLoader,
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -66,7 +68,6 @@ fun TrackInfoBottomSheet(
             .allowHardware(true)
             .build()
     }
-    val imageLoader = (LocalContext.current.applicationContext as OutifyApplication).imageLoader
 
     val defaultShare: () -> Unit = {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {

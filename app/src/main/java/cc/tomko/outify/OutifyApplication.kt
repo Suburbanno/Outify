@@ -19,9 +19,6 @@ class OutifyApplication : Application() {
     lateinit var database: AppDatabase
         private set
 
-    lateinit var imageLoader: ImageLoader
-        private set
-
     @Inject
     lateinit var spircController: SpircController
 
@@ -36,20 +33,5 @@ class OutifyApplication : Application() {
         spircController.start()
 
 //        AeadConfig.register()
-
-        imageLoader = ImageLoader.Builder(this)
-            .crossfade(false)
-            .memoryCache(
-                MemoryCache.Builder()
-                    .maxSizePercent(this, 0.10)
-                    .weakReferencesEnabled(true)
-                    .build()
-            )
-            .diskCache(
-                DiskCache.Builder()
-                    .directory(cacheDir.resolve("image_cache"))
-                    .maxSizePercent(0.25)
-                    .build()
-            ).build()
     }
 }

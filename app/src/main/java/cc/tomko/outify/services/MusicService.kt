@@ -175,15 +175,13 @@ class MusicService @Inject constructor() : MediaSessionService() {
             currentArtworkUrl = url
 
             serviceScope.launch {
-                val loader = this@MusicService.applicationContext.imageLoader
-
                 val request = ImageRequest.Builder(this@MusicService)
                     .size(coil3.size.Size.ORIGINAL)
                     .data(url)
                     .allowHardware(false)
                     .build()
 
-                val result = loader.execute(request)
+                val result = imageLoader.execute(request)
 
                 val bitmap = result.image?.toBitmap()
 
