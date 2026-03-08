@@ -193,6 +193,9 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
                                 showQueue = {
                                     sheetState.show()
+                                },
+                                onExpand = {
+                                    println("somethingg")
                                 }
                             )
                         }

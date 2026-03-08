@@ -1,8 +1,11 @@
-
 package cc.tomko.outify.ui.components.player
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,11 +15,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -56,6 +62,8 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 
+private val TAB_HEIGHT = 20.dp
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SharedTransitionScope.MiniPlayer(
@@ -63,6 +71,7 @@ fun SharedTransitionScope.MiniPlayer(
     backStack: NavBackStack<NavKey>,
     showQueue: () -> Unit,
     modifier: Modifier = Modifier,
+    onExpand: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
@@ -75,7 +84,7 @@ fun SharedTransitionScope.MiniPlayer(
 
     val imageSize = 40.dp
     val imageSizePx = with(LocalDensity.current) { imageSize.roundToPx() }
-    val artworkUrl = currentTrack ?.album ?.getCover(CoverSize.SMALL)?.uri.let { ALBUM_COVER_URL + it }
+    val artworkUrl = currentTrack?.album?.getCover(CoverSize.SMALL)?.uri.let { ALBUM_COVER_URL + it }
 
     val imageRequest = remember(artworkUrl, imageSizePx) {
         ImageRequest.Builder(context)
@@ -86,18 +95,49 @@ fun SharedTransitionScope.MiniPlayer(
     }
     val imageLoader = (LocalContext.current.applicationContext as OutifyApplication).imageLoader
 
-    AnimatedVisibility(
-        visible = true,
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.BottomCenter,
     ) {
+        AnimatedVisibility(
+            visible = onExpand != null,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .wrapContentWidth()
+                .offset(y = -TAB_HEIGHT, x = (-55).dp)
+        ) {
+            Surface(
+                tonalElevation = 2.dp,
+                shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
+                    .height(TAB_HEIGHT)
+                    .clickable { onExpand?.invoke() }
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ExpandLess,
+                        contentDescription = "Expand",
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        // Main card
         Surface(
             tonalElevation = 3.dp,
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .clickable {
-                    backStack.add(Route.PlayerScreen)
-                }
+                .clickable { backStack.add(Route.PlayerScreen) }
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -107,7 +147,8 @@ fun SharedTransitionScope.MiniPlayer(
             ) {
                 // Album artwork
                 Box(
-                    modifier = Modifier.size(64.dp)
+                    modifier = Modifier
+                        .size(64.dp)
                         .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
                 ) {
                     Surface(
@@ -146,7 +187,6 @@ fun SharedTransitionScope.MiniPlayer(
                         .weight(1f)
                         .height(imageSize)
                 ) {
-                    // Title | Artist row
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
@@ -169,7 +209,6 @@ fun SharedTransitionScope.MiniPlayer(
                         )
                     }
 
-                    // Elapsed time / total time
                     Row {
                         Text(
                             text = "${formatTime(currentTime)} / ${formatTime(totalTime)}",
@@ -179,32 +218,18 @@ fun SharedTransitionScope.MiniPlayer(
                     }
                 }
 
-                IconButton(
-                    onClick = showQueue,
-                ) {
-                    Icon(
-                        Icons.Default.Menu,
-                        contentDescription = "See queue"
-                    )
+                IconButton(onClick = showQueue) {
+                    Icon(Icons.Default.Menu, contentDescription = "See queue")
                 }
 
-                // Playback controls
                 Surface(
                     tonalElevation = 10.dp,
                     shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                    modifier = Modifier.clip(RoundedCornerShape(10.dp))
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = {
-                            spirc.playerPrevious()
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.SkipPrevious,
-                                contentDescription = null
-                            )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { spirc.playerPrevious() }) {
+                            Icon(imageVector = Icons.Default.SkipPrevious, contentDescription = null)
                         }
 
                         IconButton(onClick = {
@@ -212,25 +237,14 @@ fun SharedTransitionScope.MiniPlayer(
                             spirc.playerPlayPause()
                         }) {
                             if (isPlaying) {
-                                Icon(
-                                    imageVector = Icons.Default.Pause,
-                                    contentDescription = null
-                                )
+                                Icon(imageVector = Icons.Default.Pause, contentDescription = null)
                             } else {
-                                Icon(
-                                    imageVector = Icons.Default.PlayArrow,
-                                    contentDescription = null
-                                )
+                                Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
                             }
                         }
 
-                        IconButton(onClick = {
-                            spirc.playerNext()
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.SkipNext,
-                                contentDescription = null
-                            )
+                        IconButton(onClick = { spirc.playerNext() }) {
+                            Icon(imageVector = Icons.Default.SkipNext, contentDescription = null)
                         }
                     }
                 }
