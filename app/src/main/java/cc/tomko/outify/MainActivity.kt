@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -154,34 +155,11 @@ class MainActivity : ComponentActivity() {
             ) {
                 Scaffold(
                     bottomBar = {
-                        Column {
-                            val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
-
-                            AnimatedVisibility(
-                                visible = currentTrack != null && backStack.last() != Route.PlayerScreen,
-                                enter = slideInVertically(
-                                    initialOffsetY = { fullHeight -> fullHeight }
-                                ) + fadeIn(),
-                                exit = slideOutVertically(
-                                    targetOffsetY = { fullHeight -> fullHeight }
-                                ) + fadeOut()
-                            ) {
-                                MiniPlayer(
-                                    viewModel = miniPlayerViewModel,
-                                    backStack = backStack,
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                                    showQueue = {
-                                        sheetState.show()
-                                    }
-                                )
-                            }
-
-                            OutifyBottomNav(
-                                items = routes,
-                                selectedId = selectedId,
-                                onItemSelected = { item -> backStack.add(item.route) }
-                            )
-                        }
+                        OutifyBottomNav(
+                            items = routes,
+                            selectedId = selectedId,
+                            onItemSelected = { item -> backStack.add(item.route) }
+                        )
                     }
                 ) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
@@ -196,6 +174,28 @@ class MainActivity : ComponentActivity() {
                         )
 
                         GlobalPopupHost()
+
+                        val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+
+                        AnimatedVisibility(
+                            visible = currentTrack != null && backStack.last() != Route.PlayerScreen,
+                            enter = slideInVertically(
+                                initialOffsetY = { fullHeight -> fullHeight }
+                            ) + fadeIn(),
+                            exit = slideOutVertically(
+                                targetOffsetY = { fullHeight -> fullHeight }
+                            ) + fadeOut(),
+                            modifier = Modifier.align(Alignment.BottomCenter)
+                        ) {
+                            MiniPlayer(
+                                viewModel = miniPlayerViewModel,
+                                backStack = backStack,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                                showQueue = {
+                                    sheetState.show()
+                                }
+                            )
+                        }
                     }
                 }
 
