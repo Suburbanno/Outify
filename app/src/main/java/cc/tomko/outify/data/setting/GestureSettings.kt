@@ -68,8 +68,6 @@ val LocalSwipeActionHandler = compositionLocalOf<SwipeActionHandler> {
     }
 }
 
-data class BuiltGesture(val side: Side, val swipeGesture: SwipeGesture)
-
 fun buildSwipeGesturesForTrack(
     gestureSettings: List<GestureSetting>,
     actionHandler: SwipeActionHandler,
@@ -80,7 +78,7 @@ fun buildSwipeGesturesForTrack(
 
     gestureSettings.filter { it.enabled && it.side != null }.forEach { s ->
         val threshold = (s.thresholdFraction ?: 0.25f).coerceIn(0f, 1f)
-        val bgColor = s.backgroundHex?.let { Color(it) } ?: Color.Unspecified
+        val bgColor = s.backgroundHex?.let { Color(it) } ?: colorForAction(s.action)
 
         val onTrigger: (() -> Unit)? = when (s.action) {
             GestureAction.ADD_TO_QUEUE -> { { actionHandler.addToQueue(track.uri) } }
@@ -136,4 +134,13 @@ fun buildLongPressAction(
         GestureAction.SHOW_TRACK_INFO -> { { handler.trackInfo(track) } }
         else -> null
     }
+}
+
+private fun colorForAction(action: GestureAction): Color = when(action) {
+    GestureAction.ADD_TO_QUEUE -> Color(0xFF4CAF50) // green
+    GestureAction.START_RADIO -> Color(0xFFFFC107) // amber
+    GestureAction.ADD_TO_PLAYLIST -> Color(0xFF2196F3) // blue
+    GestureAction.ADD_TO_FAVORITE -> Color(0xFFE91E63) // pink
+    GestureAction.SHOW_TRACK_INFO -> Color(0xFF9C27B0) // purple
+    GestureAction.NONE -> Color.Unspecified
 }
