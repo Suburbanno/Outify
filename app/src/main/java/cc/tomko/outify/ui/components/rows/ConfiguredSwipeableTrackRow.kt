@@ -102,12 +102,9 @@ fun rememberTrackGestures(track: Track): Pair<List<SwipeGesture>, List<SwipeGest
     val settings = LocalSwipeGestureSettings.current
     val handler = LocalSwipeActionHandler.current
 
-    val gestures = remember(settings, track) {
+    val (start, end) = remember(settings, track) {
         buildSwipeGesturesForTrack(settings, handler, track)
     }
-
-    val start = gestures.filter { it.side == Side.Start }.map { it.swipeGesture }
-    val end = gestures.filter { it.side == Side.End }.map { it.swipeGesture }
 
     return start to end
 }

@@ -22,7 +22,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class GestureSetting(
     val action: GestureAction,
-    val side: Side = Side.End,
+    val side: Side? = Side.End,
     val trigger: GestureTrigger = GestureTrigger.SwipeEnd,
     val enabled: Boolean = true,
     val thresholdFraction: Float? = null,
@@ -74,41 +74,49 @@ fun buildSwipeGesturesForTrack(
     gestureSettings: List<GestureSetting>,
     actionHandler: SwipeActionHandler,
     track: Track
-): List<BuiltGesture> {
-    return gestureSettings.filter { it.enabled }.mapNotNull { s ->
-        val threshold = s.thresholdFraction ?: 0.25f
+): Pair<List<SwipeGesture>, List<SwipeGesture>> {
+    val start = mutableListOf<SwipeGesture>()
+    val end = mutableListOf<SwipeGesture>()
 
+    gestureSettings.filter { it.enabled && it.side != null }.forEach { s ->
+        val threshold = (s.thresholdFraction ?: 0.25f).coerceIn(0f, 1f)
         val bgColor = s.backgroundHex?.let { Color(it) } ?: Color.Unspecified
 
-        val onTrigger = when (s.action) {
+        val onTrigger: (() -> Unit)? = when (s.action) {
             GestureAction.ADD_TO_QUEUE -> { { actionHandler.addToQueue(track.uri) } }
             GestureAction.START_RADIO -> { { actionHandler.startRadio(track) } }
             GestureAction.ADD_TO_FAVORITE -> { { actionHandler.favorite(track.uri) } }
             GestureAction.ADD_TO_PLAYLIST -> { { actionHandler.addToPlaylist(track) } }
-            GestureAction.SHOW_TRACK_INFO -> { { actionHandler.trackInfo(track); println("track info") } }
-            else -> null
-        } ?: return@mapNotNull null
+            GestureAction.SHOW_TRACK_INFO -> { { actionHandler.trackInfo(track) } }
+            GestureAction.NONE -> null
+        }
+        if (onTrigger == null) return@forEach
 
-        val icon: @Composable (BoxScope.() -> Unit) = {
+        val icon: @Composable BoxScope.() -> Unit = {
             when (s.action) {
                 GestureAction.ADD_TO_QUEUE -> Icon(Icons.Default.Queue, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.START_RADIO -> Icon(Icons.Default.Radio, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.ADD_TO_FAVORITE -> Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.ADD_TO_PLAYLIST -> Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.SHOW_TRACK_INFO -> Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.fillMaxSize())
-                else -> Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.fillMaxSize())
+                GestureAction.NONE -> Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.fillMaxSize())
             }
         }
 
         val gesture = SwipeGesture(
-            thresholdFraction = threshold.coerceIn(0f, 1f),
+            thresholdFraction = threshold,
             icon = icon,
             onTrigger = onTrigger,
             backgroundColor = bgColor
         )
 
-        BuiltGesture(side = s.side, swipeGesture = gesture)
+        when (s.side ?: Side.End) {
+            Side.Start -> start += gesture
+            Side.End -> end += gesture
+        }
     }
+
+    return start to end
 }
 
 fun buildLongPressAction(
