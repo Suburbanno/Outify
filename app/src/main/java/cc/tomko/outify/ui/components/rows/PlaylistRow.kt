@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Playlist
+import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
@@ -69,24 +70,11 @@ fun SharedTransitionScope.PlaylistRow(
 
     sharedTransitionKey: String? = "${SharedElementKey.PLAYLIST_ARTWORK}_${playlist.uri}",
     color: Color = MaterialTheme.colorScheme.surfaceVariant,
-
-    imageLoader: ImageLoader = LocalContext.current.imageLoader,
 ) {
-    val context = LocalContext.current
     val imageDp: Dp = when (density) {
         TrackRowDensity.Compact -> 40.dp
         TrackRowDensity.Default -> 56.dp
         TrackRowDensity.Spacious -> 72.dp
-    }
-
-    val imageSizePx = with(LocalDensity.current) { imageDp.roundToPx() }
-
-    val imageRequest = remember(artworkUrl, imageSizePx) {
-        ImageRequest.Builder(context)
-            .data(artworkUrl)
-            .size(imageSizePx)
-            .allowHardware(true)
-            .build()
     }
 
     val combinedModifier = if (onRowClick != null || onRowLongClick != null) {
@@ -132,9 +120,8 @@ fun SharedTransitionScope.PlaylistRow(
                     .padding(start = 16.dp, top = 2.dp, bottom = 2.dp)
                     .size(imageDp)
             ) {
-                AsyncImage(
-                    model = imageRequest,
-                    imageLoader = imageLoader,
+                SmartImage(
+                    url = artworkUrl,
                     contentDescription = "Artwork",
                     modifier = modifierWithSharedBounds
                         .then(

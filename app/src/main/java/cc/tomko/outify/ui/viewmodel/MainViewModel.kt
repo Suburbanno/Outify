@@ -15,6 +15,7 @@ import cc.tomko.outify.data.setting.SwipeActionHandler
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.notifications.InAppNotificationController
+import cc.tomko.outify.ui.repository.InterfaceSettings
 import cc.tomko.outify.ui.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -31,6 +32,9 @@ class MainViewModel @Inject constructor(
 ): ViewModel() {
     val swipeSettings: Flow<List<GestureSetting>> =
         settingsRepository.interfaceSettings.map { it.gestureSettings }
+
+    val interfaceSettings: Flow<InterfaceSettings> =
+        settingsRepository.interfaceSettings
 
     val swipeActionHandler = object : SwipeActionHandler {
         override fun addToQueue(uri: String) {

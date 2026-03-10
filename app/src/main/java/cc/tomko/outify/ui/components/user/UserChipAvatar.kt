@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.data.Profile
+import cc.tomko.outify.ui.components.SmartImage
 import coil3.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -34,13 +35,10 @@ fun UserChipAvatar(
         Surface(
             tonalElevation = 12.dp
         ) {
-            AsyncImage(
-                model = artworkUrl,
-                contentDescription = null,
+            SmartImage(
+                url = artworkUrl,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clip(MaterialTheme.shapes.medium)
             )
         }
     }

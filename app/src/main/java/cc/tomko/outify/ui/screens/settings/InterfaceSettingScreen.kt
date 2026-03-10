@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DesignServices
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Interests
 import androidx.compose.material3.ElevatedCard
@@ -27,10 +28,9 @@ import cc.tomko.outify.ui.viewmodel.settings.InterfaceViewModel
 fun InterfaceSettingScreen(
     viewModel: InterfaceViewModel,
     openGestureSettings: (() -> Unit),
+    openAppearanceSettings: (() -> Unit),
     modifier: Modifier = Modifier
 ) {
-    val settings by viewModel.settings.collectAsState(initial = InterfaceSettings())
-
     LazyColumn(
         modifier = Modifier.fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -46,6 +46,20 @@ fun InterfaceSettingScreen(
                     description = "Personalize gestures",
                     icon = { Icon(Icons.Default.Gesture, contentDescription = null) },
                     onClick = openGestureSettings,
+                )
+            }
+        }
+
+        item {
+            ElevatedCard(
+                modifier = modifier
+                    .fillMaxWidth()
+            ) {
+                PreferenceEntry(
+                    title = { Text("Appearance") },
+                    description = "Customize the design",
+                    icon = { Icon(Icons.Default.DesignServices, contentDescription = null) },
+                    onClick = openAppearanceSettings,
                 )
             }
         }

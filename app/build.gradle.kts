@@ -96,7 +96,7 @@ dependencies {
 
     // Coil images
     implementation("io.coil-kt.coil3:coil-compose:3.3.0")
-    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.4.0")
 
     // Native metadata serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")

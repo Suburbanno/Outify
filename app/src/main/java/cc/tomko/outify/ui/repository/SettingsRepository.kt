@@ -40,6 +40,10 @@ class SettingsRepository @Inject constructor(
              */
             val SHOW_LYRICS_ALWAYS = booleanPreferencesKey("always_show_lyrics")
         }
+
+        object Interface {
+            val MONOCHROME_IMAGES = booleanPreferencesKey("monochrome_images")
+        }
     }
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
@@ -51,7 +55,8 @@ class SettingsRepository @Inject constructor(
         val enabled = prefs[Keys.Gesture.ENABLED] ?: true
         InterfaceSettings(
             swipeGesturesEnabled = enabled,
-            gestureSettings = if(enabled) decodeGestures(prefs[Keys.Gesture.GESTURES]) else emptyList()
+            gestureSettings = if(enabled) decodeGestures(prefs[Keys.Gesture.GESTURES]) else emptyList(),
+            monochromeImages = prefs[Keys.Interface.MONOCHROME_IMAGES] ?: true
         )
     }
 
@@ -129,6 +134,10 @@ class SettingsRepository @Inject constructor(
         dataStore.edit { it[Keys.Gesture.ENABLED] = enabled }
     }
 
+    suspend fun setMonochromeImages(enabled: Boolean) {
+        dataStore.edit { it[Keys.Interface.MONOCHROME_IMAGES] = enabled }
+    }
+
     suspend fun saveGestures(gestures: List<GestureSetting>) {
         val serialized = json.encodeToString(gestures)
         dataStore.edit { it[Keys.Gesture.GESTURES] = serialized }
@@ -169,6 +178,7 @@ data class InterfaceSettings(
             action = GestureAction.SHOW_TRACK_INFO,
             trigger = GestureTrigger.LongPress,
         )
-    )
+    ),
+    val monochromeImages: Boolean = false,
 )
 

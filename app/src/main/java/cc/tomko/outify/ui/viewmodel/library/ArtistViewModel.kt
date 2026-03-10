@@ -33,7 +33,6 @@ class ArtistViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
     val likedDao: LikedDao,
-    val imageLoader: ImageLoader,
 ): ViewModel() {
     val json = Json { ignoreUnknownKeys = true }
 

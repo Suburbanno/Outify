@@ -71,6 +71,7 @@ import cc.tomko.outify.data.getCover
 import cc.tomko.outify.data.sharedTransitionKey
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
+import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.bottomsheet.ArtistLikedTracksBottomSheet
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
@@ -245,7 +246,6 @@ fun SharedTransitionScope.ArtistDetailScreen(
                                         onClick = {
                                             onAlbumClick(album)
                                         },
-                                        imageLoader = viewModel.imageLoader
                                     )
                                 }
                             }
@@ -333,10 +333,9 @@ fun ArtistTracksHeader(
                 contentAlignment = Alignment.Center
             ) {
                 if (!artworkUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = artworkUrl,
+                    SmartImage(
+                        url = artworkUrl,
                         contentDescription = "Liked songs artwork",
-                        contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {
@@ -447,23 +446,11 @@ fun ArtistTracksHeader(
 fun SharedTransitionScope.AlbumCard(
     album: Album,
     size: Dp,
-    imageLoader: ImageLoader,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
-    val context = LocalContext.current
-
     val artworkUri = remember(album) {
         ALBUM_COVER_URL + (album.getCover(CoverSize.MEDIUM)?.uri ?: "")
-    }
-
-    val imageSizePx = with(LocalDensity.current) { size.roundToPx() }
-    val imageRequest = remember(artworkUri, imageSizePx) {
-        ImageRequest.Builder(context)
-            .data(artworkUri)
-            .size(imageSizePx)
-            .allowHardware(true)
-            .build()
     }
 
     Column(
@@ -481,9 +468,8 @@ fun SharedTransitionScope.AlbumCard(
                     .size(size)
             ) {
                 if (artworkUri.isNotBlank()) {
-                    AsyncImage(
-                        model = imageRequest,
-                        imageLoader = imageLoader,
+                    SmartImage(
+                        url = artworkUri,
                         contentDescription = "Album artwork",
                         modifier = Modifier
                             .fillMaxSize()
@@ -492,7 +478,6 @@ fun SharedTransitionScope.AlbumCard(
                                 rememberSharedContentState(album.sharedTransitionKey()),
                                 LocalNavAnimatedContentScope.current
                             ),
-                        contentScale = ContentScale.Crop
                     )
                 } else {
                     Box(

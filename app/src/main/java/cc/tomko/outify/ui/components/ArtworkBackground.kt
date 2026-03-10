@@ -22,12 +22,10 @@ fun ArtworkBackground(
     topFade: Boolean = true
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-
-        AsyncImage(
-            model = artworkUrl,
-            contentDescription = "Artwork",
+        SmartImage(
+            url = artworkUrl,
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+            contentDescription = "Artwork",
         )
 
         // Bottom fade

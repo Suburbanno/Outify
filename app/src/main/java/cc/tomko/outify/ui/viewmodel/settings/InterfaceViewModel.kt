@@ -16,14 +16,4 @@ class InterfaceViewModel @Inject constructor(
 ) : ViewModel() {
     val settings: Flow<InterfaceSettings> =
         settingsRepository.interfaceSettings
-
-    fun setSwipeGesturesEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsRepository.setGesturesEnabled(enabled)
-        }
-    }
-
-    fun openGestureSettings(){
-
-    }
 }

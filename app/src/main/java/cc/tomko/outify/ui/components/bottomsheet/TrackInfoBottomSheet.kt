@@ -27,6 +27,7 @@ import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
@@ -51,23 +52,13 @@ fun TrackInfoBottomSheet(
     onStartRadio: (() -> Unit)? = null,
     onShare: (() -> Unit)? = null,
     onCopyUri: (() -> Unit)? = null,
-
-    imageLoader: ImageLoader = LocalContext.current.imageLoader,
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
 
     val imageSize = 96.dp
-    val imageSizePx = remember(imageSize) { (imageSize.value * context.resources.displayMetrics.density).toInt() }
 
     val artworkUrl = remember(track) { ALBUM_COVER_URL + (track.album?.getCover(CoverSize.MEDIUM)?.uri ?: "") }
-    val imageRequest = remember(artworkUrl) {
-        ImageRequest.Builder(context)
-            .data(artworkUrl)
-            .size(imageSizePx)
-            .allowHardware(true)
-            .build()
-    }
 
     val defaultShare: () -> Unit = {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -108,14 +99,10 @@ fun TrackInfoBottomSheet(
                             onDismiss()
                         }
                 ) {
-                    AsyncImage(
-                        model = imageRequest,
-                        imageLoader = imageLoader,
+                    SmartImage(
+                        url = artworkUrl,
                         contentDescription = "Artwork",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(6.dp)),
-                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
 

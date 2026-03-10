@@ -57,6 +57,7 @@ import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
 import cc.tomko.outify.utils.SharedElementKey
@@ -77,8 +78,6 @@ fun SharedTransitionScope.MiniPlayer(
     showQueue: () -> Unit,
     modifier: Modifier = Modifier,
     onExpand: (() -> Unit)? = null,
-
-    imageLoader: ImageLoader = LocalContext.current.imageLoader,
 ) {
     val context = LocalContext.current
     val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
@@ -90,16 +89,7 @@ fun SharedTransitionScope.MiniPlayer(
     val totalTime = currentTrack?.duration ?: 0L
 
     val imageSize = 40.dp
-    val imageSizePx = with(LocalDensity.current) { imageSize.roundToPx() }
     val artworkUrl = currentTrack?.album?.getCover(CoverSize.SMALL)?.uri.let { ALBUM_COVER_URL + it }
-
-    val imageRequest = remember(artworkUrl, imageSizePx) {
-        ImageRequest.Builder(context)
-            .data(artworkUrl)
-            .size(imageSizePx)
-            .allowHardware(true)
-            .build()
-    }
 
     Box(
         modifier = modifier.fillMaxWidth()
@@ -189,14 +179,11 @@ fun SharedTransitionScope.MiniPlayer(
                                 visible = true,
                             )
                     ) {
-                        AsyncImage(
-                            model = imageRequest,
-                            imageLoader = imageLoader,
+                        SmartImage(
+                            url = artworkUrl,
                             contentDescription = "Artwork",
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clip(RoundedCornerShape(6.dp)),
-                            contentScale = ContentScale.Crop,
                         )
                     }
 

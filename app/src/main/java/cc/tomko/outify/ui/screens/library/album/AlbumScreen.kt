@@ -61,6 +61,7 @@ import cc.tomko.outify.data.getCover
 import cc.tomko.outify.data.sharedTransitionKey
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
+import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
@@ -261,10 +262,9 @@ fun AlbumTracksHeader(
                 contentAlignment = Alignment.Center
             ) {
                 if (!artworkUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = artworkUrl,
+                    SmartImage(
+                        url = artworkUrl,
                         contentDescription = "Liked songs artwork",
-                        contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
                 } else {

@@ -63,16 +63,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.SyncedLyric
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
-import cc.tomko.outify.utils.SharedElementKey
-import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import kotlinx.coroutines.delay
@@ -126,24 +124,28 @@ fun SharedTransitionScope.PlayerScreen(
 
             // Album artwork
             item {
-                Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(6.dp),
-                    modifier = Modifier
-                        .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
-                        .size(imageSize)
-                        .sharedBounds(
-                            rememberSharedContentState(SharedElementKey.PLAYER_ARTWORK),
-                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
-                        )
-                ) {
-                    AsyncImage(
-                        model = imageRequest,
-                        imageLoader = viewModel.imageLoader,
-                        contentDescription = "Artwork",
-                        modifier = Modifier
-                    )
-                }
+                SmartImage(
+                    url = artworkUrl,
+                    imageSize = imageSize,
+                )
+//                Surface(
+//                    color = MaterialTheme.colorScheme.surfaceVariant,
+//                    shape = RoundedCornerShape(6.dp),
+//                    modifier = Modifier
+//                        .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
+//                        .size(imageSize)
+//                        .sharedBounds(
+//                            rememberSharedContentState(SharedElementKey.PLAYER_ARTWORK),
+//                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
+//                        )
+//                ) {
+//                    AsyncImage(
+//                        model = imageRequest,
+//                        imageLoader = viewModel.imageLoader,
+//                        contentDescription = "Artwork",
+//                        modifier = Modifier
+//                    )
+//                }
             }
 
             item { Spacer(modifier = Modifier.height(16.dp)) }

@@ -95,8 +95,6 @@ fun SwitchPreferenceEntry(
     isEnabled: Boolean = true,
     isChecked: Boolean = false,
 ) {
-    var checked by remember { mutableStateOf(isChecked) }
-
     PreferenceEntry(
         modifier,
         title,
@@ -107,17 +105,13 @@ fun SwitchPreferenceEntry(
             trailingContent?.invoke()
 
             Switch(
-                checked = checked,
-                onCheckedChange = {
-                    checked = !checked
-                    onCheckedChange(checked)
-                },
+                checked = isChecked,
+                onCheckedChange = onCheckedChange,
                 enabled = isEnabled,
             )
         },
         onClick = {
-            checked = !checked
-            onCheckedChange(checked)
+            onCheckedChange(!isChecked)
         },
         isEnabled
     )

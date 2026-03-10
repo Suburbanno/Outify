@@ -41,6 +41,7 @@ import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
 import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
@@ -125,8 +126,8 @@ fun SharedTransitionScope.ArtistLikedTracksBottomSheet(
                                 modifier = Modifier.size(56.dp)
                             ) {
                                 if (artworkUrl.isNotBlank()) {
-                                    AsyncImage(
-                                        model = artworkUrl,
+                                    SmartImage(
+                                        url = artworkUrl,
                                         contentDescription = "Artist artwork",
                                         modifier = Modifier.fillMaxSize()
                                     )

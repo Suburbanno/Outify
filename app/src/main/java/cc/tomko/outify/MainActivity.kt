@@ -31,6 +31,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -39,12 +41,9 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
 import cc.tomko.outify.core.AuthManager
-import cc.tomko.outify.data.Track
-import cc.tomko.outify.data.setting.GestureSetting
 import cc.tomko.outify.data.setting.LocalSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
-import cc.tomko.outify.data.setting.Side
-import cc.tomko.outify.data.setting.SwipeActionHandler
+import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.GlobalPopupHost
 import cc.tomko.outify.ui.components.navigation.NavDestination
 import cc.tomko.outify.ui.components.navigation.NavigationRoot
@@ -145,13 +144,18 @@ class MainActivity : ComponentActivity() {
         val queueViewModel: QueueViewModel = hiltViewModel()
         val miniPlayerViewModel: MiniPlayerViewModel = hiltViewModel()
 
-        val swipeSettings by viewModel.swipeSettings.collectAsState(initial = InterfaceSettings().gestureSettings)
+        val interfaceSettings by viewModel
+            .interfaceSettings
+            .collectAsState(initial = InterfaceSettings())
+
+        val swipeSettings by viewModel.swipeSettings.collectAsState(initial = interfaceSettings.gestureSettings)
 
         SharedTransitionLayout {
             CompositionLocalProvider(
                 LocalSharedTransitionScope provides this,
                 LocalSwipeGestureSettings provides swipeSettings,
-                LocalSwipeActionHandler provides viewModel.swipeActionHandler
+                LocalSwipeActionHandler provides viewModel.swipeActionHandler,
+                LocalUiSettings provides interfaceSettings,
             ) {
                 Scaffold(
                     bottomBar = {
