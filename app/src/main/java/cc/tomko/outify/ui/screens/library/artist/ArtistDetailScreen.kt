@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.rounded.Shuffle
@@ -210,11 +211,27 @@ fun SharedTransitionScope.ArtistDetailScreen(
                         item {
                             Spacer(modifier = Modifier.height(48.dp))
 
-                            Text(
-                                text = "Albums",
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Albums",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = "See all albums",
+                                    modifier = Modifier
+                                        .clickable {
+                                            println("open albums")
+                                        }
+                                )
+                            }
 
                             val albumImageSize = 84.dp
 
