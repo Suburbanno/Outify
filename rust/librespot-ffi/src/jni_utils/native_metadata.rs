@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
-use base64::{engine::general_purpose, Engine};
+use base64::{Engine, engine::general_purpose};
 use jni::{
     JNIEnv,
     objects::{GlobalRef, JClass, JMethodID, JObject, JValue},
     sys::jboolean,
 };
+use librespot_core::SpotifyUri;
 use librespot_metadata::{
     Album, Artist, Playlist, Track,
     image::Image,
@@ -32,12 +33,15 @@ pub struct TrackJson {
 
 impl From<&Track> for TrackJson {
     fn from(track: &Track) -> Self {
-        let files = track.files.0.iter().map(|(format, file_id)| {
-            FileJson {
+        let files = track
+            .files
+            .0
+            .iter()
+            .map(|(format, file_id)| FileJson {
                 r#type: format!("{:?}", format),
                 id: file_id.to_base16(),
-            }
-        }).collect();
+            })
+            .collect();
 
         Self {
             id: track.id.to_id(),
@@ -70,6 +74,7 @@ pub struct ArtistJson {
     tracks: Vec<String>, // Just raw SpotifyUris
     covers: Vec<ImageJson>,
     albums: Vec<String>,
+    singles: Vec<String>,
 }
 
 impl From<&Artist> for ArtistJson {
@@ -90,15 +95,52 @@ impl From<&Artist> for ArtistJson {
             portraits: artist.portraits.iter().map(ImageJson::from).collect(),
             tracks: tracks,
             covers: artist.portrait_group.iter().map(ImageJson::from).collect(),
-            albums: artist
-                .albums
+            albums: unique_albums_in_order(artist),
+            singles: artist
+                .singles
                 .0
                 .iter()
                 .flat_map(|group| group.0.0.iter())
                 .map(|uri| uri.to_uri())
-                .collect(),
+                .collect::<Vec<String>>(),
         }
     }
+}
+
+fn unique_albums_in_order(artist: &Artist) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    let mut result = Vec::new();
+
+    let mut push = |uri: &SpotifyUri| {
+        let s = uri.to_uri();
+        if seen.insert(s.clone()) {
+            result.push(s);
+        }
+    };
+
+    for uri in artist.albums.0.iter().flat_map(|group| group.0.0.iter()) {
+        push(uri);
+    }
+
+    for uri in artist
+        .compilations
+        .0
+        .iter()
+        .flat_map(|group| group.0.0.iter())
+    {
+        push(uri);
+    }
+
+    for uri in artist
+        .appears_on_albums
+        .0
+        .iter()
+        .flat_map(|group| group.0.0.iter())
+    {
+        push(uri);
+    }
+
+    result
 }
 
 // Serializable Album object
