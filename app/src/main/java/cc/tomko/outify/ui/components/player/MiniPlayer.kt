@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -95,24 +96,24 @@ fun SharedTransitionScope.MiniPlayer(
     Box(
         modifier = modifier.fillMaxWidth()
             .pointerInput(Unit) {
-                var totalDrag = 0f
-                detectHorizontalDragGestures(
-                    onHorizontalDrag = { change, dragAmount ->
-                        totalDrag += dragAmount
+                var totalDragX = 0f
+
+                detectDragGestures(
+                    onDrag = { change, dragAmount ->
+                        totalDragX += dragAmount.x
                     },
                     onDragEnd = {
                         val threshold = 100.dp.toPx()
-                        if (totalDrag > threshold) {
-                            // Swiped right
-                            spirc.playerPrevious()
-                        } else if (totalDrag < -threshold) {
-                            // Swiped left
-                            spirc.playerNext()
+
+                        when {
+                            totalDragX > threshold -> spirc.playerPrevious()
+                            totalDragX < -threshold -> spirc.playerNext()
                         }
-                        totalDrag = 0f // reset
+
+                        totalDragX = 0f
                     },
                     onDragCancel = {
-                        totalDrag = 0f
+                        totalDragX = 0f
                     }
                 )
             },
