@@ -134,7 +134,7 @@ class SearchViewModel @Inject constructor(
                                     .filter { it.type == SearchResultType.PLAYLIST }
                                     .mapNotNull { result ->
                                         runCatching {
-                                            metadata.getPlaylistMetadata(result.uri)
+                                            metadata.getPlaylistMetadata(result.uri, true)
                                         }.getOrNull()?.let {
                                             result.uri to it
                                         }

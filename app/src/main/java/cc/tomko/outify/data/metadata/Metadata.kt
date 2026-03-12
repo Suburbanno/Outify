@@ -93,8 +93,8 @@ class Metadata @Inject constructor(
         return parsed
     }
 
-    suspend fun getPlaylistMetadata(uri: String): Playlist? {
-        return playlistMetadataHelper.getPlaylistMetadata(uri)
+    suspend fun getPlaylistMetadata(uri: String, allowCached: Boolean): Playlist? {
+        return playlistMetadataHelper.getPlaylistMetadata(uri, allowCached)
     }
 
     fun observePlaylist(uri: String) =

@@ -174,7 +174,7 @@ fun SharedTransitionScope.NavigationRoot(
 
             entry<Route.PlaylistScreen> {
                 val viewModel: PlaylistViewModel = hiltViewModel()
-                viewModel.loadPlaylist(it.playlistUri)
+                viewModel.loadPlaylist(it.playlistUri, false)
 
                 PlaylistScreen(
                     viewModel = viewModel,

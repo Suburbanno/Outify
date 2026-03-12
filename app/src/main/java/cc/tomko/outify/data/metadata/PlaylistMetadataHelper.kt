@@ -35,11 +35,14 @@ class PlaylistMetadataHelper @Inject constructor(
      * Retrieves a playlist by URI. If not present locally, fetches and persists.
      * Always tries to fetch remote to get latest revision and apply changes if available.
      */
-    suspend fun getPlaylistMetadata(uri: String): Playlist? = coroutineScope {
+    suspend fun getPlaylistMetadata(
+        uri: String,
+        allowCached: Boolean = true
+    ): Playlist? = coroutineScope {
         if (uri.isBlank()) return@coroutineScope null
 
         val playlistId = uri.removePrefix("spotify:playlist:")
-        val cached = playlistDao.getPlaylistWithItems(playlistId)
+        val cached = if (allowCached) playlistDao.getPlaylistWithItems(playlistId) else null
 
         val remotePlaylist = runCatching {
             try {
@@ -63,11 +66,16 @@ class PlaylistMetadataHelper @Inject constructor(
 
         if (remotePlaylist == null && cached == null) return@coroutineScope null
 
+        if (!allowCached) {
+            remotePlaylist?.let {
+                withContext(Dispatchers.IO) { persistPlaylist(it) }
+            }
+            return@coroutineScope remotePlaylist
+        }
+
         if (remotePlaylist != null) {
             if (cached == null) {
-                withContext(Dispatchers.IO) {
-                    persistPlaylist(remotePlaylist)
-                }
+                withContext(Dispatchers.IO) { persistPlaylist(remotePlaylist) }
                 return@coroutineScope remotePlaylist
             }
 
@@ -80,18 +88,12 @@ class PlaylistMetadataHelper @Inject constructor(
 
             val diff = remotePlaylist.diff
             if (diff != null) {
-                withContext(Dispatchers.IO) {
-                    applyDiffAndPersist(cached, diff, remotePlaylist)
-                }
+                withContext(Dispatchers.IO) { applyDiffAndPersist(cached, diff, remotePlaylist) }
             } else {
-                withContext(Dispatchers.IO) {
-                    persistPlaylist(remotePlaylist)
-                }
+                withContext(Dispatchers.IO) { persistPlaylist(remotePlaylist) }
             }
 
-            val updated = withContext(Dispatchers.IO) {
-                playlistDao.getPlaylistWithItems(playlistId)
-            }
+            val updated = withContext(Dispatchers.IO) { playlistDao.getPlaylistWithItems(playlistId) }
             return@coroutineScope updated?.toDomain()
         } else {
             return@coroutineScope cached?.toDomain()

@@ -53,21 +53,39 @@ class PlaylistViewModel @Inject constructor(
     private val _trackMetadata = MutableStateFlow<Map<String, Track>>(emptyMap())
     val trackMetadata: StateFlow<Map<String, Track>> = _trackMetadata.asStateFlow()
 
+    val isRefreshing = MutableStateFlow(false)
+
     val likedTrackIds =
         likedDao.observeLikedIds()
             .map { it.toHashSet() }
 
-    fun loadPlaylist(playlistUri: String) {
+    fun loadPlaylist(playlistUri: String, cleanFetch: Boolean) {
         viewModelScope.launch {
+            isRefreshing.value = true
             _uiState.value = PlaylistUiState.Loading
 
             runCatching {
-                metadata.getPlaylistMetadata(playlistUri)
+                metadata.getPlaylistMetadata(playlistUri, !cleanFetch)
             }.onSuccess { playlist ->
+                isRefreshing.value = false
                 _uiState.value = PlaylistUiState.Success(playlist)
             }.onFailure { e ->
+                isRefreshing.value = false
                 _uiState.value = PlaylistUiState.Error(e.message ?: "Unknown error")
             }
+        }
+    }
+
+    fun refresh() {
+        val currentPlaylistUri = when (val state = _uiState.value) {
+            is PlaylistUiState.Success -> state.playlist?.uri
+            else -> null
+        }
+
+        currentPlaylistUri?.let { uri ->
+            loadPlaylist(uri, true)
+        } ?: run {
+            _uiState.value = PlaylistUiState.Error("No playlist loaded to refresh")
         }
     }
 

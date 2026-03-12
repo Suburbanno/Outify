@@ -23,6 +23,7 @@ import androidx.compose.material3.LargeExtendedFloatingActionButton
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -93,6 +94,7 @@ fun SharedTransitionScope.PlaylistScreen(
             val playlist = (uiState as PlaylistUiState.Success).playlist!!
             val tracks = playlist.contents
             val likedIds by viewModel.likedTrackIds.collectAsState(initial = emptySet())
+            val isRefreshing by viewModel.isRefreshing.collectAsState()
 
             val lazyList = rememberLazyListState()
             val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
@@ -120,7 +122,11 @@ fun SharedTransitionScope.PlaylistScreen(
                 }
             }
 
-            Box(
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = {
+                    viewModel.refresh()
+                },
                 modifier = Modifier
                     .fillMaxSize()
                     .background(color = MaterialTheme.colorScheme.surface)
@@ -150,7 +156,7 @@ fun SharedTransitionScope.PlaylistScreen(
                                 isLiked = track!!.id in likedIds,
                                 onRowClick = remember(track!!.uri) {
                                     {
-                                        spirc.load(null, track!!.uri)
+                                        spirc.load(playlist.uri, track!!.uri)
                                         // Optimistic UI
                                         viewModel.setTrack(track!!)
                                     }
