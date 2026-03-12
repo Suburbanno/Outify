@@ -38,7 +38,7 @@ fun UserChipAvatar(
             SmartImage(
                 url = artworkUrl,
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
             )
         }
     }

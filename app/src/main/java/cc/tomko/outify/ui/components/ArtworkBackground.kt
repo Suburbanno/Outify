@@ -19,13 +19,15 @@ fun ArtworkBackground(
     artworkUrl: String,
     modifier: Modifier = Modifier,
     bottomFade: Boolean = true,
-    topFade: Boolean = true
+    topFade: Boolean = true,
+    monochrome: Boolean? = null,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         SmartImage(
             url = artworkUrl,
             modifier = Modifier.fillMaxSize(),
             contentDescription = "Artwork",
+            monochrome = monochrome
         )
 
         // Bottom fade

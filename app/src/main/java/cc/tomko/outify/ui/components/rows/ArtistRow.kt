@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Artist
+import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.ImageLoader
@@ -119,7 +120,8 @@ fun SharedTransitionScope.ArtistRow(
                 SmartImage(
                     url = artworkUrl,
                     contentDescription = "Artwork",
-                    modifier = modifierWithSharedBounds
+                    modifier = modifierWithSharedBounds,
+                    monochrome = LocalUiSettings.current.monochromeArtists
                 )
             }
 

@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.repository
 
+import androidx.compose.ui.input.key.Key
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -43,6 +44,11 @@ class SettingsRepository @Inject constructor(
 
         object Interface {
             val MONOCHROME_IMAGES = booleanPreferencesKey("monochrome_images")
+            val MONOCHROME_ALBUMS = booleanPreferencesKey("monochrome_albums")
+            val MONOCHROME_ARTISTS = booleanPreferencesKey("monochrome_artists")
+            val MONOCHROME_PLAYLISTS = booleanPreferencesKey("monochrome_playlists")
+            val MONOCHROME_TRACKS = booleanPreferencesKey("monochrome_tracks")
+            val MONOCHROME_PLAYER = booleanPreferencesKey("monochrome_player")
         }
     }
 
@@ -53,10 +59,17 @@ class SettingsRepository @Inject constructor(
 
     val interfaceSettings: Flow<InterfaceSettings> = dataStore.data.map { prefs ->
         val enabled = prefs[Keys.Gesture.ENABLED] ?: true
+        
+        val monochrome = prefs[Keys.Interface.MONOCHROME_IMAGES] ?: false
         InterfaceSettings(
             swipeGesturesEnabled = enabled,
-            gestureSettings = if(enabled) decodeGestures(prefs[Keys.Gesture.GESTURES]) else emptyList(),
-            monochromeImages = prefs[Keys.Interface.MONOCHROME_IMAGES] ?: true
+            gestureSettings = if (enabled) decodeGestures(prefs[Keys.Gesture.GESTURES]) else emptyList(),
+            monochromeImages = monochrome,
+            monochromeAlbums = monochrome && prefs[Keys.Interface.MONOCHROME_ALBUMS] ?: false,
+            monochromeArtists = monochrome && prefs[Keys.Interface.MONOCHROME_ARTISTS] ?: false,
+            monochromePlaylists = monochrome && prefs[Keys.Interface.MONOCHROME_PLAYLISTS] ?: false,
+            monochromeTracks = monochrome && prefs[Keys.Interface.MONOCHROME_TRACKS] ?: false,
+            monochromePlayer = monochrome && prefs[Keys.Interface.MONOCHROME_PLAYER] ?: false,
         )
     }
 
@@ -138,6 +151,26 @@ class SettingsRepository @Inject constructor(
         dataStore.edit { it[Keys.Interface.MONOCHROME_IMAGES] = enabled }
     }
 
+    suspend fun setMonochromeAlbums(enabled: Boolean) {
+        dataStore.edit { it[Keys.Interface.MONOCHROME_ALBUMS] = enabled }
+    }
+
+    suspend fun setMonochromeArtists(enabled: Boolean) {
+        dataStore.edit { it[Keys.Interface.MONOCHROME_ARTISTS] = enabled }
+    }
+
+    suspend fun setMonochromePlaylists(enabled: Boolean) {
+        dataStore.edit { it[Keys.Interface.MONOCHROME_PLAYLISTS] = enabled }
+    }
+
+    suspend fun setMonochromeTracks(enabled: Boolean) {
+        dataStore.edit { it[Keys.Interface.MONOCHROME_TRACKS] = enabled }
+    }
+
+    suspend fun setMonochromePlayer(enabled: Boolean) {
+        dataStore.edit { it[Keys.Interface.MONOCHROME_PLAYER] = enabled }
+    }
+
     suspend fun saveGestures(gestures: List<GestureSetting>) {
         val serialized = json.encodeToString(gestures)
         dataStore.edit { it[Keys.Gesture.GESTURES] = serialized }
@@ -180,5 +213,10 @@ data class InterfaceSettings(
         )
     ),
     val monochromeImages: Boolean = false,
+    val monochromeAlbums: Boolean = false,
+    val monochromeArtists: Boolean = false,
+    val monochromePlaylists: Boolean = false,
+    val monochromeTracks: Boolean = false,
+    val monochromePlayer: Boolean = false,
 )
 

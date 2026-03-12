@@ -62,6 +62,7 @@ import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.data.sharedTransitionKey
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
@@ -323,7 +324,8 @@ fun ArtistTracksHeader(
                     SmartImage(
                         url = artworkUrl,
                         contentDescription = "Liked songs artwork",
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        monochrome = LocalUiSettings.current.monochromeTracks
                     )
                 } else {
                     Box(
@@ -465,6 +467,7 @@ fun SharedTransitionScope.AlbumCard(
                                 rememberSharedContentState(album.sharedTransitionKey()),
                                 LocalNavAnimatedContentScope.current
                             ),
+                        monochrome = LocalUiSettings.current.monochromeAlbums
                     )
                 } else {
                     Box(

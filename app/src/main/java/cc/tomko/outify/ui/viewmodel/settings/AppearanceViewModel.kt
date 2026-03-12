@@ -21,4 +21,34 @@ class AppearanceViewModel @Inject constructor(
             settingsRepository.setMonochromeImages(enabled)
         }
     }
+
+    fun setMonochromeAlbums(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setMonochromeAlbums(enabled)
+        }
+    }
+
+    fun setMonochromeArtists(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setMonochromeArtists(enabled)
+        }
+    }
+
+    fun setMonochromePlaylists(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setMonochromePlaylists(enabled)
+        }
+    }
+
+    fun setMonochromeTracks(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setMonochromeTracks(enabled)
+        }
+    }
+
+    fun setMonochromePlayer(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setMonochromePlayer(enabled)
+        }
+    }
 }

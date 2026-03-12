@@ -27,6 +27,7 @@ import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import coil3.ImageLoader
@@ -102,7 +103,8 @@ fun TrackInfoBottomSheet(
                     SmartImage(
                         url = artworkUrl,
                         contentDescription = "Artwork",
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        monochrome = LocalUiSettings.current.monochromeTracks
                     )
                 }
 

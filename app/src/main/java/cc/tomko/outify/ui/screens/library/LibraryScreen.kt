@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.navigation.Route
@@ -150,6 +151,7 @@ fun SharedTransitionScope.LibraryScreen(
 
                         ArtworkBackground(
                             artworkUrl = artworkUrl ?: "", // TODO: Some placeholder when null
+                            monochrome = LocalUiSettings.current.monochromePlaylists
                         )
                     },
                     titleContent = {

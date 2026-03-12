@@ -6,9 +6,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.Album
+import androidx.compose.material.icons.filled.Audiotrack
 import androidx.compose.material.icons.filled.DesignServices
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.MonochromePhotos
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlayCircleOutline
+import androidx.compose.material.icons.filled.PlaylistPlay
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -22,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cc.tomko.outify.ui.components.PreferenceEntry
+import cc.tomko.outify.ui.components.PreferenceHeader
+import cc.tomko.outify.ui.components.PreferenceSectionHeader
 import cc.tomko.outify.ui.components.SwitchPreferenceEntry
 import cc.tomko.outify.ui.repository.InterfaceSettings
 import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
@@ -39,9 +47,11 @@ fun AppearanceSettingScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
+            PreferenceHeader("Appearance")
+
             ElevatedCard(
                 modifier = modifier
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
             ) {
                 SwitchPreferenceEntry(
                     title = { Text("Monochrome artwork") },
@@ -52,6 +62,64 @@ fun AppearanceSettingScreen(
                         viewModel.setMonochromeImages(enabled)
                     }
                 )
+            }
+
+        }
+        item {
+            if(settings.monochromeImages) {
+                PreferenceSectionHeader("Monochrome settings")
+
+                ElevatedCard {
+                    SwitchPreferenceEntry(
+                        title = { Text("Monochrome albums") },
+                        description = "Album artwork in album views will be monochrome",
+                        icon = { Icon(Icons.Default.Album, contentDescription = null) },
+                        isChecked = settings.monochromeAlbums,
+                        onCheckedChange = { enabled ->
+                            viewModel.setMonochromeAlbums(enabled)
+                        }
+                    )
+
+                    SwitchPreferenceEntry(
+                        title = { Text("Monochrome artists") },
+                        description = "Artist artwork in artist views will be monochrome",
+                        icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        isChecked = settings.monochromeArtists,
+                        onCheckedChange = { enabled ->
+                            viewModel.setMonochromeArtists(enabled)
+                        }
+                    )
+
+                    SwitchPreferenceEntry(
+                        title = { Text("Monochrome playlists") },
+                        description = "Playlist artwork will be monochrome",
+                        icon = { Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = null) },
+                        isChecked = settings.monochromePlaylists,
+                        onCheckedChange = { enabled ->
+                            viewModel.setMonochromePlaylists(enabled)
+                        }
+                    )
+
+                    SwitchPreferenceEntry(
+                        title = { Text("Monochrome tracks") },
+                        description = "Track rows will be monochrome",
+                        icon = { Icon(Icons.Default.Audiotrack, contentDescription = null) },
+                        isChecked = settings.monochromeTracks,
+                        onCheckedChange = { enabled ->
+                            viewModel.setMonochromeTracks(enabled)
+                        }
+                    )
+
+                    SwitchPreferenceEntry(
+                        title = { Text("Monochrome player") },
+                        description = "Player (mini & fullscreen) will be monochrome",
+                        icon = { Icon(Icons.Default.PlayCircleOutline, contentDescription = null) },
+                        isChecked = settings.monochromePlayer,
+                        onCheckedChange = { enabled ->
+                            viewModel.setMonochromePlayer(enabled)
+                        }
+                    )
+                }
             }
         }
     }

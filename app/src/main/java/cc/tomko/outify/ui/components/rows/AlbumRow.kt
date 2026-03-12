@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.Album
+import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.utils.SharedElementKey
 import coil3.ImageLoader
@@ -109,19 +110,15 @@ fun SharedTransitionScope.AlbumRow(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                color = color,
-                shape = MaterialShapes.Circle.toShape(),
-                modifier = Modifier
+            SmartImage(
+                url = artworkUrl,
+                contentDescription = "Artwork",
+                modifier = modifierWithSharedBounds
                     .padding(start = 16.dp, top = 2.dp, bottom = 2.dp)
-                    .size(imageDp)
-            ) {
-                SmartImage(
-                    url = artworkUrl,
-                    contentDescription = "Artwork",
-                    modifier = modifierWithSharedBounds
-                )
-            }
+                    .size(imageDp),
+                shape = MaterialShapes.Square.toShape(),
+                monochrome = LocalUiSettings.current.monochromeAlbums
+            )
 
             Spacer(modifier = Modifier.width(12.dp))
 

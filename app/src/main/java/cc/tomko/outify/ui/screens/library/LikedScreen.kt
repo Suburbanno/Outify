@@ -41,6 +41,7 @@ import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.bottomsheet.TrackInfoBottomSheet
@@ -180,6 +181,7 @@ fun SharedTransitionScope.LikedScreen(
                 val artworkUrl by viewModel.getArtwork().collectAsState(initial = null)
                 ArtworkBackground(
                     artworkUrl = ALBUM_COVER_URL + artworkUrl,
+                    monochrome = LocalUiSettings.current.monochromeTracks
                 )
             },
             titleContent = {

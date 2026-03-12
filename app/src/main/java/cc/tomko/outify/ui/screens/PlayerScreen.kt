@@ -67,6 +67,7 @@ import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.data.Artist
 import cc.tomko.outify.data.SyncedLyric
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.ui.model.player.PlayerAction
@@ -127,25 +128,8 @@ fun SharedTransitionScope.PlayerScreen(
                 SmartImage(
                     url = artworkUrl,
                     imageSize = imageSize,
+                    monochrome = LocalUiSettings.current.monochromePlayer
                 )
-//                Surface(
-//                    color = MaterialTheme.colorScheme.surfaceVariant,
-//                    shape = RoundedCornerShape(6.dp),
-//                    modifier = Modifier
-//                        .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
-//                        .size(imageSize)
-//                        .sharedBounds(
-//                            rememberSharedContentState(SharedElementKey.PLAYER_ARTWORK),
-//                            animatedVisibilityScope = LocalNavAnimatedContentScope.current
-//                        )
-//                ) {
-//                    AsyncImage(
-//                        model = imageRequest,
-//                        imageLoader = viewModel.imageLoader,
-//                        contentDescription = "Artwork",
-//                        modifier = Modifier
-//                    )
-//                }
             }
 
             item { Spacer(modifier = Modifier.height(16.dp)) }

@@ -58,6 +58,7 @@ import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.data.sharedTransitionKey
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
@@ -265,7 +266,8 @@ fun AlbumTracksHeader(
                     SmartImage(
                         url = artworkUrl,
                         contentDescription = "Liked songs artwork",
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        monochrome = LocalUiSettings.current.monochromeAlbums
                     )
                 } else {
                     Box(

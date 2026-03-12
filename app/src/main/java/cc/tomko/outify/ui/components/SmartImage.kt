@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -29,8 +30,11 @@ fun SmartImage(
     modifier: Modifier = Modifier,
     imageSize: Dp? = null,
     contentDescription: String? = null,
+    shape: Shape = RoundedCornerShape(6.dp),
+
+    monochrome: Boolean? = null,
 ) {
-    val monochromeImage = LocalUiSettings.current.monochromeImages
+    val monochromeImage = monochrome ?: LocalUiSettings.current.monochromeImages
 
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -39,8 +43,6 @@ fun SmartImage(
 
     val imageLoader = context.imageLoader
     val imageRequest = rememberSmartImageRequest(url, imageSizePx)
-
-    val shape = remember { RoundedCornerShape(6.dp) }
 
     val colorFilter = remember(monochromeImage) {
         if (!monochromeImage) null

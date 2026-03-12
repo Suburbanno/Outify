@@ -57,6 +57,7 @@ import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.OutifyApplication
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
+import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
@@ -183,7 +184,8 @@ fun SharedTransitionScope.MiniPlayer(
                             url = artworkUrl,
                             contentDescription = "Artwork",
                             modifier = Modifier
-                                .fillMaxSize()
+                                .fillMaxSize(),
+                            monochrome = LocalUiSettings.current.monochromePlayer
                         )
                     }
 
