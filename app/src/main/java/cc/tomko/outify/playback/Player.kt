@@ -39,6 +39,8 @@ import kotlin.time.toDuration
 import androidx.core.graphics.scale
 import androidx.media3.common.util.Log
 import coil3.asImage
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 
 @Singleton
 @UnstableApi
@@ -52,7 +54,10 @@ class Player @Inject constructor(
 
     private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
     var currentArtworkBitmap: Bitmap? = null
+    private var currentArtworkBytes: ByteArray? = null
     private var currentArtworkUri: String? = null
+
+    private var artworkJob: Job? = null
 
     var engine: AudioEngine = AudioEngine(application.applicationContext, object: PlayerEventCallback {
 
@@ -64,25 +69,62 @@ class Player @Inject constructor(
                 val cover = track.album?.getCover(CoverSize.LARGE)
                 val artworkUrl = cover?.let { ALBUM_COVER_URL + it.uri }
                 currentArtworkUri = artworkUrl
-                currentArtworkBitmap = null
 
-                if (artworkUrl != null) {
-                    try {
-                        val request = ImageRequest.Builder(application)
-                            .data(artworkUrl)
-                            .allowHardware(false)
-                            .build()
+                invalidateState()
 
-                        val result = imageLoader.execute(request)
-                        val bitmap = result.image?.toBitmap()
+                artworkJob?.cancel()
 
-                        if (bitmap != null) {
-                            currentArtworkBitmap = bitmap.scale(512, 512) // optional scaling
+                if (artworkUrl == null) return@launch
+
+                artworkJob = scope.launch {
+                    val loadResult = withContext(Dispatchers.IO) {
+                        try {
+                            val request = ImageRequest.Builder(application)
+                                .data(artworkUrl)
+                                .allowHardware(false)
+                                .build()
+
+                            val result = imageLoader.execute(request)
+                            val bmp = result.image?.toBitmap()
+
+                            val finalBmp = bmp?.let {
+                                val max = 1024
+                                if (it.width > max || it.height > max) {
+                                    val ratio = minOf(max.toFloat() / it.width, max.toFloat() / it.height)
+                                    it.scale((it.width * ratio).toInt(), (it.height * ratio).toInt())
+                                } else it
+                            }
+
+                            val bytes = finalBmp?.let { fb ->
+                                ByteArrayOutputStream().use { stream ->
+                                    fb.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+                                    stream.toByteArray()
+                                }
+                            }
+
+                            Pair(finalBmp, bytes)
+                        } catch (e: Exception) {
+                            Log.w("Player", "artwork load failed", e)
+                            null
                         }
-                    } catch (_: Exception) {}
-                }
+                    }
 
-                invalidateState() // update MediaSession
+                    if (loadResult == null) return@launch
+
+                    val (loadedBitmap, loadedBytes) = loadResult
+
+                    val currentTrackId = stateHolder.state.value.currentTrack?.id
+                    if (currentTrackId != track.id) {
+                        return@launch
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        currentArtworkBitmap = loadedBitmap
+                        currentArtworkBytes = loadedBytes
+
+                        invalidateState()
+                    }
+                }
             }
         }
 
@@ -108,19 +150,18 @@ class Player @Inject constructor(
         val ps = stateHolder.state.value
         val track = ps.currentTrack
 
+        val mediaItem = track?.toMediaItem(
+            artworkBytes = currentArtworkBytes,
+            artworkUri = currentArtworkUri
+        )
+
         val playlist = track?.let {
             listOf(MediaItemData.Builder(track.id)
-                .setMediaItem(track.toMediaItem(
-                    artworkBitmap = currentArtworkBitmap,
-                    artworkUri = currentArtworkUri
-                ))
+                .setMediaItem(mediaItem!!)
                 .setDurationUs(track.duration * 1000L)
                 .setDefaultPositionUs(0)
                 .setIsSeekable(true)
-                .setMediaMetadata(track.toMediaItem(
-                    artworkBitmap = currentArtworkBitmap,
-                    artworkUri = currentArtworkUri
-                ).mediaMetadata)
+                .setMediaMetadata(mediaItem.mediaMetadata)
                 .build())
         } ?: emptyList()
 
@@ -223,7 +264,7 @@ class Player @Inject constructor(
     }
 }
 fun Track.toMediaItem(
-    artworkBitmap: Bitmap? = null,
+    artworkBytes: ByteArray? = null,
     artworkUri: String? = null
 ): MediaItem {
     val metadataBuilder = MediaMetadata.Builder()
@@ -235,10 +276,9 @@ fun Track.toMediaItem(
         .setTotalTrackCount(album?.tracks?.size ?: 0)
 
     artworkUri?.let { metadataBuilder.setArtworkUri(it.toUri()) }
-    artworkBitmap?.let {
-        val stream = ByteArrayOutputStream()
-        it.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
-        metadataBuilder.setArtworkData(stream.toByteArray() , MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+
+    artworkBytes?.let {
+        metadataBuilder.setArtworkData(it, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
     }
 
     return MediaItem.Builder()

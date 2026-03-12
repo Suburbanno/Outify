@@ -83,8 +83,6 @@ fun SharedTransitionScope.PlayerScreen(
     viewModel: PlayerViewModel,
     onArtistClick: (Artist) -> Unit,
 ) {
-    val context = LocalContext.current
-
     val uiState by viewModel.uiState.collectAsState()
     val artworkUrl = uiState.albumArt?.let { ALBUM_COVER_URL + it }
     val positionMs by viewModel.positionMs.collectAsState()
@@ -97,15 +95,6 @@ fun SharedTransitionScope.PlayerScreen(
     val isRepeating by viewModel.isRepeating.collectAsState()
 
     val imageSize = 400.dp
-    val imageSizePx = with(LocalDensity.current) { imageSize.roundToPx() }
-
-    val imageRequest = remember(artworkUrl) {
-        ImageRequest.Builder(context)
-            .data(artworkUrl)
-            .size(imageSizePx)
-            .allowHardware(true)
-            .build()
-    }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -473,12 +462,23 @@ fun Lyrics(
     seekTo: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LaunchedEffect(track?.id) {
-        loadLyrics()
-    }
-
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(track?.id) {
+        loadLyrics()
+
+        val idx = lyrics.indexOf(currentLyric)
+        if (idx >= 0) {
+            scope.launch {
+                listState.animateScrollToItem(idx, (0))
+            }
+        } else {
+            scope.launch {
+                listState.animateScrollToItem(0)
+            }
+        }
+    }
 
     LaunchedEffect(currentLyric?.timeMs, lyrics.hashCode()) {
         val idx = lyrics.indexOf(currentLyric)
