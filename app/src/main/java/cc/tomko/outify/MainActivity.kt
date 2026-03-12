@@ -159,11 +159,21 @@ class MainActivity : ComponentActivity() {
             ) {
                 Scaffold(
                     bottomBar = {
-                        OutifyBottomNav(
-                            items = routes,
-                            selectedId = selectedId,
-                            onItemSelected = { item -> backStack.add(item.route) }
-                        )
+                        AnimatedVisibility(
+                            visible = backStack.last() != Route.PlayerScreen,
+                            enter = slideInVertically(
+                                initialOffsetY = { fullHeight -> fullHeight }
+                            ) + fadeIn(),
+                            exit = slideOutVertically(
+                                targetOffsetY = { fullHeight -> fullHeight }
+                            ) + fadeOut(),
+                        ) {
+                            OutifyBottomNav(
+                                items = routes,
+                                selectedId = selectedId,
+                                onItemSelected = { item -> backStack.add(item.route) }
+                            )
+                        }
                     }
                 ) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
