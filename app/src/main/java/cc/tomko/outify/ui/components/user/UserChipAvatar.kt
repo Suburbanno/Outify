@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.data.Profile
+import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import coil3.compose.AsyncImage
 
@@ -39,6 +40,7 @@ fun UserChipAvatar(
                 url = artworkUrl,
                 modifier = Modifier
                     .fillMaxWidth(),
+                monochrome = LocalUiSettings.current.monochromeArtists
             )
         }
     }
