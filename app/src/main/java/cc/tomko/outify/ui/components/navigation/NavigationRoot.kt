@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -30,6 +31,7 @@ import cc.tomko.outify.ui.screens.search.SearchScreen
 import cc.tomko.outify.ui.screens.settings.AppearanceSettingScreen
 import cc.tomko.outify.ui.screens.settings.GestureSettingsScreen
 import cc.tomko.outify.ui.screens.settings.InterfaceSettingScreen
+import cc.tomko.outify.ui.screens.settings.PlaybackSettingScreen
 import cc.tomko.outify.ui.screens.settings.SettingsScreen
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
 import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
@@ -41,6 +43,7 @@ import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
 import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
 import cc.tomko.outify.ui.viewmodel.settings.GestureSettingViewModel
 import cc.tomko.outify.ui.viewmodel.settings.InterfaceViewModel
+import cc.tomko.outify.ui.viewmodel.settings.PlaybackSettingViewModel
 import cc.tomko.outify.ui.viewmodel.settings.SettingsViewModel
 
 @Composable
@@ -193,6 +196,9 @@ fun SharedTransitionScope.NavigationRoot(
                     openInterfaceSettings = {
                         backStack.add(Route.InterfaceSettings)
                     },
+                    openPlaybackSettings = {
+                        backStack.add(Route.PlaybackSettings)
+                    },
                     openDebugSettings = {
                     }
                 )
@@ -224,6 +230,14 @@ fun SharedTransitionScope.NavigationRoot(
                 val viewModel: GestureSettingViewModel = hiltViewModel()
 
                 GestureSettingsScreen(
+                    viewModel = viewModel
+                )
+            }
+
+            entry<Route.PlaybackSettings> {
+                val viewModel: PlaybackSettingViewModel = hiltViewModel()
+
+                PlaybackSettingScreen(
                     viewModel = viewModel
                 )
             }

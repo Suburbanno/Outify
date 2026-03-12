@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeveloperMode
+import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Interests
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -25,6 +26,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     modifier: Modifier = Modifier,
     openInterfaceSettings: (() -> Unit),
+    openPlaybackSettings: (() -> Unit),
     openDebugSettings: (() -> Unit),
 ) {
     LazyColumn(
@@ -42,6 +44,19 @@ fun SettingsScreen(
                     title = { Text("Interface") },
                     icon = { Icon(Icons.Default.Interests, contentDescription = null) },
                     onClick = openInterfaceSettings,
+                )
+            }
+        }
+
+        item {
+            ElevatedCard(
+                modifier = modifier
+                    .fillMaxWidth()
+            ) {
+                PreferenceEntry(
+                    title = { Text("Playback") },
+                    icon = { Icon(Icons.Default.Headphones, contentDescription = null) },
+                    onClick = openPlaybackSettings,
                 )
             }
         }

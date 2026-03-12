@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import cc.tomko.outify.data.setting.GestureAction
 import cc.tomko.outify.data.setting.GestureSetting
 import cc.tomko.outify.data.setting.GestureTrigger
@@ -24,7 +25,7 @@ import javax.inject.Singleton
 class SettingsRepository @Inject constructor(
     val dataStore: DataStore<Preferences>,
 ) {
-    private object Keys {
+    object Keys {
         val SHUFFLE = booleanPreferencesKey("shuffle")
         val REPEAT = booleanPreferencesKey("repeat")
         val GAPLESS = booleanPreferencesKey("gapless")
@@ -70,6 +71,13 @@ class SettingsRepository @Inject constructor(
             monochromePlaylists = monochrome && prefs[Keys.Interface.MONOCHROME_PLAYLISTS] ?: false,
             monochromeTracks = monochrome && prefs[Keys.Interface.MONOCHROME_TRACKS] ?: false,
             monochromePlayer = monochrome && prefs[Keys.Interface.MONOCHROME_PLAYER] ?: false,
+        )
+    }
+
+    val playbackSettings: Flow<PlaybackSettings> =  dataStore.data.map { prefs ->
+        PlaybackSettings(
+            gapless = prefs[Keys.GAPLESS] ?: false,
+            normalizeAudio = prefs[Keys.NORMALIZE_AUDIO] ?: false
         )
     }
 
@@ -220,3 +228,7 @@ data class InterfaceSettings(
     val monochromePlayer: Boolean = false,
 )
 
+data class PlaybackSettings(
+    val gapless: Boolean = false,
+    val normalizeAudio: Boolean = false
+)

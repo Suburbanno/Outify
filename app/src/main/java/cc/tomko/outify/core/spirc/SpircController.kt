@@ -10,6 +10,7 @@ import cc.tomko.outify.ui.repository.SettingsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -25,7 +26,9 @@ class SpircController @Inject constructor(
     fun start() {
         session.initializeSession(object : SessionCallback {
             override fun onInitialized() {
-                initializeSpirc()
+                spirc.scope.launch {
+                    initializeSpirc()
+                }
             }
 
             override fun onShutdown() {
@@ -38,7 +41,10 @@ class SpircController @Inject constructor(
         })
     }
 
-    private fun initializeSpirc(){
+    private suspend fun initializeSpirc(){
+        val gapless = settingsRepository.dataStore.data.map { it[SettingsRepository.Keys.GAPLESS] ?: false }.first()
+        val normalise = settingsRepository.dataStore.data.map { it[SettingsRepository.Keys.NORMALIZE_AUDIO] ?: false }.first()
+
         Spirc.initializeSpirc(object : SpircInitializationCallback {
             override fun initialized() {
                 Spirc.bufferCallback(object : SpircBufferCallback {
@@ -59,7 +65,7 @@ class SpircController @Inject constructor(
                 handleSpircFailure()
             }
 
-        })
+        }, gapless, normalise)
     }
 
     private fun activateAndTransfer(){

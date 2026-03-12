@@ -29,7 +29,7 @@ object Spirc {
      * Initializes the SpircRuntime
      */
     @JvmStatic
-    external fun initializeSpirc(callback: SpircInitializationCallback): Boolean
+    external fun initializeSpirc(callback: SpircInitializationCallback, gapless: Boolean, normalisation: Boolean): Boolean
 
     /**
      * Sets the buffer callback for spirc

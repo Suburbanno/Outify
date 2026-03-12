@@ -21,6 +21,8 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
     mut env: JNIEnv,
     _this: JClass,
     callback: JObject,
+    gapless: jboolean,
+    normalisation: jboolean,
 ) -> jboolean {
     info!("Initializing spirc!");
 
@@ -44,7 +46,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
     let jvm = crate::JVM.get().unwrap().clone();
 
     handle.spawn(async move {
-        let result = crate::spirc::initialize_spirc().await;
+        let result = crate::spirc::initialize_spirc(gapless != 0, normalisation != 0).await;
 
         let mut env = match jvm.attach_current_thread() {
             Ok(env) => env,

@@ -108,8 +108,11 @@ fn start_shutdown_listener(session: Session) {
 
         warn!("Session shutdown! Auto-restarting..");
 
+        let gapless = crate::spirc::GAPLESS.load(std::sync::atomic::Ordering::Relaxed);
+        let normalise = crate::spirc::NORMALISE_AUDIO.load(std::sync::atomic::Ordering::Relaxed);
+
         initialize_session().await;
-        crate::spirc::initialize_spirc().await;
+        crate::spirc::initialize_spirc(gapless, normalise).await;
         crate::spirc::with_spirc(|spirc| {
             spirc.activate();
             spirc.transfer();

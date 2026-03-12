@@ -23,6 +23,8 @@ use crate::session::with_session;
 static SPIRC_RUNTIME: OnceCell<RwLock<Option<SpircRuntime>>> = OnceCell::new();
 static CURRENT_TRACK: OnceCell<Mutex<Option<String>>> = OnceCell::new();
 
+pub static NORMALISE_AUDIO: AtomicBool = AtomicBool::new(false);
+pub static GAPLESS: AtomicBool = AtomicBool::new(false);
 static CURRENT_CONTEXT: OnceCell<Mutex<Option<CurrentContext>>> = OnceCell::new();
 static IS_PLAYING: AtomicBool = AtomicBool::new(false);
 static IS_SHUFFLING: AtomicBool = AtomicBool::new(false);
@@ -50,13 +52,15 @@ impl SpircRuntime {
     pub async fn new(
         session: &Session,
         credentials: Credentials,
+        gapless: bool,
+        normalisation: bool,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let player_config = PlayerConfig {
             // TODO: Make configurable from app
             position_update_interval: Some(std::time::Duration::from_millis(5_000)),
             bitrate: librespot_playback::config::Bitrate::Bitrate320,
-            gapless: true,
-            normalisation: false,
+            gapless,
+            normalisation,
             ..Default::default()
         };
         let audio_format = AudioFormat::S16;
@@ -105,6 +109,9 @@ impl SpircRuntime {
             }
             info!("SpircRuntime event receiver closed");
         });
+
+        GAPLESS.store(gapless, std::sync::atomic::Ordering::Relaxed);
+        NORMALISE_AUDIO.store(normalisation, std::sync::atomic::Ordering::Relaxed);
 
         Ok(Self {
             spirc: Arc::new(spirc),
@@ -380,7 +387,7 @@ fn update_current_track(uri: SpotifyUri) {
     }
 }
 
-pub async fn initialize_spirc() -> Result<(), librespot_core::Error> {
+pub async fn initialize_spirc(gapless: bool, normalisation: bool) -> Result<(), librespot_core::Error> {
     debug!("Initializing SpircRuntime");
 
     let lock = SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
@@ -419,7 +426,7 @@ pub async fn initialize_spirc() -> Result<(), librespot_core::Error> {
         }
     };
 
-    let runtime = match SpircRuntime::new(&session, credentials).await {
+    let runtime = match SpircRuntime::new(&session, credentials, gapless, normalisation).await {
         Ok(r) => r,
         Err(e) => {
             error!("Failed to create SpircRuntime with err: {}", e);
