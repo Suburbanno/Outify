@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
@@ -51,9 +52,6 @@ class MusicService @Inject constructor() : MediaSessionService() {
 
     private lateinit var mediaSession: MediaSession
 
-    private var currentArtwork: Bitmap? = null
-    private var currentArtworkUrl: String? = null
-
     private var currentTrack: Track? = null
 
     private val serviceScope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
@@ -61,9 +59,15 @@ class MusicService @Inject constructor() : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
 
-        createNotificationChannel()
+        val attrContext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            createAttributionContext("audioPlayback")
+        } else {
+            this
+        }
 
-        mediaSession = MediaSession.Builder(this, player)
+        createNotificationChannel(attrContext)
+
+        mediaSession = MediaSession.Builder(attrContext, player)
             .setCallback(object : MediaSession.Callback {
                 override fun onConnect(
                     session: MediaSession,
@@ -88,18 +92,13 @@ class MusicService @Inject constructor() : MediaSessionService() {
 
         serviceScope.launch {
             playbackStateHolder.state.collect { state ->
-                val track = state.currentTrack
-                val cover = track?.album?.getCover(CoverSize.LARGE)
-                val artworkUri = cover?.uri
+                currentTrack = state.currentTrack
 
-                if (artworkUri != null) {
-                    val url = ALBUM_COVER_URL + artworkUri
-                    loadArtworkFromUrl(url) {}
+                if (currentTrack != null) {
+                    postOrStartForegroundNotification(startInForeground = true)
                 } else {
                     postOrStartForegroundNotification(startInForeground = false)
                 }
-
-                currentTrack = track
             }
         }
 
@@ -110,7 +109,7 @@ class MusicService @Inject constructor() : MediaSessionService() {
         return mediaSession
     }
 
-    private fun createNotificationChannel(){
+    private fun createNotificationChannel(attrContext: Context){
         val channel = NotificationChannel(
             CHANNEL_ID,
             "Outify Playback",
@@ -120,8 +119,8 @@ class MusicService @Inject constructor() : MediaSessionService() {
             setShowBadge(false)
         }
 
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.createNotificationChannel(channel)
+        val nm = attrContext.getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(channel)
     }
 
     private fun buildContentIntent(): PendingIntent? {
@@ -136,14 +135,18 @@ class MusicService @Inject constructor() : MediaSessionService() {
     }
 
     private fun buildNotification(): Notification {
+        val track = currentTrack
+        val metadata = mediaSession.player.mediaMetadata
+
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(androidx.media3.session.R.drawable.media3_icon_play)
-            .setContentTitle(currentTrack?.name ?: "Currently not playing")
-            .setContentText(currentTrack?.artists?.joinToString { it.name } ?: "Outify")
-            .setSubText(currentTrack?.album?.name ?: "Unknown")
-            .setLargeIcon(currentArtwork)
+            .setContentTitle(track?.name ?: metadata.title ?: "Not Playing")
+            .setContentText(track?.artists?.joinToString { it.name } ?: metadata.artist ?: "Outify")
+            .setSubText(track?.album?.name ?: metadata.albumTitle ?: "Unknown")
+            .setLargeIcon(player.currentArtworkBitmap)
             .setContentIntent(buildContentIntent())
             .setAutoCancel(false)
+            .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
 
         builder.setStyle(MediaStyleNotificationHelper.MediaStyle(mediaSession))
@@ -167,30 +170,6 @@ class MusicService @Inject constructor() : MediaSessionService() {
             }
         } else {
             notificationManager.notify(notificationId, notification)
-        }
-    }
-
-    private fun loadArtworkFromUrl(url: String, callback: (Bitmap?) -> Unit) {
-        if (url != currentArtworkUrl) {
-            currentArtworkUrl = url
-
-            serviceScope.launch {
-                val request = ImageRequest.Builder(this@MusicService)
-                    .size(coil3.size.Size.ORIGINAL)
-                    .data(url)
-                    .allowHardware(false)
-                    .build()
-
-                val result = imageLoader.execute(request)
-
-                val bitmap = result.image?.toBitmap()
-
-                currentArtwork = bitmap
-                postOrStartForegroundNotification(startInForeground = false)
-                callback(bitmap)
-            }
-        } else {
-            callback(currentArtwork)
         }
     }
 

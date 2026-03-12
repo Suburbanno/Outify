@@ -3,6 +3,7 @@ package cc.tomko.outify.playback
 import android.app.Application
 import android.content.Context
 import android.graphics.drawable.BitmapDrawable
+import android.os.Bundle
 import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -35,6 +36,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
+import androidx.core.graphics.scale
+import androidx.media3.common.util.Log
+import coil3.asImage
 
 @Singleton
 @UnstableApi
@@ -42,32 +46,50 @@ class Player @Inject constructor(
     application: Application,
     val stateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
+    val json: Json,
+    val imageLoader: ImageLoader,
 ): SimpleBasePlayer(application.mainLooper) {
-    private val json = Json { ignoreUnknownKeys = true }
-    private val playerJob = SupervisorJob()
 
-    private val scope = CoroutineScope(
-        Dispatchers.Main.immediate + playerJob
-    )
+    private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
+    var currentArtworkBitmap: Bitmap? = null
+    private var currentArtworkUri: String? = null
 
     var engine: AudioEngine = AudioEngine(application.applicationContext, object: PlayerEventCallback {
-        override fun onTrackChange(spotify_uri: String, json: String) {
+
+        override fun onTrackChange(spotify_uri: String, json_str: String) {
             scope.launch {
-                val track: Track = this@Player.json.decodeFromString(json)
+                val track: Track = json.decodeFromString(json_str)
                 stateHolder.setTrack(track)
-                invalidateState()
+
+                val cover = track.album?.getCover(CoverSize.LARGE)
+                val artworkUrl = cover?.let { ALBUM_COVER_URL + it.uri }
+                currentArtworkUri = artworkUrl
+                currentArtworkBitmap = null
+
+                if (artworkUrl != null) {
+                    try {
+                        val request = ImageRequest.Builder(application)
+                            .data(artworkUrl)
+                            .allowHardware(false)
+                            .build()
+
+                        val result = imageLoader.execute(request)
+                        val bitmap = result.image?.toBitmap()
+
+                        if (bitmap != null) {
+                            currentArtworkBitmap = bitmap.scale(512, 512) // optional scaling
+                        }
+                    } catch (_: Exception) {}
+                }
+
+                invalidateState() // update MediaSession
             }
         }
 
-        override fun onPositionUpdate(
-            spotify_uri: String,
-            position_ms: Long,
-            json_raw: String
-        ) {
-            if(stateHolder.state.value.currentTrack?.id != spotify_uri) {
+        override fun onPositionUpdate(spotify_uri: String, position_ms: Long, json_raw: String) {
+            if (stateHolder.state.value.currentTrack?.id != spotify_uri) {
                 onTrackChange(spotify_uri, json_raw)
             }
-
             scope.launch {
                 stateHolder.seekTo(position_ms.toDuration(DurationUnit.MILLISECONDS))
                 invalidateState()
@@ -82,35 +104,31 @@ class Player @Inject constructor(
         }
     })
 
-    init {
-        scope.launch {
-            stateHolder.state.collect {
-                invalidateState()
-            }
-        }
-    }
-
     override fun getState(): State {
         val ps = stateHolder.state.value
+        val track = ps.currentTrack
 
-        val playlist: List<MediaItemData> = ps.currentTrack?.let { track ->
-            listOf(
-                MediaItemData.Builder(track.id)
-                    .setMediaItem(track.toMediaItem())
-                    .setDurationUs(
-                        if (track.duration > 0) track.duration * 1000L else C.TIME_UNSET
-                    )
-                    .setDefaultPositionUs(0)
-                    .setIsSeekable(true)
-                    .build()
-            )
+        val playlist = track?.let {
+            listOf(MediaItemData.Builder(track.id)
+                .setMediaItem(track.toMediaItem(
+                    artworkBitmap = currentArtworkBitmap,
+                    artworkUri = currentArtworkUri
+                ))
+                .setDurationUs(track.duration * 1000L)
+                .setDefaultPositionUs(0)
+                .setIsSeekable(true)
+                .setMediaMetadata(track.toMediaItem(
+                    artworkBitmap = currentArtworkBitmap,
+                    artworkUri = currentArtworkUri
+                ).mediaMetadata)
+                .build())
         } ?: emptyList()
 
         val playbackState = when {
             ps.state == PlayState.BUFFERING -> STATE_BUFFERING
             playlist.isEmpty() -> STATE_IDLE
             ps.isPlaying -> STATE_READY
-            else -> STATE_READY  // Still ready even when paused
+            else -> STATE_READY
         }
 
         return State.Builder()
@@ -161,7 +179,6 @@ class Player @Inject constructor(
     }
 
     public override fun handleRelease(): ListenableFuture<*> {
-        playerJob.cancel()
         engine.releaseAudioTrack()
         // TODO: tell spirc to cleanup
         return com.google.common.util.concurrent.Futures.immediateVoidFuture()
@@ -205,22 +222,28 @@ class Player @Inject constructor(
         return builder.build()
     }
 }
-
-fun Track.toMediaItem(): MediaItem {
-    val artworkUrl = album?.getCover(CoverSize.LARGE)?.let { ALBUM_COVER_URL + it }
-
-    val metadata = MediaMetadata.Builder()
+fun Track.toMediaItem(
+    artworkBitmap: Bitmap? = null,
+    artworkUri: String? = null
+): MediaItem {
+    val metadataBuilder = MediaMetadata.Builder()
         .setTitle(name)
+        .setDisplayTitle(name)
         .setArtist(artists.joinToString { it.name })
         .setAlbumTitle(album?.name)
+        .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
         .setTotalTrackCount(album?.tracks?.size ?: 0)
-        .setArtworkUri(artworkUrl?.toUri())
-        .setDurationMs(duration.takeIf { it > 0 })
-        .build()
+
+    artworkUri?.let { metadataBuilder.setArtworkUri(it.toUri()) }
+    artworkBitmap?.let {
+        val stream = ByteArrayOutputStream()
+        it.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+        metadataBuilder.setArtworkData(stream.toByteArray() , MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+    }
 
     return MediaItem.Builder()
         .setMediaId(id)
         .setUri(uri)
-        .setMediaMetadata(metadata)
+        .setMediaMetadata(metadataBuilder.build())
         .build()
 }
