@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ui.components.PreferenceEntry
+import cc.tomko.outify.ui.components.PreferenceHeader
 import cc.tomko.outify.ui.components.settings.SettingItem
 import cc.tomko.outify.ui.components.settings.SettingsGroup
 import cc.tomko.outify.ui.components.settings.SwitchSettingItem
@@ -37,6 +38,8 @@ fun InterfaceSettingScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
+            PreferenceHeader("Interface")
+
             ElevatedCard(
                 modifier = modifier
                     .fillMaxWidth()

@@ -33,6 +33,7 @@ import cc.tomko.outify.data.setting.GestureSetting
 import cc.tomko.outify.data.setting.GestureTrigger
 import cc.tomko.outify.data.setting.Side
 import cc.tomko.outify.ui.components.PreferenceEntry
+import cc.tomko.outify.ui.components.PreferenceHeader
 import cc.tomko.outify.ui.components.SwitchPreferenceEntry
 import cc.tomko.outify.ui.components.bottomsheet.GestureCustomizeBottomSheet
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
@@ -57,6 +58,8 @@ fun SharedTransitionScope.GestureSettingsScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
+            PreferenceHeader("Gestures")
+
             ElevatedCard(
                 modifier = modifier
                     .fillMaxWidth()
