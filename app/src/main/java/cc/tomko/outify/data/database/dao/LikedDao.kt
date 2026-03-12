@@ -81,5 +81,5 @@ interface LikedDao {
         WHERE ta.artistId = :artistId
         ORDER BY ls.position
     """)
-    fun observeLikedUrisByArtist(artistId: String): Flow<List<String>>
+    fun observeLikedIdsByArtist(artistId: String): Flow<List<String>>
 }

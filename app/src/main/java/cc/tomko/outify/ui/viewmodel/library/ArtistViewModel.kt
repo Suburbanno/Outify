@@ -1,6 +1,5 @@
 package cc.tomko.outify.ui.viewmodel.library
 
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
@@ -11,7 +10,6 @@ import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.database.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.playback.PlaybackStateHolder
-import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -41,12 +39,12 @@ class ArtistViewModel @Inject constructor(
 
     private val currentArtistId = MutableStateFlow<String?>(null)
 
-    val likedTrackUris: StateFlow<Set<String>> = currentArtistId
+    val likedTrackIds: StateFlow<Set<String>> = currentArtistId
         .flatMapLatest { artistId ->
             if (artistId.isNullOrEmpty()) {
                 flowOf(emptySet())
             } else {
-                likedDao.observeLikedUrisByArtist(artistId)
+                likedDao.observeLikedIdsByArtist(artistId)
                     .map { it.toHashSet() }
             }
         }
@@ -65,10 +63,13 @@ class ArtistViewModel @Inject constructor(
         playbackStateHolder.state.map { it.isPlaying }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val likedTracks: StateFlow<List<Track>> = likedTrackUris
-        .flatMapLatest { uris ->
-            if (uris.isEmpty()) flowOf(emptyList())
-            else metadata.observeTracks(uris.toList())
+    val likedTracks: StateFlow<List<Track>> = likedTrackIds
+        .flatMapLatest { ids ->
+            if (ids.isEmpty()) flowOf(emptyList())
+            else {
+                val uris = ids.map { "spotify:track:$it" }
+                metadata.observeTracks(uris)
+            }
         }
         .stateIn(
             scope = viewModelScope,
