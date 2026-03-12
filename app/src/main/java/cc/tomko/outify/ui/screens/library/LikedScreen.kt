@@ -181,7 +181,6 @@ fun SharedTransitionScope.LikedScreen(
                 val artworkUrl by viewModel.getArtwork().collectAsState(initial = null)
                 ArtworkBackground(
                     artworkUrl = ALBUM_COVER_URL + artworkUrl,
-                    monochrome = LocalUiSettings.current.monochromeTracks
                 )
             },
             titleContent = {

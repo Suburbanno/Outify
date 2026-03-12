@@ -51,4 +51,10 @@ class AppearanceViewModel @Inject constructor(
             settingsRepository.setMonochromePlayer(enabled)
         }
     }
+
+    fun setMonochromeHeaders(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setMonochromeHeaders(enabled)
+        }
+    }
 }

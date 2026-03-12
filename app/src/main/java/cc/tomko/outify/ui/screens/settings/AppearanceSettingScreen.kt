@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.MonochromePhotos
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.PlaylistPlay
+import androidx.compose.material.icons.filled.Topic
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -117,6 +118,16 @@ fun AppearanceSettingScreen(
                         isChecked = settings.monochromePlayer,
                         onCheckedChange = { enabled ->
                             viewModel.setMonochromePlayer(enabled)
+                        }
+                    )
+
+                    SwitchPreferenceEntry(
+                        title = { Text("Monochrome headers") },
+                        description = "Page headers will be monochrome",
+                        icon = { Icon(Icons.Default.Topic, contentDescription = null) },
+                        isChecked = settings.monochromeHeaders,
+                        onCheckedChange = { enabled ->
+                            viewModel.setMonochromeHeaders(enabled)
                         }
                     )
                 }

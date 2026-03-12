@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import cc.tomko.outify.data.setting.LocalUiSettings
 import coil3.compose.AsyncImage
 
 @Composable
@@ -20,14 +21,13 @@ fun ArtworkBackground(
     modifier: Modifier = Modifier,
     bottomFade: Boolean = true,
     topFade: Boolean = true,
-    monochrome: Boolean? = null,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         SmartImage(
             url = artworkUrl,
             modifier = Modifier.fillMaxSize(),
             contentDescription = "Artwork",
-            monochrome = monochrome
+            monochrome = LocalUiSettings.current.monochromeHeaders
         )
 
         // Bottom fade

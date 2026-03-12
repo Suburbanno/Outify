@@ -151,7 +151,6 @@ fun SharedTransitionScope.LibraryScreen(
 
                         ArtworkBackground(
                             artworkUrl = artworkUrl ?: "", // TODO: Some placeholder when null
-                            monochrome = LocalUiSettings.current.monochromePlaylists
                         )
                     },
                     titleContent = {

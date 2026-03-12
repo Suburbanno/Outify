@@ -50,6 +50,7 @@ class SettingsRepository @Inject constructor(
             val MONOCHROME_PLAYLISTS = booleanPreferencesKey("monochrome_playlists")
             val MONOCHROME_TRACKS = booleanPreferencesKey("monochrome_tracks")
             val MONOCHROME_PLAYER = booleanPreferencesKey("monochrome_player")
+            val MONOCHROME_HEADERS = booleanPreferencesKey("monochrome_headers")
         }
     }
 
@@ -71,6 +72,7 @@ class SettingsRepository @Inject constructor(
             monochromePlaylists = monochrome && prefs[Keys.Interface.MONOCHROME_PLAYLISTS] ?: false,
             monochromeTracks = monochrome && prefs[Keys.Interface.MONOCHROME_TRACKS] ?: false,
             monochromePlayer = monochrome && prefs[Keys.Interface.MONOCHROME_PLAYER] ?: false,
+            monochromeHeaders = monochrome && prefs[Keys.Interface.MONOCHROME_HEADERS] ?: false,
         )
     }
 
@@ -179,6 +181,10 @@ class SettingsRepository @Inject constructor(
         dataStore.edit { it[Keys.Interface.MONOCHROME_PLAYER] = enabled }
     }
 
+    suspend fun setMonochromeHeaders(enabled: Boolean) {
+        dataStore.edit { it[Keys.Interface.MONOCHROME_HEADERS] = enabled }
+    }
+
     suspend fun saveGestures(gestures: List<GestureSetting>) {
         val serialized = json.encodeToString(gestures)
         dataStore.edit { it[Keys.Gesture.GESTURES] = serialized }
@@ -226,6 +232,7 @@ data class InterfaceSettings(
     val monochromePlaylists: Boolean = false,
     val monochromeTracks: Boolean = false,
     val monochromePlayer: Boolean = false,
+    val monochromeHeaders: Boolean = false,
 )
 
 data class PlaybackSettings(
