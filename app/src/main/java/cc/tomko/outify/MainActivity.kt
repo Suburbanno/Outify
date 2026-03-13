@@ -181,8 +181,8 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
-                ) {  _ ->
-                    Box(modifier = Modifier.fillMaxSize()) {
+                ) {  innerPadding ->
+                    Box(modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding())) {
                         NavigationRoot(
                             backStack,
                             modifier = Modifier.matchParentSize()

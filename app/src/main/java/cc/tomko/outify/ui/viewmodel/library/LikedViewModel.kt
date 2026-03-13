@@ -13,10 +13,12 @@ import cc.tomko.outify.ui.repository.LikedRepository
 import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -43,7 +45,7 @@ class LikedViewModel @Inject constructor(
     val totalCount: StateFlow<Int> = likedRepository.observeCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     val likedTracks: StateFlow<List<Track>> = likedRepository.observeLikedTracksWithDetails()
         .mapLatest { rows ->
             if (rows.isEmpty()) return@mapLatest emptyList()
@@ -56,6 +58,7 @@ class LikedViewModel @Inject constructor(
                 }.getOrNull()
             }
         }
+        .debounce(50)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Guards against duplicate concurrent fetches

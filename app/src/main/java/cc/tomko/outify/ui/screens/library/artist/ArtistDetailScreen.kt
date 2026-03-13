@@ -189,7 +189,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
                         }
                     }
 
-                    items(popularTracks, key = { track -> "artist_song_${track.uri}" }) { track ->
+                    items(popularTracks, key = { track -> track.uri }) { track ->
                         SwipeableTrackRowConfigured(
                             track = track,
                             currentTrack = currentTrack,

@@ -11,16 +11,22 @@ import cc.tomko.outify.data.database.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
@@ -39,6 +45,7 @@ class ArtistViewModel @Inject constructor(
 
     private val currentArtistId = MutableStateFlow<String?>(null)
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     val likedTrackIds: StateFlow<Set<String>> = currentArtistId
         .flatMapLatest { artistId ->
             if (artistId.isNullOrEmpty()) {
@@ -62,20 +69,22 @@ class ArtistViewModel @Inject constructor(
     fun isPlaying(): Flow<Boolean> =
         playbackStateHolder.state.map { it.isPlaying }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     val likedTracks: StateFlow<List<Track>> = likedTrackIds
         .flatMapLatest { ids ->
-            if (ids.isEmpty()) flowOf(emptyList())
-            else {
-                val uris = ids.map { "spotify:track:$it" }
-                metadata.observeTracks(uris)
-            }
+            flow {
+                if (ids.isEmpty()) emit(emptyList())
+                else {
+                    val uris = ids.map { "spotify:track:$it" }
+                    metadata.observeTracks(uris)
+                        .collect { tracks ->
+                            emit(tracks)
+                        }
+                }
+            }.flowOn(Dispatchers.IO)
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList()
-        )
+        .debounce(50)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val popularTracks: StateFlow<List<Track>> = popularTrackUris
@@ -101,23 +110,21 @@ class ArtistViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
-    fun loadArtist(artistUri: String) {
-        viewModelScope.launch {
-            try {
-                val artist = metadata.getArtistMetadata(artistUri)
-                if(artist == null) {
-                    _uiState.value = ArtistUiState.Error("Artist failed to fetch")
-                    return@launch
-                }
+    suspend fun loadArtist(artistUri: String) {
+        val artist = withContext(Dispatchers.IO) {
+            metadata.getArtistMetadata(artistUri)
+        }
 
-                popularTrackUris.value = artist.tracks
-                albumUris.value = artist.albums
+        if (artist == null) {
+            _uiState.value = ArtistUiState.Error("Artist failed to fetch")
+            return
+        }
 
-                currentArtistId.value = artist.id
-                _uiState.value = ArtistUiState.Success(artist)
-            } catch (e: Exception) {
-                _uiState.value = ArtistUiState.Error(e.message ?: "An error occurred")
-            }
+        withContext(Dispatchers.Main.immediate) {
+            currentArtistId.value = artist.id
+            popularTrackUris.value = artist.tracks
+            albumUris.value = artist.albums
+            _uiState.value = ArtistUiState.Success(artist)
         }
     }
 

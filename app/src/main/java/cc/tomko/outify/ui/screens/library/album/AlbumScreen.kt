@@ -72,6 +72,7 @@ import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.screens.library.artist.ArtistTracksHeader
 import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModel
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.flow.map
 
 /**
  * Shout out to PixelPlay.
@@ -90,10 +91,12 @@ fun SharedTransitionScope.AlbumDetailScreen(
 
     when {
         uiState.isLoading -> {
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-                contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 ContainedLoadingIndicator()
             }
         }
@@ -121,8 +124,7 @@ fun SharedTransitionScope.AlbumDetailScreen(
             val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
             val spirc = viewModel.spirc
 
-            val likedTracks by viewModel.likedTracks.collectAsState()
-            val likedTrackCount = likedTracks.size
+            val likedTracksId by viewModel.likedTrackIds.collectAsState()
 
             val lazyList = rememberLazyListState()
 
@@ -164,18 +166,6 @@ fun SharedTransitionScope.AlbumDetailScreen(
                         )
                     }
 
-                    if (likedTrackCount > 0) {
-                        item {
-                            AlbumTracksHeader(
-                                likedCount = likedTrackCount,
-                                artworkUrl = artworkUrl,
-                                onClick = {
-//                                    showLikedSheet = true
-                                },
-                            )
-                        }
-                    }
-
                     items(tracks, key = { track -> "album_song_${track.uri}" }) { track ->
                         SwipeableTrackRowConfigured(
                             track = track,
@@ -188,6 +178,7 @@ fun SharedTransitionScope.AlbumDetailScreen(
                                     viewModel.setTrack(track)
                                 }
                             },
+                            isLiked = track.id in likedTracksId,
                             onArtistClick = { artistClick(it.uri) },
                         )
                     }
@@ -229,107 +220,6 @@ fun SharedTransitionScope.AlbumDetailScreen(
                             Icon(Icons.Rounded.Shuffle, null)
                         }
                     }
-                )
-            }
-        }
-    }
-}
-@Composable
-fun AlbumTracksHeader(
-    likedCount: Int,
-    artworkUrl: String?,
-    modifier: Modifier = Modifier,
-    imageSize: Dp = 48.dp,
-    onClick: () -> Unit = {},
-){
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        tonalElevation = 6.dp,
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .clickable(onClick = onClick)
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // artwork + heart overlay
-            Box(
-                modifier = Modifier
-                    .size(imageSize)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (!artworkUrl.isNullOrBlank()) {
-                    SmartImage(
-                        url = artworkUrl,
-                        contentDescription = "Liked songs artwork",
-                        modifier = Modifier.fillMaxSize(),
-                        monochrome = LocalUiSettings.current.monochromeAlbums
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.MusicNote,
-                            contentDescription = null
-                        )
-                    }
-                }
-
-                // Full overlay scrim
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(Color.Black.copy(alpha = 0.35f))
-                )
-
-                // Centered heart icon
-                Icon(
-                    imageVector = Icons.Filled.Favorite,
-                    contentDescription = "Liked",
-                    tint = Color.White,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Title + subtitle
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp)
-            ) {
-                Text(
-                    text = "Liked Songs",
-                    style = MaterialTheme.typography.headlineSmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "You have $likedCount liked songs",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            // trailing arrow
-            IconButton(onClick = onClick) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Open liked songs"
                 )
             }
         }

@@ -11,9 +11,11 @@ import cc.tomko.outify.data.metadata.Metadata
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
@@ -36,7 +38,7 @@ class LibraryViewModel @Inject constructor(
 
     val isRefreshing = MutableStateFlow(false)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     val playlists: StateFlow<List<Playlist>> =
         playlistUris
             .flatMapLatest { uris ->
@@ -46,6 +48,7 @@ class LibraryViewModel @Inject constructor(
                     metadata.observePlaylists(uris)
                 }
             }
+            .debounce(50)
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(5000),
