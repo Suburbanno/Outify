@@ -9,7 +9,6 @@ use jni::{
 };
 
 pub async fn get_user_profile(username: Option<String>) -> Option<UserJson> {
-    info!("Getting user profile..");
     let session = match with_session(|s| s.clone()) {
         Ok(s) => s,
         Err(e) => {
@@ -24,15 +23,26 @@ pub async fn get_user_profile(username: Option<String>) -> Option<UserJson> {
     };
     let limit: u32 = 5000;
 
-    info!("Requesting user profile");
-    let result = session
+    let result = match session
         .spclient()
         .get_user_profile(&username, Some(limit), Some(limit))
         .await
-        .unwrap();
+    {
+        Ok(r) => r,
+        Err(e) => {
+            error!("failed to get user profile: {e}");
+            return None;
+        },
+    };
 
-    let json = String::from_utf8(result.to_vec()).unwrap();
-    info!("{}",&json);
+    let json = match String::from_utf8(result.to_vec()) {
+        Ok(j) => j,
+        Err(e) => {
+            error!("failed to get string from bytes: {e}");
+            return None;
+        },
+    };
+
     let profile: UserJson = match serde_json::from_str(&json) {
         Ok(p) => p,
         Err(e) => {
@@ -50,7 +60,6 @@ pub extern "system" fn Java_cc_tomko_outify_profile_UserProfile_getUserProfile(
     _this: JClass,
     username: JString,
 ) -> jstring {
-    info!("GetUserProfile");
     let rt = match TOKIO_RUNTIME.get() {
         Some(r) => r,
         None => {

@@ -122,13 +122,15 @@ class PlaylistViewModel @Inject constructor(
                 val jsonRaw = try {
                     userProfile.getUserProfile(id)
                 } catch (e: Exception) {
-                    throw e
-                }
+                    e.printStackTrace()
+                    null
+                } ?: return@async null
 
                 val profile = try {
                     json.decodeFromString<Profile>(jsonRaw)
                 } catch (e: Exception) {
-                    throw e
+                    e.printStackTrace()
+                    return@async null
                 }
 
                 _authors.update { current -> current + (id to profile) }
@@ -136,6 +138,7 @@ class PlaylistViewModel @Inject constructor(
                 profile
             }
         }.awaitAll()
+            .filterNotNull()
     }
 
     fun setTrack(track: Track) {

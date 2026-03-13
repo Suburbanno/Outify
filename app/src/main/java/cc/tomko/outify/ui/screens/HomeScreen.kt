@@ -3,7 +3,10 @@ package cc.tomko.outify.ui.screens
 import android.annotation.SuppressLint
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -28,7 +31,7 @@ fun HomeScreen(
 ) {
     Scaffold() { innerPaddings ->
         Column(modifier = Modifier
-            .padding(start = 24.dp, top = 24.dp)) {
+            .padding(top = WindowInsets.systemBars.asPaddingValues().calculateTopPadding(), start = 24.dp)) {
             Text(
                 text = "Welcome back,\nUser!",
                 style = MaterialTheme.typography.headlineLargeEmphasized)

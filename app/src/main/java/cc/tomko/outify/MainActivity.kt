@@ -1,5 +1,6 @@
 package cc.tomko.outify
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -14,7 +15,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -31,11 +31,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -60,9 +59,7 @@ import cc.tomko.outify.ui.viewmodel.auth.LibrespotAuthProgress
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -79,6 +76,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         intent?.data?.let {
             deepLinkFlow.tryEmit(it)
@@ -104,6 +103,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @Composable
     fun App(
         viewModel: MainViewModel,
@@ -181,8 +181,8 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
-                ) { innerPadding ->
-                    Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                ) {  _ ->
+                    Box(modifier = Modifier.fillMaxSize()) {
                         NavigationRoot(
                             backStack,
                             modifier = Modifier.matchParentSize()

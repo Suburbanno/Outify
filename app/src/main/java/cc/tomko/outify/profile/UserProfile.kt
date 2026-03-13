@@ -8,5 +8,5 @@ class UserProfile @Inject constructor() {
     /**
      * Retrieves the users profile as a string
      */
-    external fun getUserProfile(username: String? = null): String
+    external fun getUserProfile(username: String? = null): String?
 }

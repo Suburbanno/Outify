@@ -1,9 +1,12 @@
 package cc.tomko.outify.ui.screens.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DesignServices
@@ -34,6 +37,7 @@ fun InterfaceSettingScreen(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize()
+            .padding(top = WindowInsets.systemBars.asPaddingValues().calculateTopPadding())
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
