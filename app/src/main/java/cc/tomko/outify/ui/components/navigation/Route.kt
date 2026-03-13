@@ -1,10 +1,16 @@
 package cc.tomko.outify.ui.components.navigation
 
 import androidx.navigation3.runtime.NavKey
+import cc.tomko.outify.ui.viewmodel.auth.LibrespotAuthProgress
 import kotlinx.serialization.Serializable
 
 @Serializable
 sealed interface Route: NavKey {
+    @Serializable
+    data class LibrespotAuthScreen(val progress: LibrespotAuthProgress): Route, NavKey
+    @Serializable
+    data object SetupScreen: Route, NavKey
+
     @Serializable
     data object HomeScreen: Route, NavKey
 

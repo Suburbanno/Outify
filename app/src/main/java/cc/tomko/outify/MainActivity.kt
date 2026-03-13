@@ -54,9 +54,9 @@ import cc.tomko.outify.ui.components.player.QueueBottomSheet
 import cc.tomko.outify.ui.components.player.rememberQueueBottomSheetState
 import cc.tomko.outify.ui.notifications.InAppNotificationHost
 import cc.tomko.outify.ui.repository.InterfaceSettings
-import cc.tomko.outify.ui.screens.auth.AuthActivity
 import cc.tomko.outify.ui.theme.OutifyTheme
 import cc.tomko.outify.ui.viewmodel.MainViewModel
+import cc.tomko.outify.ui.viewmodel.auth.LibrespotAuthProgress
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -92,10 +92,6 @@ class MainActivity : ComponentActivity() {
                 }
             )
         }
-
-        if(!handleAuth()){
-            return;
-        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -112,7 +108,11 @@ class MainActivity : ComponentActivity() {
     fun App(
         viewModel: MainViewModel,
     ){
-        val backStack = rememberNavBackStack(Route.HomeScreen)
+        val startRoute = if(authManager.hasCachedCredentials()) {
+            Route.HomeScreen
+        } else Route.LibrespotAuthScreen(LibrespotAuthProgress.START)
+
+        val backStack = rememberNavBackStack(startRoute)
 
         LaunchedEffect(Unit) {
             deepLinkFlow.collect { uri ->
@@ -128,8 +128,14 @@ class MainActivity : ComponentActivity() {
             NavDestination("liked", "Liked", Route.LikedScreen) { Icon(Icons.Default.Favorite, contentDescription = null) },
             NavDestination("library", "Library", Route.LibraryScreen) { Icon(Icons.Default.LibraryMusic, contentDescription = null) },
         )
+        val hideNavbar = listOf<Class<*>>(
+            Route.LibrespotAuthScreen::class.java,
+            Route.SetupScreen::class.java,
+            Route.PlayerScreen::class.java
+        )
 
         val currentRoute = backStack.last()
+        val visibleNavbar = hideNavbar.none { it.isInstance(currentRoute) }
 
         val selectedId = when (currentRoute) {
             Route.HomeScreen -> "home"
@@ -160,7 +166,7 @@ class MainActivity : ComponentActivity() {
                 Scaffold(
                     bottomBar = {
                         AnimatedVisibility(
-                            visible = backStack.last() != Route.PlayerScreen,
+                            visible = visibleNavbar,
                             enter = slideInVertically(
                                 initialOffsetY = { fullHeight -> fullHeight }
                             ) + fadeIn(),
@@ -229,17 +235,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Checks for existing credentials and redirects to the login page if needed
-    fun handleAuth(): Boolean {
-        if (!authManager.hasCachedCredentials()) {
-            startActivity(Intent(this, AuthActivity::class.java));
-            finish();
-            return false;
-        }
-        return true;
-    }
-
     fun parseDeepLinkUriToNavKey(uri: Uri): NavKey? {
+        // Outify links
+        if(uri.scheme == "outify"){
+            return when (uri.host) {
+                "auth_complete" -> {
+                    Route.LibrespotAuthScreen(LibrespotAuthProgress.SUCCESS)
+                }
+                "auth_failed" -> {
+                    Route.LibrespotAuthScreen(LibrespotAuthProgress.FAILED)
+                }
+                else -> null
+            }
+        }
+
         // spotify:x:y (opaque)
         if (uri.scheme == "spotify" && uri.host == null) {
             val ssp = uri.schemeSpecificPart ?: return null

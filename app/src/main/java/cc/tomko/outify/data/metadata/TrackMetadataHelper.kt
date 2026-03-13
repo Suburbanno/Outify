@@ -189,7 +189,6 @@ class TrackMetadataHelper @Inject constructor(
                             val raw = nativeMetadata.retryOnRateLimit {
                                 nativeMetadata.fetchMetadata(uri)
                             }
-                            println(raw)
 
                             val t = json.decodeFromString<Track>(raw.toString())
                             uri to t

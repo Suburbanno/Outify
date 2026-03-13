@@ -52,8 +52,16 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
+                <!--  OAuth callback -->
+                <data android:scheme="outify"
+                    android:host="auth_complete" />
+                <data android:scheme="outify"
+                    android:host="auth_failed" />
+
+                <!--  Opening spotify URLs-->
                 <data android:scheme="spotify" />
 
+                <!--  Opening spotify URLs-->
                 <data
                     android:scheme="https"
                     android:host="open.spotify.com" />
@@ -63,11 +71,6 @@
             android:name=".ui.screens.HomeScreen"
             android:exported="false"
             android:label="@string/title_activity_home_screen"
-            android:theme="@style/Theme.Material3Expressive" />
-        <activity
-            android:name=".ui.screens.auth.AuthActivity"
-            android:exported="false"
-            android:label="@string/title_activity_auth"
             android:theme="@style/Theme.Material3Expressive" />
         <activity
             android:name=".ui.screens.auth.CallbackActivity"

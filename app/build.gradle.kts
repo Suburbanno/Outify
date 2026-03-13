@@ -110,6 +110,9 @@ dependencies {
     implementation(libs.androidx.media3.common)
     implementation(libs.androidx.media3.session)
 
+    // HTTP server for oauth
+    implementation("org.nanohttpd:nanohttpd:2.3.1")
+
     implementation(platform(libs.compose.bom))
     implementation(libs.material)
     implementation(libs.material3.window.size.class1)

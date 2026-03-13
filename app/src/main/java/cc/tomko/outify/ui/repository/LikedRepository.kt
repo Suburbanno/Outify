@@ -10,9 +10,11 @@ import cc.tomko.outify.data.database.dao.LikedDao
 import cc.tomko.outify.data.database.impl.LikedTrackEntity
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.min
 
 @Singleton
 class LikedRepository @Inject constructor(
@@ -27,6 +29,68 @@ class LikedRepository @Inject constructor(
         private const val SUBSTRING_OFFSET = "spotify:track:".length
     }
 
+    suspend fun syncLikedTracks(): Boolean {
+        val pageSize = 50
+        val perPageDelayMs = 200L
+        val maxRetries = 3
+        val initialBackoffMs = 500L
+
+        try {
+            try {
+                if(!syncLikedUris()) return false
+            } catch (t: Throwable) {
+                Log.w(TAG, "syncLikedUris failed (continuing): ${t.message}", t)
+            }
+
+            var offset = 0
+            var anyFetched = false
+
+            while (true) {
+                val ids = likedDao.getIdsWindow(limit = pageSize, offset = offset)
+                if (ids.isEmpty()) break
+
+                val uris = ids.map { "spotify:track:$it" }
+
+                var attempt = 0
+                var succeeded = false
+                var backoff = initialBackoffMs
+
+                while (attempt < maxRetries && !succeeded) {
+                    try {
+                        val fetched = trackMetadataHelper.getTrackMetadata(uris)
+
+                        if (fetched.isNotEmpty()) {
+                            anyFetched = true
+                        }
+
+                        succeeded = true
+                    } catch (e: Exception) {
+                        attempt++
+                        val isTransient = true
+                        if (attempt >= maxRetries || !isTransient) {
+                            Log.e(TAG, "Failed fetching metadata for liked tracks (offset=$offset).", e)
+                            return false
+                        } else {
+                            Log.w(TAG, "Transient failure fetching metadata (offset=$offset), retrying in $backoff ms (attempt=$attempt).", e)
+                            delay(backoff)
+                            backoff = min(backoff * 2, 10_000L)
+                        }
+                    }
+                }
+
+                // polite pause between pages
+                delay(perPageDelayMs)
+                offset += pageSize
+            }
+
+            Log.d(TAG, "syncLikedTracks finished; anyFetched=$anyFetched")
+            return true
+        } catch (t: Throwable) {
+            Log.e("LikedRepository", "syncLikedTracks failed unexpectedly", t)
+            return false
+        }
+    }
+
     /**
      * Pulls the URI list from the API and rebuilds liked_songs if it differs.
      * Returns true if anything changed.
@@ -34,7 +98,17 @@ class LikedRepository @Inject constructor(
     suspend fun syncLikedUris(): Boolean {
         val remote = metadata.getLikedUris()
         val cached = likedDao.getLikedIds()
-        if (remote == cached) return false
+
+        if (remote.size == cached.size) {
+            var allMatch = true
+            for ((i, uri) in remote.withIndex()) {
+                if (uri.length <= SUBSTRING_OFFSET || uri.substring(SUBSTRING_OFFSET) != cached[i]) {
+                    allMatch = false
+                    break
+                }
+            }
+            if (allMatch) return false
+        }
 
         Log.d(TAG, "Liked list changed (${cached.size} → ${remote.size}), resyncing")
         db.withTransaction {

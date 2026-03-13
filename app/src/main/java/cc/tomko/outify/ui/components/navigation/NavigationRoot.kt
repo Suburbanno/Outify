@@ -22,6 +22,8 @@ import androidx.navigation3.ui.NavDisplay
 import cc.tomko.outify.ui.components.bottomsheet.ArtistLikedTracksBottomSheet
 import cc.tomko.outify.ui.screens.HomeScreen
 import cc.tomko.outify.ui.screens.PlayerScreen
+import cc.tomko.outify.ui.screens.auth.AuthScreen
+import cc.tomko.outify.ui.screens.auth.SetupOutifyScreen
 import cc.tomko.outify.ui.screens.library.LibraryScreen
 import cc.tomko.outify.ui.screens.library.LikedScreen
 import cc.tomko.outify.ui.screens.library.PlaylistScreen
@@ -34,6 +36,8 @@ import cc.tomko.outify.ui.screens.settings.InterfaceSettingScreen
 import cc.tomko.outify.ui.screens.settings.PlaybackSettingScreen
 import cc.tomko.outify.ui.screens.settings.SettingsScreen
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
+import cc.tomko.outify.ui.viewmodel.auth.AuthViewModel
+import cc.tomko.outify.ui.viewmodel.auth.SetupViewModel
 import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
 import cc.tomko.outify.ui.viewmodel.library.LibraryViewModel
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
@@ -70,6 +74,28 @@ fun SharedTransitionScope.NavigationRoot(
                     slideOutHorizontally { it } + fadeOut()
         },
         entryProvider = entryProvider {
+            entry<Route.LibrespotAuthScreen> {
+                val viewModel: AuthViewModel = hiltViewModel()
+
+                viewModel.setNavigateCallback { route -> backStack.add(route) }
+                viewModel.setProgress(it.progress)
+
+                AuthScreen(
+                    viewModel = viewModel,
+                )
+            }
+            entry<Route.SetupScreen> {
+                val viewModel: SetupViewModel = hiltViewModel()
+                viewModel.onSetupComplete = {
+                    backStack.clear()
+                    backStack.add(Route.HomeScreen)
+                }
+
+                SetupOutifyScreen(
+                    viewModel = viewModel
+                )
+            }
+
             entry<Route.HomeScreen> {
                 HomeScreen(
                     backStack
@@ -200,6 +226,7 @@ fun SharedTransitionScope.NavigationRoot(
                         backStack.add(Route.PlaybackSettings)
                     },
                     openDebugSettings = {
+                        backStack.add(Route.SetupScreen)
                     }
                 )
             }
