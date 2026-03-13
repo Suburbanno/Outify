@@ -95,7 +95,6 @@ impl SpotifyClient {
                     Err(e) => {
                         // Log the error for debugging
                         log::error!("Failed to get Spotify token: {:?}", e);
-                        // Convert to your error type
                         Err(SpotifyApiError::NoToken)
                     }
                 }
