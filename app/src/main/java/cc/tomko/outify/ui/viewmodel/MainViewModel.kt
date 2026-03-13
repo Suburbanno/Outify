@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.Icon
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.setting.GestureAction
@@ -29,6 +30,7 @@ class MainViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     private val spirc: SpircWrapper,
     private val settingsRepository: SettingsRepository,
+    private val spClient: SpClient,
 ): ViewModel() {
     val swipeSettings: Flow<List<GestureSetting>> =
         settingsRepository.interfaceSettings.map { it.gestureSettings }
@@ -46,7 +48,9 @@ class MainViewModel @Inject constructor(
             playbackStateHolder.setTrack(track)
             InAppNotificationController.show("Radio started", { Icon(Icons.Default.Radio, contentDescription = "Radio started") }, 1000L)
         }
-        override fun favorite(trackUri: String) { }
+        override fun favorite(trackUri: String) {
+            spClient.saveItems(arrayOf(trackUri))
+        }
         override fun addToPlaylist(track: Track) { }
         override fun trackInfo(track: Track) { openTrackInfo(track) }
     }

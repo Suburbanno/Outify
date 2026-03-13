@@ -90,11 +90,7 @@ impl SpotifyClient {
         let token: Token = crate::session::with_session_async(|ses| {
             Box::pin(async move {
                 // Attempt to get a token
-                match ses
-                    .token_provider()
-                    .get_token_with_client_id("user-library-modify,user-follow-modify,playlist-modify-public", "9a8d2f0ce77a4e248bb71fefcb557637")
-                    .await
-                {
+                match ses.login5().auth_token().await {
                     Ok(t) => Ok(t),
                     Err(e) => {
                         // Log the error for debugging
@@ -120,6 +116,20 @@ impl SpotifyClient {
             .timeout(REQUEST_TIMEOUT)
             .send()
             .await?;
+
+        // Debug purposes
+        if res.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            if let Some(retry_after) = res.headers().get("Retry-After") {
+                let seconds = match retry_after.to_str() {
+                    Ok(s) => {
+                        debug!("wait: {s}");
+                    }
+                    Err(e) => {
+                        debug!("failed: {e}");
+                    },
+                };
+            }
+        }
 
         Ok(res.status())
     }
