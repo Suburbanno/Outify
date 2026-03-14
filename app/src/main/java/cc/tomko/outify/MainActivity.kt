@@ -42,6 +42,8 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
 import cc.tomko.outify.core.AuthManager
+import cc.tomko.outify.data.CoverSize
+import cc.tomko.outify.data.getCover
 import cc.tomko.outify.data.setting.LocalSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
 import cc.tomko.outify.data.setting.LocalUiSettings
@@ -92,12 +94,9 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            OutifyTheme(
-                content = {
-                    val mainViewModel: MainViewModel = hiltViewModel()
-                    App(mainViewModel)
-                }
-            )
+            val mainViewModel: MainViewModel = hiltViewModel()
+
+            App(mainViewModel)
         }
     }
 
@@ -115,8 +114,8 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun App(
         viewModel: MainViewModel,
-    ){
-        val startRoute = if(authManager.hasCachedCredentials()) {
+    ) {
+        val startRoute = if (authManager.hasCachedCredentials()) {
             Route.HomeScreen
         } else Route.LibrespotAuthScreen(LibrespotAuthProgress.START)
 
@@ -131,10 +130,29 @@ class MainActivity : ComponentActivity() {
         }
 
         val routes = listOf(
-            NavDestination("home", "Home", Route.HomeScreen) { Icon(Icons.Default.Home, contentDescription = null) },
-            NavDestination("search", "Search", Route.SearchScreen) { Icon(Icons.Default.Search, contentDescription = null) },
-            NavDestination("liked", "Liked", Route.LikedScreen) { Icon(Icons.Default.Favorite, contentDescription = null) },
-            NavDestination("library", "Library", Route.LibraryScreen) { Icon(Icons.Default.LibraryMusic, contentDescription = null) },
+            NavDestination("home", "Home", Route.HomeScreen) {
+                Icon(
+                    Icons.Default.Home,
+                    contentDescription = null
+                )
+            },
+            NavDestination("search", "Search", Route.SearchScreen) {
+                Icon(
+                    Icons.Default.Search,
+                    contentDescription = null
+                )
+            },
+            NavDestination("liked", "Liked", Route.LikedScreen) {
+                Icon(
+                    Icons.Default.Favorite,
+                    contentDescription = null
+                )
+            },
+            NavDestination(
+                "library",
+                "Library",
+                Route.LibraryScreen
+            ) { Icon(Icons.Default.LibraryMusic, contentDescription = null) },
         )
         val hideNavbar = listOf<Class<*>>(
             Route.LibrespotAuthScreen::class.java,
@@ -167,109 +185,124 @@ class MainActivity : ComponentActivity() {
             .collectAsState(initial = InterfaceSettings())
 
         val swipeSettings by viewModel.swipeSettings.collectAsState(initial = interfaceSettings.gestureSettings)
+        val currentTrack by viewModel.currentTrack()
+            .collectAsState(initial = null)
 
-        SharedTransitionLayout {
-            CompositionLocalProvider(
-                LocalSharedTransitionScope provides this,
-                LocalSwipeGestureSettings provides swipeSettings,
-                LocalSwipeActionHandler provides viewModel.swipeActionHandler,
-                LocalUiSettings provides interfaceSettings,
-            ) {
-                Scaffold(
-                    bottomBar = {
-                        AnimatedVisibility(
-                            visible = visibleNavbar,
-                            enter = slideInVertically(
-                                initialOffsetY = { fullHeight -> fullHeight }
-                            ) + fadeIn(),
-                            exit = slideOutVertically(
-                                targetOffsetY = { fullHeight -> fullHeight }
-                            ) + fadeOut(),
-                        ) {
-                            OutifyBottomNav(
-                                items = routes,
-                                selectedId = selectedId,
-                                onItemSelected = { item -> backStack.add(item.route) }
-                            )
-                        }
-                    }
-                ) {  innerPadding ->
-                    Box(modifier = Modifier.fillMaxSize().padding(bottom = innerPadding.calculateBottomPadding())) {
-                        NavigationRoot(
-                            backStack,
-                            modifier = Modifier.matchParentSize()
-                        )
-
-                        InAppNotificationHost(
-                            modifier = Modifier.matchParentSize(),
-                            maxWidthFraction = 0.92f
-                        )
-
-                        GlobalPopupHost(
-                            backStack = backStack,
-                            addToQueue = { viewModel.addToQueue(it.uri) },
-                            startRadio = { viewModel.startRadio(it) },
-                            toggleLike = { viewModel.favorite(it.uri) }
-                        )
-
-                        val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
-
-                        AnimatedVisibility(
-                            visible = currentTrack != null,
-                            enter = slideInVertically(
-                                initialOffsetY = { fullHeight -> fullHeight }
-                            ) + fadeIn(),
-                            exit = slideOutVertically(
-                                targetOffsetY = { fullHeight -> fullHeight }
-                            ) + fadeOut(),
-                            modifier = Modifier.align(Alignment.BottomCenter)
-                        ) {
-                            PlayerSheet(
-                                sheetState = playerSheetState,
-                                listState = playerListState,
-                                miniPlayerHeight = 88.dp,
-                                miniContent = { progress ->
-                                    MiniPlayer(
-                                        viewModel = miniPlayerViewModel,
-                                        backStack = backStack,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                                        showQueue = { sheetState.show() },
-                                        onExpand = {
-                                            println("expand")
-                                        },
-                                        onClick = {
-                                            scope.launch { playerSheetState.expand() }
-                                        }
+        OutifyTheme(
+            track = currentTrack,
+            enableDynamicTheme = true,
+            pureBlack = false,
+            highContrastCompat = false,
+            content = {
+                SharedTransitionLayout {
+                    CompositionLocalProvider(
+                        LocalSharedTransitionScope provides this,
+                        LocalSwipeGestureSettings provides swipeSettings,
+                        LocalSwipeActionHandler provides viewModel.swipeActionHandler,
+                        LocalUiSettings provides interfaceSettings,
+                    ) {
+                        Scaffold(
+                            bottomBar = {
+                                AnimatedVisibility(
+                                    visible = visibleNavbar,
+                                    enter = slideInVertically(
+                                        initialOffsetY = { fullHeight -> fullHeight }
+                                    ) + fadeIn(),
+                                    exit = slideOutVertically(
+                                        targetOffsetY = { fullHeight -> fullHeight }
+                                    ) + fadeOut(),
+                                ) {
+                                    OutifyBottomNav(
+                                        items = routes,
+                                        selectedId = selectedId,
+                                        onItemSelected = { item -> backStack.add(item.route) }
                                     )
-                                },
-                                fullContent = { progress ->
-                                    PlayerScreen(
-                                        viewModel = playerViewModel,
+                                }
+                            }
+                        ) { innerPadding ->
+                            Box(
+                                modifier = Modifier.fillMaxSize()
+                                    .padding(bottom = innerPadding.calculateBottomPadding())
+                            ) {
+                                NavigationRoot(
+                                    backStack,
+                                    modifier = Modifier.matchParentSize()
+                                )
+
+                                InAppNotificationHost(
+                                    modifier = Modifier.matchParentSize(),
+                                    maxWidthFraction = 0.92f
+                                )
+
+                                GlobalPopupHost(
+                                    backStack = backStack,
+                                    addToQueue = { viewModel.addToQueue(it.uri) },
+                                    startRadio = { viewModel.startRadio(it) },
+                                    toggleLike = { viewModel.favorite(it.uri) }
+                                )
+
+                                AnimatedVisibility(
+                                    visible = currentTrack != null,
+                                    enter = slideInVertically(
+                                        initialOffsetY = { fullHeight -> fullHeight }
+                                    ) + fadeIn(),
+                                    exit = slideOutVertically(
+                                        targetOffsetY = { fullHeight -> fullHeight }
+                                    ) + fadeOut(),
+                                    modifier = Modifier.align(Alignment.BottomCenter)
+                                ) {
+                                    PlayerSheet(
+                                        sheetState = playerSheetState,
                                         listState = playerListState,
-                                        onArtistClick = {
-                                            backStack.add(Route.ArtistScreen(it.uri))
+                                        miniPlayerHeight = 88.dp,
+                                        miniContent = { progress ->
+                                            MiniPlayer(
+                                                viewModel = miniPlayerViewModel,
+                                                backStack = backStack,
+                                                modifier = Modifier.padding(
+                                                    horizontal = 12.dp,
+                                                    vertical = 12.dp
+                                                ),
+                                                showQueue = { sheetState.show() },
+                                                onExpand = {
+                                                    println("expand")
+                                                },
+                                                onClick = {
+                                                    scope.launch { playerSheetState.expand() }
+                                                }
+                                            )
                                         },
-                                        onMoreOptions = {
-                                            GlobalPopupController.showTrackPopup(currentTrack!!)
+                                        fullContent = { progress ->
+                                            PlayerScreen(
+                                                viewModel = playerViewModel,
+                                                listState = playerListState,
+                                                onArtistClick = {
+                                                    backStack.add(Route.ArtistScreen(it.uri))
+                                                },
+                                                onMoreOptions = {
+                                                    GlobalPopupController.showTrackPopup(
+                                                        currentTrack!!
+                                                    )
+                                                }
+                                            )
                                         }
                                     )
+                                }
+                            }
+                        }
+
+                        if (sheetState.visible.value) {
+                            QueueBottomSheet(
+                                sheetState = sheetState.sheetState,
+                                viewModel = queueViewModel,
+                                onDismissRequest = {
+                                    sheetState.hide()
                                 }
                             )
                         }
                     }
                 }
-
-                if(sheetState.visible.value) {
-                    QueueBottomSheet(
-                        sheetState = sheetState.sheetState,
-                        viewModel = queueViewModel,
-                        onDismissRequest = {
-                            sheetState.hide()
-                        }
-                    )
-                }
-            }
-        }
+            })
     }
 
     fun parseDeepLinkUriToNavKey(uri: Uri): NavKey? {
