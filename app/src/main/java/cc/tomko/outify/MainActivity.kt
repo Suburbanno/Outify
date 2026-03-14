@@ -190,9 +190,9 @@ class MainActivity : ComponentActivity() {
 
         OutifyTheme(
             track = currentTrack,
-            enableDynamicTheme = true,
-            pureBlack = false,
-            highContrastCompat = false,
+            enableDynamicTheme = interfaceSettings.dynamicTheme,
+            pureBlack = interfaceSettings.pureBlack,
+            highContrastCompat = interfaceSettings.highContrastCompat,
             content = {
                 SharedTransitionLayout {
                     CompositionLocalProvider(

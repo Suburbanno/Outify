@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.Boolean
 
 @Singleton
 class SettingsRepository @Inject constructor(
@@ -44,6 +45,10 @@ class SettingsRepository @Inject constructor(
         }
 
         object Interface {
+            val DYNAMIC_THEME = booleanPreferencesKey("dynamic_theme")
+            val PURE_BLACK = booleanPreferencesKey("pure_black")
+            val HIGH_CONTRAST_COMPAT = booleanPreferencesKey("high_contrast_compat")
+
             val MONOCHROME_IMAGES = booleanPreferencesKey("monochrome_images")
             val MONOCHROME_ALBUMS = booleanPreferencesKey("monochrome_albums")
             val MONOCHROME_ARTISTS = booleanPreferencesKey("monochrome_artists")
@@ -66,6 +71,13 @@ class SettingsRepository @Inject constructor(
         InterfaceSettings(
             swipeGesturesEnabled = enabled,
             gestureSettings = if (enabled) decodeGestures(prefs[Keys.Gesture.GESTURES]) else emptyList(),
+
+            // Dynamic theme
+            dynamicTheme = prefs[Keys.Interface.DYNAMIC_THEME] ?: true,
+            pureBlack = prefs[Keys.Interface.PURE_BLACK] ?: false,
+            highContrastCompat = prefs[Keys.Interface.HIGH_CONTRAST_COMPAT] ?: false,
+
+            // Monochrome
             monochromeImages = monochrome,
             monochromeAlbums = monochrome && prefs[Keys.Interface.MONOCHROME_ALBUMS] ?: false,
             monochromeArtists = monochrome && prefs[Keys.Interface.MONOCHROME_ARTISTS] ?: false,
@@ -157,6 +169,18 @@ class SettingsRepository @Inject constructor(
         dataStore.edit { it[Keys.Gesture.ENABLED] = enabled }
     }
 
+    suspend fun setDynamicTheme(enabled: Boolean) {
+        dataStore.edit { it[Keys.Interface.DYNAMIC_THEME] = enabled }
+    }
+
+    suspend fun setPureBlack(enabled: Boolean) {
+        dataStore.edit { it[Keys.Interface.PURE_BLACK] = enabled }
+    }
+
+    suspend fun setHighContrastCompat(enabled: Boolean) {
+        dataStore.edit { it[Keys.Interface.HIGH_CONTRAST_COMPAT] = enabled }
+    }
+
     suspend fun setMonochromeImages(enabled: Boolean) {
         dataStore.edit { it[Keys.Interface.MONOCHROME_IMAGES] = enabled }
     }
@@ -226,6 +250,12 @@ data class InterfaceSettings(
             trigger = GestureTrigger.LongPress,
         )
     ),
+    // Dynamic theme
+    val dynamicTheme: Boolean = true,
+    val pureBlack: Boolean = false,
+    val highContrastCompat: Boolean = false,
+
+    // Monochrome
     val monochromeImages: Boolean = false,
     val monochromeAlbums: Boolean = false,
     val monochromeArtists: Boolean = false,

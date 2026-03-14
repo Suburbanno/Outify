@@ -57,4 +57,22 @@ class AppearanceViewModel @Inject constructor(
             settingsRepository.setMonochromeHeaders(enabled)
         }
     }
+
+    fun setDynamicTheme(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDynamicTheme(enabled)
+        }
+    }
+
+    fun setPureBlack(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setPureBlack(enabled)
+        }
+    }
+
+    fun setHighContrastCompat(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setHighContrastCompat(enabled)
+        }
+    }
 }

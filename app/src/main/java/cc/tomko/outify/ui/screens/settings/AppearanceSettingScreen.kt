@@ -12,6 +12,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.Contrast
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DesignServices
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.MonochromePhotos
@@ -135,6 +137,41 @@ fun AppearanceSettingScreen(
                         }
                     )
                 }
+            }
+        }
+
+        item {
+            PreferenceSectionHeader("Dynamic")
+
+            ElevatedCard {
+                SwitchPreferenceEntry(
+                    title = { Text("Dynamic theme") },
+                    description = "Colorscheme will change according to current track",
+                    icon = { Icon(Icons.Default.DesignServices, contentDescription = null) },
+                    isChecked = settings.dynamicTheme,
+                    onCheckedChange = { enabled ->
+                        viewModel.setDynamicTheme(enabled)
+                    }
+                )
+
+                SwitchPreferenceEntry(
+                    title = { Text("Pure black") },
+                    description = "Use AMOLED black",
+                    icon = { Icon(Icons.Default.DarkMode, contentDescription = null) },
+                    isChecked = settings.pureBlack,
+                    onCheckedChange = { enabled ->
+                        viewModel.setPureBlack(enabled)
+                    }
+                )
+
+                SwitchPreferenceEntry(
+                    title = { Text("High contrast") },
+                    icon = { Icon(Icons.Default.Contrast, contentDescription = null) },
+                    isChecked = settings.highContrastCompat,
+                    onCheckedChange = { enabled ->
+                        viewModel.setHighContrastCompat(enabled)
+                    }
+                )
             }
         }
     }
