@@ -4,6 +4,10 @@ import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.os.Build
 import androidx.annotation.OptIn
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -115,8 +119,15 @@ fun OutifyTheme(
                 .pureBlack(darkTheme && pureBlack)
         }
 
+    val animatedScheme = animateColorScheme(
+        target = colorScheme,
+        animationSpec = tween(
+            durationMillis = 600,
+            easing = FastOutSlowInEasing
+        )
+    )
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = animatedScheme,
         typography = MaterialTheme.typography,
         content = content
     )
@@ -207,6 +218,48 @@ fun ColorScheme.pureBlack(apply: Boolean) =
         surface = Color.Black,
         background = Color.Black
     ) else this
+
+@Composable
+fun animateColorScheme(target: ColorScheme, animationSpec: AnimationSpec<Color>): ColorScheme {
+    val primary by animateColorAsState(target.primary, animationSpec)
+    val onPrimary by animateColorAsState(target.onPrimary, animationSpec)
+    val primaryContainer by animateColorAsState(target.primaryContainer, animationSpec)
+    val onPrimaryContainer by animateColorAsState(target.onPrimaryContainer, animationSpec)
+
+    val secondary by animateColorAsState(target.secondary, animationSpec)
+    val onSecondary by animateColorAsState(target.onSecondary, animationSpec)
+    val secondaryContainer by animateColorAsState(target.secondaryContainer, animationSpec)
+    val onSecondaryContainer by animateColorAsState(target.onSecondaryContainer, animationSpec)
+
+    val background by animateColorAsState(target.background, animationSpec)
+    val onBackground by animateColorAsState(target.onBackground, animationSpec)
+
+    val surface by animateColorAsState(target.surface, animationSpec)
+    val onSurface by animateColorAsState(target.onSurface, animationSpec)
+
+    val error by animateColorAsState(target.error, animationSpec)
+    val onError by animateColorAsState(target.onError, animationSpec)
+
+    val outline by animateColorAsState(target.outline, animationSpec)
+
+    return target.copy(
+        primary = primary,
+        onPrimary = onPrimary,
+        primaryContainer = primaryContainer,
+        onPrimaryContainer = onPrimaryContainer,
+        secondary = secondary,
+        onSecondary = onSecondary,
+        secondaryContainer = secondaryContainer,
+        onSecondaryContainer = onSecondaryContainer,
+        background = background,
+        onBackground = onBackground,
+        surface = surface,
+        onSurface = onSurface,
+        error = error,
+        onError = onError,
+        outline = outline
+    )
+}
 
 val ColorSaver = object : Saver<Color, Int> {
     override fun restore(value: Int): Color = Color(value)
