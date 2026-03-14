@@ -35,9 +35,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -243,28 +245,28 @@ fun SharedTransitionScope.MiniPlayer(
 
                 Surface(
                     tonalElevation = 10.dp,
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.clip(RoundedCornerShape(10.dp))
+                    shape = MaterialShapes.Cookie4Sided.toShape()
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-//                        IconButton(onClick = { spirc.playerPrevious() }) {
-//                            Icon(imageVector = Icons.Default.SkipPrevious, contentDescription = null)
-//                        }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
 
                         IconButton(onClick = {
                             viewModel.setTrack(currentTrack)
                             spirc.playerPlayPause()
                         }) {
                             if (isPlaying) {
-                                Icon(imageVector = Icons.Default.Pause, contentDescription = null)
+                                Icon(
+                                    imageVector = Icons.Default.Pause,
+                                    contentDescription = null
+                                )
                             } else {
-                                Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
+                                Icon(
+                                    imageVector = Icons.Default.PlayArrow,
+                                    contentDescription = null
+                                )
                             }
                         }
-
-//                        IconButton(onClick = { spirc.playerNext() }) {
-//                            Icon(imageVector = Icons.Default.SkipNext, contentDescription = null)
-//                        }
                     }
                 }
             }
