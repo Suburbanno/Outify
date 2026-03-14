@@ -2,6 +2,8 @@ package cc.tomko.outify.ui.components.player
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -9,6 +11,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +47,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +57,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -70,7 +75,11 @@ import coil3.compose.AsyncImage
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
+import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 private val TAB_HEIGHT = 20.dp
 
@@ -78,7 +87,7 @@ private val TAB_HEIGHT = 20.dp
 @Composable
 fun SharedTransitionScope.MiniPlayer(
     viewModel: MiniPlayerViewModel,
-    backStack: NavBackStack<NavKey>,
+    onDismiss: () -> Unit,
     showQueue: () -> Unit,
     modifier: Modifier = Modifier,
     onExpand: (() -> Unit)? = null,
@@ -96,30 +105,61 @@ fun SharedTransitionScope.MiniPlayer(
     val imageSize = 40.dp
     val artworkUrl = currentTrack?.album?.getCover(CoverSize.SMALL)?.uri.let { ALBUM_COVER_URL + it }
 
+    val offsetY = remember { Animatable(0f) }
+    val coroutineScope = rememberCoroutineScope()
+
     Box(
         modifier = modifier.fillMaxWidth()
             .pointerInput(Unit) {
                 var totalDragX = 0f
+                var totalDragY = 0f
 
                 detectDragGestures(
                     onDrag = { change, dragAmount ->
                         totalDragX += dragAmount.x
+                        totalDragY += dragAmount.y
+
+                        coroutineScope.launch {
+                            val target = max(0f, offsetY.value + dragAmount.y)
+                            offsetY.snapTo(target)
+                        }
                     },
                     onDragEnd = {
-                        val threshold = 100.dp.toPx()
+                        val horizontalThreshold = 100.dp.toPx()
+                        val verticalThreshold = 40.dp.toPx()
 
                         when {
-                            totalDragX > threshold -> spirc.playerPrevious()
-                            totalDragX < -threshold -> spirc.playerNext()
+                            totalDragX > horizontalThreshold -> spirc.playerPrevious()
+                            totalDragX < -horizontalThreshold -> spirc.playerNext()
+                        }
+
+                        if (totalDragY > verticalThreshold) {
+                            onDismiss()
+                        }
+
+                        coroutineScope.launch {
+                            offsetY.animateTo(
+                                targetValue = 0f,
+                                animationSpec = tween(durationMillis = 300)
+                            )
                         }
 
                         totalDragX = 0f
+                        totalDragY = 0f
                     },
                     onDragCancel = {
+                        coroutineScope.launch {
+                            offsetY.animateTo(
+                                targetValue = 0f,
+                                animationSpec = tween(durationMillis = 300)
+                            )
+                        }
                         totalDragX = 0f
+                        totalDragY = 0f
                     }
                 )
-            },
+            }
+            .offset { IntOffset(x = 0, y = offsetY.value.roundToInt()) },
         contentAlignment = Alignment.BottomCenter,
     ) {
         AnimatedVisibility(

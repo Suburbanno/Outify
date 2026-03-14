@@ -258,7 +258,9 @@ class MainActivity : ComponentActivity() {
                                         miniContent = { progress ->
                                             MiniPlayer(
                                                 viewModel = miniPlayerViewModel,
-                                                backStack = backStack,
+                                                onDismiss = {
+                                                    miniPlayerViewModel.setTrack(null)
+                                                },
                                                 modifier = Modifier.padding(
                                                     horizontal = 12.dp,
                                                     vertical = 12.dp

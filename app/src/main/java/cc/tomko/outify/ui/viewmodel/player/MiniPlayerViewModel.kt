@@ -42,6 +42,9 @@ class MiniPlayerViewModel @Inject constructor(
         playbackStateHolder.state.map { it.isBuffering }
 
     fun setTrack(track: Track?) {
+        if(track == null){
+            spirc.playerPause()
+        }
         playbackStateHolder.setTrack(track)
     }
 }
