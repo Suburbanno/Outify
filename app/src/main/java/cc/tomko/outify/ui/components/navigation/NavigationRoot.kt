@@ -100,21 +100,6 @@ fun SharedTransitionScope.NavigationRoot(
                     backStack
                 )
             }
-            entry<Route.PlayerScreen>(
-                metadata = verticalTransition()
-            ) {
-                val viewModel: PlayerViewModel = hiltViewModel()
-
-                PlayerScreen(
-                    viewModel = viewModel,
-                    onArtistClick = {
-                        backStack.add(Route.ArtistScreen(it.uri))
-                    },
-                    onMoreOptions = {
-                        GlobalPopupController.showTrackPopup(viewModel.state.value.currentTrack!!)
-                    }
-                )
-            }
 
             entry<Route.LikedScreen>  {
                 val viewModel: LikedViewModel = hiltViewModel()

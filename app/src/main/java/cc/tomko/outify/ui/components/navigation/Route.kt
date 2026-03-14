@@ -18,9 +18,6 @@ sealed interface Route: NavKey {
     data object SearchScreen: Route, NavKey
 
     @Serializable
-    data object PlayerScreen: Route, NavKey
-
-    @Serializable
     data object LikedScreen: Route, NavKey
 
     @Serializable

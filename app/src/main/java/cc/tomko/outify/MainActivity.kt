@@ -17,6 +17,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
@@ -31,6 +32,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -43,23 +45,29 @@ import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.data.setting.LocalSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
 import cc.tomko.outify.data.setting.LocalUiSettings
+import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.components.GlobalPopupHost
 import cc.tomko.outify.ui.components.navigation.NavDestination
 import cc.tomko.outify.ui.components.navigation.NavigationRoot
 import cc.tomko.outify.ui.components.navigation.OutifyBottomNav
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.player.MiniPlayer
+import cc.tomko.outify.ui.components.player.PlayerSheet
 import cc.tomko.outify.ui.components.player.QueueBottomSheet
+import cc.tomko.outify.ui.components.player.rememberPlayerSheetState
 import cc.tomko.outify.ui.components.player.rememberQueueBottomSheetState
 import cc.tomko.outify.ui.notifications.InAppNotificationHost
 import cc.tomko.outify.ui.repository.InterfaceSettings
+import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.theme.OutifyTheme
 import cc.tomko.outify.ui.viewmodel.MainViewModel
 import cc.tomko.outify.ui.viewmodel.auth.LibrespotAuthProgress
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
+import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -131,7 +139,6 @@ class MainActivity : ComponentActivity() {
         val hideNavbar = listOf<Class<*>>(
             Route.LibrespotAuthScreen::class.java,
             Route.SetupScreen::class.java,
-            Route.PlayerScreen::class.java
         )
 
         val currentRoute = backStack.last()
@@ -149,6 +156,11 @@ class MainActivity : ComponentActivity() {
 
         val queueViewModel: QueueViewModel = hiltViewModel()
         val miniPlayerViewModel: MiniPlayerViewModel = hiltViewModel()
+        val playerViewModel: PlayerViewModel = hiltViewModel()
+
+        val playerSheetState = rememberPlayerSheetState()
+        val playerListState = rememberLazyListState()
+        val scope = rememberCoroutineScope()
 
         val interfaceSettings by viewModel
             .interfaceSettings
@@ -203,7 +215,7 @@ class MainActivity : ComponentActivity() {
                         val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
 
                         AnimatedVisibility(
-                            visible = currentTrack != null && backStack.last() != Route.PlayerScreen,
+                            visible = currentTrack != null,
                             enter = slideInVertically(
                                 initialOffsetY = { fullHeight -> fullHeight }
                             ) + fadeIn(),
@@ -212,15 +224,35 @@ class MainActivity : ComponentActivity() {
                             ) + fadeOut(),
                             modifier = Modifier.align(Alignment.BottomCenter)
                         ) {
-                            MiniPlayer(
-                                viewModel = miniPlayerViewModel,
-                                backStack = backStack,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
-                                showQueue = {
-                                    sheetState.show()
+                            PlayerSheet(
+                                sheetState = playerSheetState,
+                                listState = playerListState,
+                                miniPlayerHeight = 88.dp,
+                                miniContent = { progress ->
+                                    MiniPlayer(
+                                        viewModel = miniPlayerViewModel,
+                                        backStack = backStack,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+                                        showQueue = { sheetState.show() },
+                                        onExpand = {
+                                            println("expand")
+                                        },
+                                        onClick = {
+                                            scope.launch { playerSheetState.expand() }
+                                        }
+                                    )
                                 },
-                                onExpand = {
-                                    println("somethingg")
+                                fullContent = { progress ->
+                                    PlayerScreen(
+                                        viewModel = playerViewModel,
+                                        listState = playerListState,
+                                        onArtistClick = {
+                                            backStack.add(Route.ArtistScreen(it.uri))
+                                        },
+                                        onMoreOptions = {
+                                            GlobalPopupController.showTrackPopup(currentTrack!!)
+                                        }
+                                    )
                                 }
                             )
                         }

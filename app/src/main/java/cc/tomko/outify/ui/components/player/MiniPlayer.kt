@@ -80,6 +80,7 @@ fun SharedTransitionScope.MiniPlayer(
     showQueue: () -> Unit,
     modifier: Modifier = Modifier,
     onExpand: (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
@@ -157,7 +158,7 @@ fun SharedTransitionScope.MiniPlayer(
                 .fillMaxWidth()
                 .height(64.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .clickable { backStack.add(Route.PlayerScreen) }
+                .clickable { onClick?.invoke() }
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
