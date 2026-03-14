@@ -8,15 +8,18 @@ import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Lyrics
 import cc.tomko.outify.data.SyncedLyric
 import cc.tomko.outify.data.Track
+import cc.tomko.outify.data.database.dao.LikedDao
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.model.player.PlayerUIState
+import cc.tomko.outify.ui.repository.LikedRepository
 import cc.tomko.outify.ui.repository.PlayerRepository
 import cc.tomko.outify.ui.repository.SettingsRepository
 import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +27,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
@@ -41,6 +46,7 @@ class PlayerViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
     private val playbackStateHolder: PlaybackStateHolder,
     private val settingsRepository: SettingsRepository,
+    private val likedDao: LikedDao,
 ): ViewModel() {
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
@@ -56,6 +62,24 @@ class PlayerViewModel @Inject constructor(
 
     val isRepeating = settingsRepository.repeatEnabled
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val isLiked: StateFlow<Boolean> =
+        playbackStateHolder.state
+            .map { it.currentTrack?.id }
+            .flatMapLatest { trackId ->
+                if (trackId == null) {
+                    flowOf(false)
+                } else {
+                    likedDao.observeIsTrackLiked(trackId)
+                }
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(5000),
+                false
+            )
+
 
     init {
         viewModelScope.launch {

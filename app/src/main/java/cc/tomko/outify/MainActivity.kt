@@ -193,7 +193,12 @@ class MainActivity : ComponentActivity() {
                             maxWidthFraction = 0.92f
                         )
 
-                        GlobalPopupHost()
+                        GlobalPopupHost(
+                            backStack = backStack,
+                            addToQueue = { viewModel.addToQueue(it.uri) },
+                            startRadio = { viewModel.startRadio(it) },
+                            toggleLike = { viewModel.favorite(it.uri) }
+                        )
 
                         val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
 

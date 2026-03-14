@@ -40,16 +40,13 @@ class MainViewModel @Inject constructor(
 
     val swipeActionHandler = object : SwipeActionHandler {
         override fun addToQueue(uri: String) {
-            spirc.addToQueue(uri)
-            InAppNotificationController.show("Added to queue", { Icon(Icons.Default.Queue, contentDescription = "Added to queue") }, 1000L)
+            this@MainViewModel.addToQueue(uri)
         }
         override fun startRadio(track: Track) {
-            spirc.startRadio(track.uri, false)
-            playbackStateHolder.setTrack(track)
-            InAppNotificationController.show("Radio started", { Icon(Icons.Default.Radio, contentDescription = "Radio started") }, 1000L)
+            this@MainViewModel.startRadio(track)
         }
         override fun favorite(trackUri: String) {
-            spClient.saveItems(arrayOf(trackUri))
+            this@MainViewModel.favorite(trackUri)
         }
         override fun addToPlaylist(track: Track) { }
         override fun trackInfo(track: Track) { openTrackInfo(track) }
@@ -57,6 +54,21 @@ class MainViewModel @Inject constructor(
 
     fun currentTrack(): Flow<Track?> =
         playbackStateHolder.state.map { it.currentTrack }
+
+    fun addToQueue(uri: String) {
+        spirc.addToQueue(uri)
+        InAppNotificationController.show("Added to queue", { Icon(Icons.Default.Queue, contentDescription = "Added to queue") }, 1000L)
+    }
+
+    fun startRadio(track: Track) {
+        spirc.startRadio(track.uri, false)
+        playbackStateHolder.setTrack(track)
+        InAppNotificationController.show("Radio started", { Icon(Icons.Default.Radio, contentDescription = "Radio started") }, 1000L)
+    }
+
+    fun favorite(trackUri: String) {
+        spClient.saveItems(arrayOf(trackUri))
+    }
 
     fun openTrackInfo(track: Track) {
         viewModelScope.launch {

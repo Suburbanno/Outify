@@ -13,13 +13,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import cc.tomko.outify.ui.components.bottomsheet.ArtistLikedTracksBottomSheet
+import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.screens.HomeScreen
 import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.screens.auth.AuthScreen
@@ -110,6 +109,9 @@ fun SharedTransitionScope.NavigationRoot(
                     viewModel = viewModel,
                     onArtistClick = {
                         backStack.add(Route.ArtistScreen(it.uri))
+                    },
+                    onMoreOptions = {
+                        GlobalPopupController.showTrackPopup(viewModel.state.value.currentTrack!!)
                     }
                 )
             }

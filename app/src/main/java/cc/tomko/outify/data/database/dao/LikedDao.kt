@@ -19,7 +19,10 @@ interface LikedDao {
     fun observeLikedTracks(): Flow<List<LikedTrackWithTrack>>
 
     @Query("SELECT EXISTS(SELECT 1 FROM liked_songs WHERE trackId = :id)")
-    fun containsTrack(id: String): Boolean
+    suspend fun containsTrack(id: String): Boolean
+
+    @Query("SELECT EXISTS(SELECT 1 FROM liked_songs WHERE trackId = :id)")
+    fun observeIsTrackLiked(id: String): Flow<Boolean>
 
     @Transaction
     @Query("""
