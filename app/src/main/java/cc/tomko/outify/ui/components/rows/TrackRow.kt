@@ -213,7 +213,6 @@ fun SharedTransitionScope.TrackRow(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
                 if (isLoaded) {
                     AudioBarsIndicator(
                         isPlaying = isPlaying,
@@ -222,6 +221,13 @@ fun SharedTransitionScope.TrackRow(
                         barHeight = 12.dp,
                         spacing = 3.dp,
                         color = LocalContentColor.current
+                    )
+                }
+
+                if(isExplicit) {
+                    Icon(
+                        Icons.Default.Explicit,
+                        contentDescription = null
                     )
                 }
 
