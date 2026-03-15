@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -17,18 +19,28 @@ import coil3.compose.AsyncImage
 
 @Composable
 fun ArtworkBackground(
-    artworkUrl: String,
     modifier: Modifier = Modifier,
+    artworkUrl: String? = null,
+    fallback: @Composable (() -> Unit)? = null,
     bottomFade: Boolean = true,
     topFade: Boolean = true,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        SmartImage(
-            url = artworkUrl,
-            modifier = Modifier.fillMaxSize(),
-            contentDescription = "Artwork",
-            monochrome = LocalUiSettings.current.monochromeHeaders
-        )
+        if(artworkUrl != null){
+            SmartImage(
+                url = artworkUrl,
+                modifier = Modifier.fillMaxSize(),
+                contentDescription = "Artwork",
+                monochrome = LocalUiSettings.current.monochromeHeaders
+            )
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                fallback?.invoke()
+            }
+        }
 
         // Bottom fade
         if (bottomFade) {

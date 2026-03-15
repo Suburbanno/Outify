@@ -14,8 +14,11 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -150,7 +153,13 @@ fun SharedTransitionScope.LibraryScreen(
                         }
 
                         ArtworkBackground(
-                            artworkUrl = artworkUrl ?: "", // TODO: Some placeholder when null
+                            artworkUrl = artworkUrl,
+                            fallback = {
+                                Icon(
+                                    Icons.Default.LibraryMusic,
+                                    contentDescription = null
+                                )
+                            }
                         )
                     },
                     titleContent = {

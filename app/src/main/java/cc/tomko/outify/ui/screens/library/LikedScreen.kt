@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.rounded.Shuffle
@@ -180,7 +182,13 @@ fun SharedTransitionScope.LikedScreen(
             backgroundContent = {
                 val artworkUrl by viewModel.getArtwork().collectAsState(initial = null)
                 ArtworkBackground(
-                    artworkUrl = ALBUM_COVER_URL + artworkUrl,
+                    artworkUrl = artworkUrl?.let { ALBUM_COVER_URL + it },
+                    fallback = {
+                        Icon(
+                            Icons.Default.MusicNote,
+                            contentDescription = null
+                        )
+                    }
                 )
             },
             titleContent = {
