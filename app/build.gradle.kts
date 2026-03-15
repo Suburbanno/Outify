@@ -20,22 +20,33 @@ extensions.configure<ApplicationExtension>("android") {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0a"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
-        }
-    }
+            isMinifyEnabled = true
+            isShrinkResources = true
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("debug")
         }
+
+        debug {
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
     }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
