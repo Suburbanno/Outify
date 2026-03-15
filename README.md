@@ -40,10 +40,10 @@ Contact us through Github:
 - [x] media notification
 - [x] keep alive lifecycle
 
-# Screenshots
-<img src="docs/images/player_1.png" alt="Player interface"/>
-<img src="docs/images/artist.png" alt="Artist view"/>
-<img src="docs/images/liked.png" alt="Liked view"/>
+### Screenshots
+<img src="docs/images/player_1.png" alt="Player interface" width="120"/>
+<img src="docs/images/artist.png" alt="Artist view" width="120"/>
+<img src="docs/images/liked.png" alt="Liked view" width="120"/>
 
 [View entire gallery](./docs/images/)
 
