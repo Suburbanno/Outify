@@ -16,6 +16,7 @@ Outify is based on librespot backend allowing us to stream Spotify audio.
 - Streaming S16 audio
 - Viewing playlists, albums, artists, your library
 - Sleek Material 3 design
+- Dynamic Material Theme
 
 ### Contributing
 Please take a look at [CONTRIBUTING.md](https://github.com/iTomKo/Outify/blob/master/docs/CONTRIBUTING.md)
@@ -38,6 +39,13 @@ Contact us through Github:
 - [ ] offline support
 - [x] media notification
 - [x] keep alive lifecycle
+
+# Screenshots
+<img src="docs/images/player_1.png" alt="Player interface"/>
+<img src="docs/images/artist.png" alt="Artist view"/>
+<img src="docs/images/liked.png" alt="Liked view"/>
+
+[View entire gallery](./docs/images/)
 
 ### Attribution
 [librespot-org/librespot](https://github.com/librespot-org/librespot) for providing the required backend
