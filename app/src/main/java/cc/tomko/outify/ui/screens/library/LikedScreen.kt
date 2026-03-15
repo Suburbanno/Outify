@@ -1,6 +1,8 @@
 package cc.tomko.outify.ui.screens.library
 
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -52,6 +54,7 @@ import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.ui.notifications.NotificationSpec
+import cc.tomko.outify.ui.screens.search.MaterialSearchBar
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
@@ -146,6 +149,15 @@ fun SharedTransitionScope.LikedScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxSize()
         ) {
+            item {
+                MaterialSearchBar(
+                    onQueryChange = viewModel::onQueryChange,
+                    isLoading = false,
+                    autoFocus = false,
+                    placeholderText = "Search liked",
+                )
+            }
+
             items(
                 items = tracks,
                 key = { it.uri },
@@ -171,6 +183,7 @@ fun SharedTransitionScope.LikedScreen(
                         transitioningTrackUri = track.uri
                         onArtistClick(artist)
                     },
+                    modifier = Modifier.animateItem(),
                 )
             }
         }

@@ -133,6 +133,9 @@ class LikedRepository @Inject constructor(
     fun observeLikedTracksWithDetails(): Flow<List<TrackWithArtists>> =
         likedDao.observeLikedTracksWithDetails()
 
+    fun observeSearchLikedTracks(query: String): Flow<List<TrackWithArtists>> =
+        likedDao.observeSearchLikedTracks(query)
+
     fun observeCount(): Flow<Int> = likedDao.observeCount()
 
     /**

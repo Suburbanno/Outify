@@ -3,6 +3,7 @@ package cc.tomko.outify.ui.viewmodel.library
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.Track
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
@@ -35,6 +37,7 @@ class LikedViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
 ) : ViewModel() {
     val isRefreshing = MutableStateFlow(false)
+    private val query = MutableStateFlow("")
 
     companion object {
         private const val PAGE_SIZE = 30
@@ -46,20 +49,29 @@ class LikedViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-    val likedTracks: StateFlow<List<Track>> = likedRepository.observeLikedTracksWithDetails()
-        .mapLatest { rows ->
-            if (rows.isEmpty()) return@mapLatest emptyList()
-
-            val albums = likedRepository.getAlbumsForTracks(rows)
-
-            rows.mapNotNull { twa ->
-                runCatching {
-                    twa.toDomain(twa.track.albumId?.let { albums[it] })
-                }.getOrNull()
+    val likedTracks: StateFlow<List<Track>> =
+        query
+            .debounce(250)
+            .mapLatest { q ->
+                if (q.isBlank()) {
+                    likedRepository.observeLikedTracksWithDetails()
+                } else {
+                    likedRepository.observeSearchLikedTracks(q)
+                }
             }
-        }
-        .debounce(50)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+            .flatMapLatest { it }
+            .mapLatest { rows ->
+                if (rows.isEmpty()) return@mapLatest emptyList()
+
+                val albums = likedRepository.getAlbumsForTracks(rows)
+
+                rows.mapNotNull { twa ->
+                    runCatching {
+                        twa.toDomain(twa.track.albumId?.let { albums[it] })
+                    }.getOrNull()
+                }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Guards against duplicate concurrent fetches
     private val fetchLock = Mutex()
@@ -104,6 +116,10 @@ class LikedViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun onQueryChange(newQuery: String) {
+        query.value = newQuery
     }
 
     fun getArtwork(): Flow<String?> =

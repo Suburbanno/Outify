@@ -73,6 +73,20 @@ interface LikedDao {
     """)
     fun observeLikedTracksWithDetails(): Flow<List<TrackWithArtists>>
 
+    @Transaction
+    @Query("""
+        SELECT DISTINCT t.*
+        FROM liked_songs ls
+        INNER JOIN tracks t ON ls.trackId = t.id
+        LEFT JOIN track_artists ta ON ta.trackId = t.id
+        LEFT JOIN artists a ON a.artistId = ta.artistId
+        WHERE
+            t.name LIKE '%' || :query || '%'
+            OR a.name LIKE '%' || :query || '%'
+        ORDER BY ls.position ASC
+    """)
+    fun observeSearchLikedTracks(query: String): Flow<List<TrackWithArtists>>
+
     @Query("SELECT trackId FROM liked_songs")
     fun observeLikedIds(): Flow<List<String>>
 

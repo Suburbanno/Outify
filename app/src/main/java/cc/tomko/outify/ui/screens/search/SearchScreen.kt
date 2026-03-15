@@ -205,6 +205,7 @@ fun SharedTransitionScope.SearchScreen(
                             onArtworkClick = {
                                 backStack.add(AlbumScreenFromTrackUri(item.uri))
                             },
+                            modifier = Modifier.animateItem()
                         )
                     }
                     is SearchUiModel.AlbumItem -> {
@@ -217,6 +218,7 @@ fun SharedTransitionScope.SearchScreen(
                             onRowClick = {
                                 backStack.add(Route.AlbumScreenFromAlbumUri(album.uri))
                             },
+                            modifier = Modifier.animateItem()
                         )
                     }
                     is SearchUiModel.ArtistItem -> {
@@ -227,7 +229,8 @@ fun SharedTransitionScope.SearchScreen(
                             artworkUrl = ALBUM_COVER_URL + artist.getCover(CoverSize.MEDIUM)?.uri,
                             onRowClick = {
                                 backStack.add(ArtistScreen(artist.uri))
-                            }
+                            },
+                            modifier = Modifier.animateItem()
                         )
                     }
                     is SearchUiModel.PlaylistItem -> {
@@ -248,6 +251,7 @@ fun SharedTransitionScope.SearchScreen(
                                 // TODO: Add author page
                             },
                             contentDescription = playlist.attributes.description,
+                            modifier = Modifier.animateItem()
                         )
                     }
                 }
@@ -263,6 +267,7 @@ fun MaterialSearchBar(
     isLoading: Boolean,
     modifier: Modifier = Modifier,
     autoFocus: Boolean = true,
+    placeholderText: String = "Search Spotify",
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val expanded = false
@@ -296,7 +301,7 @@ fun MaterialSearchBar(
                 },
                 expanded = expanded,
                 onExpandedChange = { /* no-op: keep collapsed so results render below */ },
-                placeholder = { Text(text = "Search Spotify") },
+                placeholder = { Text(text = placeholderText) },
                 leadingIcon = {
                     Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
                 },
