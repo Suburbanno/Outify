@@ -113,4 +113,5 @@ jobs:
           prerelease: true
           files: |
             app/build/outputs/apk/release/*.apk
-            app/build/outputs/bundle/release/*.aab
+          overwrite_files: true
+          token: ${{ secrets.GH_PAT }}
