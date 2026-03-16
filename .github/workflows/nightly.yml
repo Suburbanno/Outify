@@ -6,15 +6,28 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  setup:
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      librespot_commit: ${{ steps.librespot_commit.outputs.commit }}
     steps:
       - name: Checkout repository with submodules
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
+
+      - name: Compute librespot commit
+        id: librespot_commit
+        run: |
+          echo "commit=$(git -C rust/deps/librespot rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Generate version name
+        id: version
+        run: |
+          VERSION="nightly-$(date +'%Y.%m.%d')"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Cache Cargo (librespot)
         uses: actions/cache@v3
@@ -23,8 +36,9 @@ jobs:
             rust/deps/librespot/target
             ~/.cargo/registry
             ~/.cargo/git
-          key: librespot-rust-${{ runner.os }}-${{ hashFiles('rust/deps/librespot/Cargo.lock') }}
+          key: librespot-rust-${{ runner.os }}-${{ steps.librespot_commit.outputs.commit }}-${{ hashFiles('rust/deps/librespot/Cargo.lock') }}
           restore-keys: |
+            librespot-rust-${{ runner.os }}-${{ steps.librespot_commit.outputs.commit }}-
             librespot-rust-${{ runner.os }}-
 
       - name: Cache Gradle
@@ -33,34 +47,25 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', '**/*.gradle*', 'settings.gradle*') }}
 
-      - name: Debug git state
-        run: |
-          echo "HEAD COMMIT:"
-          git rev-parse HEAD
-          echo "Submodule pointer:"
-          git ls-tree HEAD rust/deps/librespot || true
-          echo "Submodule status:"
-          git submodule status || true
-
-      - name: Ensure submodules are synced
-        run: |
-          git submodule sync --recursive
-          git submodule update --init --recursive
-
-      - name: Generate version name
-        id: version
-        run: |
-          VERSION="nightly-$(date +'%Y.%m.%d')"
-          echo "VERSION_NAME=$VERSION" >> $GITHUB_ENV
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
+  librespot_build:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
         with:
-          distribution: temurin
-          java-version: 17
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Restore Cargo cache
+        uses: actions/cache@v3
+        with:
+          path: rust/deps/librespot/target
+          key: librespot-rust-${{ runner.os }}-${{ needs.setup.librespot_commit }}-${{ hashFiles('rust/deps/librespot/Cargo.lock') }}
+          restore-keys: |
+            librespot-rust-${{ runner.os }}-${{ needs.setup.librespot_commit }}-
+            librespot-rust-${{ runner.os }}-
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -79,31 +84,47 @@ jobs:
 
       - name: Install Rust Android targets
         run: |
-          rustup target add \
-            aarch64-linux-android \
-            armv7-linux-androideabi \
-            x86_64-linux-android \
-            i686-linux-android
+          rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
 
       - name: Build librespot
+        env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}/rust/deps/librespot/target
         run: |
           chmod +x ./buildLibrespot.sh
           ./buildLibrespot.sh
+
+  android_build:
+    runs-on: ubuntu-latest
+    needs: librespot_build
+    env:
+      ANDROID_KEYSTORE_FILE: app/release.keystore
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      VERSION_NAME: ${{ needs.setup.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
 
       - name: Decode Keystore
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
 
-      - name: Verify keystore
-        run: ls -l app/release.keystore
-
       - name: Build signed release
-        env:
-          ANDROID_KEYSTORE_FILE: app/release.keystore
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
+
+  publish_release:
+    runs-on: ubuntu-latest
+    needs: android_build
+    env:
+      VERSION_NAME: ${{ needs.setup.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
 
       - name: Publish Nightly Release
         uses: softprops/action-gh-release@v2
