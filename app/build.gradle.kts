@@ -20,7 +20,7 @@ extensions.configure<ApplicationExtension>("android") {
         minSdk = 26
         targetSdk = 36
         versionCode = 1
-        versionName = "1.0a"
+        versionName = (project.findProperty("versionName") ?: "dev") as String?
     }
 
     buildTypes {
