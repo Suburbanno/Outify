@@ -58,6 +58,14 @@ jobs:
       - name: Export NDK path
         run: echo "ANDROID_NDK=${{ steps.ndk.outputs.ndk-path }}" >> $GITHUB_ENV
 
+      - name: Install Rust Android targets
+        run: |
+          rustup target add \
+            aarch64-linux-android \
+            armv7-linux-androideabi \
+            x86_64-linux-android \
+            i686-linux-android
+
       - name: Build librespot
         run: |
           chmod +x ./buildLibrespot.sh
