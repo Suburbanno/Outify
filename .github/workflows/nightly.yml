@@ -1,0 +1,87 @@
+name: Android Nightly
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository with submodules
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Debug git state
+        run: |
+          echo "HEAD COMMIT:"
+          git rev-parse HEAD
+          echo "Submodule pointer:"
+          git ls-tree HEAD rust/deps/librespot || true
+          echo "Submodule status:"
+          git submodule status || true
+
+      - name: Ensure submodules are synced
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - name: Generate version name
+        id: version
+        run: |
+          VERSION="nightly-$(date +'%Y.%m.%d')"
+          echo "VERSION_NAME=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk
+
+      - name: Install Android NDK
+        id: ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r29
+
+      - name: Export NDK path
+        run: echo "ANDROID_NDK=${{ steps.ndk.outputs.ndk-path }}" >> $GITHUB_ENV
+
+      - name: Build librespot
+        run: |
+          chmod +x ./buildLibrespot.sh
+          ./buildLibrespot.sh
+
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+
+      - name: Build signed release
+        run: |
+          ./gradlew assembleRelease \
+            -PversionName=${{ env.VERSION_NAME }} \
+            -Pandroid.injected.signing.store.file=release.keystore \
+            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
+            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
+            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+
+      - name: Publish Nightly Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: Nightly Build ${{ env.VERSION_NAME }}
+          prerelease: true
+          files: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
