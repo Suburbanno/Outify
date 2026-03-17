@@ -5,8 +5,6 @@ set -e
 declare -A ABI_TRIPLE_MAP=(
 	["arm64-v8a"]="aarch64-linux-android"
 	["armeabi-v7a"]="armv7-linux-androideabi"
-	["x86"]="i686-linux-android"
-	["x86_64"]="x86_64-linux-android"
 )
 
 PROJECT_ROOT=$(pwd)
