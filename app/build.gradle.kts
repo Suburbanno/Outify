@@ -25,24 +25,35 @@ extensions.configure<ApplicationExtension>("android") {
 
     signingConfigs {
         create("ciRelease") {
-            val keystoreFile = System.getenv("ANDROID_KEYSTORE_FILE")
-            val keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
-            val keyAlias = System.getenv("ANDROID_KEY_ALIAS")
-            val keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+					val keystoreFileEnv = System.getenv("ANDROID_KEYSTORE_FILE")
+					val keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+					val keyAliasEnv = System.getenv("ANDROID_KEY_ALIAS")
+					val keyPasswordEnv = System.getenv("ANDROID_KEY_PASSWORD")
 
-            if (!keystoreFile.isNullOrBlank()) {
-                storeFile = file(keystoreFile)
-            }
-            if (!keystorePassword.isNullOrBlank()) {
-                storePassword = keystorePassword
-            }
-            if (!keyAlias.isNullOrBlank()) {
-                this.keyAlias = keyAlias
-            }
-            if (!keyPassword.isNullOrBlank()) {
-                this.keyPassword = keyPassword
-            }
-        }
+					require(!keystoreFileEnv.isNullOrBlank()) {
+						"ANDROID_KEYSTORE_FILE is not set"
+					}
+					require(!keystorePassword.isNullOrBlank()) {
+						"ANDROID_KEYSTORE_PASSWORD is not set"
+					}
+					require(!keyAliasEnv.isNullOrBlank()) {
+						"ANDROID_KEY_ALIAS is not set"
+					}
+					require(!keyPasswordEnv.isNullOrBlank()) {
+						"ANDROID_KEY_PASSWORD is not set"
+					}
+
+					val resolvedFile = if (File(keystoreFileEnv).isAbsolute) {
+						file(keystoreFileEnv)
+					} else {
+						rootProject.file(keystoreFileEnv)
+					}
+
+					storeFile = resolvedFile
+					storePassword = keystorePassword
+					keyAlias = keyAliasEnv
+					keyPassword = keyPasswordEnv
+				}
     }
 
     buildTypes {
@@ -51,11 +62,11 @@ extensions.configure<ApplicationExtension>("android") {
             isShrinkResources = true
 
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = if (System.getenv("ANDROID_KEYSTORE_FILE") != null) {
-                signingConfigs.getByName("ciRelease")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+						signingConfig = if (!System.getenv("ANDROID_KEYSTORE_FILE").isNullOrBlank()) {
+							signingConfigs.getByName("ciRelease")
+						} else {
+							signingConfigs.getByName("debug")
+						}
         }
 
         debug {
