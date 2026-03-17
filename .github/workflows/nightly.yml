@@ -173,6 +173,12 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightlies
+          path: app/build/outputs/apk/release/*.apk
+
   publish_release:
     runs-on: ubuntu-latest
     needs: android_build
@@ -180,10 +186,14 @@ jobs:
     env:
       VERSION_NAME: ${{ needs.setup.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Ensure folders
+        run: mkdir -p app/build/outputs/apk/release
+    
+      - name: Download APKs
+        uses: actions/download-artifact@v4
         with:
-          fetch-depth: 0
-          submodules: recursive
+          name: nightlies
+          path: app/build/outputs/apk/release
 
       - name: Publish Nightly Release
         uses: softprops/action-gh-release@v2
