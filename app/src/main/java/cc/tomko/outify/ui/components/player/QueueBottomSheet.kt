@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -162,20 +164,13 @@ fun SharedTransitionScope.QueueBottomSheet(
         sheetState = sheetState,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         modifier = Modifier
-            .fillMaxWidth()
-            .then(
-                if (queueState.tracks.isEmpty() && !queueState.isLoading)
-                    Modifier.wrapContentHeight()
-                else
-                    Modifier
-                        .heightIn(min = 300.dp)
-                        .wrapContentHeight()
-            ),
+            .fillMaxWidth(),
         tonalElevation = 3.dp,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxSize()
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -298,7 +293,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                         state = listState,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .wrapContentHeight(),
+                            .weight(1f),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         // Spacer item to preserve index offset for reorder
@@ -326,7 +321,8 @@ fun SharedTransitionScope.QueueBottomSheet(
                                         isDraggingItem -> MaterialTheme.colorScheme.surfaceVariant
                                         isCurrentTrack -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                                         else           -> Color.Transparent
-                                    }
+                                    },
+                                    modifier = Modifier.animateItem(),
                                 ) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,

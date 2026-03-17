@@ -133,7 +133,7 @@ class QueueViewModel @Inject constructor(
         // load previous pages
         if (canonicalFirst < loadedRange.first + PREFETCH_THRESHOLD && loadedRange.first > 0) {
             loadPreviousPage(currentTrack)
-        } else if (canonicalLast > loadedRange.last - PREFETCH_THRESHOLD && loadedRange.last < state.totalSize) {
+        } else if (canonicalLast > loadedRange.last - PREFETCH_THRESHOLD && loadedRange.last + 1 < state.totalSize) {
             loadNextPage(currentTrack)
         }
     }
@@ -183,7 +183,7 @@ class QueueViewModel @Inject constructor(
                 val state = _queueState.value
                 val currentRange = state.loadedRange
                 val newEndIndex = min(state.totalSize, currentRange.last + PAGE_SIZE)
-                if (newEndIndex <= currentRange.last) return@launch
+                if (newEndIndex <= currentRange.last + 1) return@launch
 
                 _queueState.update { it.copy(isLoadingNext = true, error = null) }
 
