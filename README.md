@@ -1,4 +1,6 @@
 # Outify
+[![Android Nightly](https://github.com/iTomKo/Outify/actions/workflows/nightly.yml/badge.svg)](https://github.com/iTomKo/Outify/actions/workflows/nightly.yml)
+
 Third party open source Android Spotify client with Material 3 using librespot Rust
 
 > [!WARNING]
