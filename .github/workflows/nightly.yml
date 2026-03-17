@@ -72,10 +72,10 @@ jobs:
             rust/target
             ~/.cargo/registry
             ~/.cargo/git
-        key: librespot-rust-${{ runner.os }}-${{ needs.setup.outputs.librespot_commit }}-${{ matrix.abi }}
-        restore-keys: |
-          librespot-rust-${{ runner.os }}-${{ needs.setup.outputs.librespot_commit }}-
-          librespot-rust-${{ runner.os }}-
+          key: librespot-rust-${{ runner.os }}-${{ needs.setup.outputs.librespot_commit }}-${{ matrix.abi }}
+          restore-keys: |
+            librespot-rust-${{ runner.os }}-${{ needs.setup.outputs.librespot_commit }}-
+            librespot-rust-${{ runner.os }}-
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -151,14 +151,14 @@ jobs:
       - name: Cache Gradle
         uses: actions/cache@v3
         with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-          ~/.gradle/build-cache
-          ~/.android/build-cache
-        key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', '**/*.gradle*', 'settings.gradle*') }}
-        restore-keys: |
-          gradle-${{ runner.os }}-
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/build-cache
+            ~/.android/build-cache
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', '**/*.gradle*', 'settings.gradle*') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       - name: Build signed release
         run: ./gradlew assembleRelease
