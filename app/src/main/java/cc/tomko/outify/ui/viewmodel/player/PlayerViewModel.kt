@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -155,8 +156,23 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
-    fun currentTrack(): Flow<Track?> =
-        playbackStateHolder.state.map { it.currentTrack }
+    val currentTrack: StateFlow<Track?> = playbackStateHolder.state
+        .map { it.currentTrack }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null
+        )
+
+    val isPlaying: StateFlow<Boolean> = playbackStateHolder.state
+        .map { it.isPlaying }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = false
+        )
 
     fun loadLyrics(){
         viewModelScope.launch {

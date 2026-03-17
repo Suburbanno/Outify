@@ -103,8 +103,8 @@ fun SharedTransitionScope.ArtistLikedTracksBottomSheet(
                 val artistState = (uiState as ArtistUiState.Success).artist
                 val artworkUrl = ALBUM_COVER_URL + (artistState.getCover(CoverSize.LARGE)?.uri ?: "")
                 val likedTracks by viewModel.likedTracks.collectAsState()
-                val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
-                val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
+                val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
+                val isPlaybackPlaying by viewModel.isPlaying.collectAsState(initial = false)
                 val spirc = viewModel.spirc
 
                 Column(

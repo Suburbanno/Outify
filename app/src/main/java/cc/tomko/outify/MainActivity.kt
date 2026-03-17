@@ -187,8 +187,7 @@ class MainActivity : ComponentActivity() {
             .collectAsState(initial = InterfaceSettings())
 
         val swipeSettings by viewModel.swipeSettings.collectAsState(initial = interfaceSettings.gestureSettings)
-        val currentTrack by viewModel.currentTrack()
-            .collectAsState(initial = null)
+        val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
 
         OutifyTheme(
             track = currentTrack,

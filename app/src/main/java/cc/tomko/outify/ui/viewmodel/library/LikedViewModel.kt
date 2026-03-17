@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
@@ -134,9 +135,21 @@ class LikedViewModel @Inject constructor(
         playbackStateHolder.setTrack(track)
     }
 
-    fun currentTrack(): Flow<Track?> =
-        playbackStateHolder.state.map { it.currentTrack }
+    val currentTrack: StateFlow<Track?> = playbackStateHolder.state
+        .map { it.currentTrack }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null
+        )
 
-    fun isPlaying(): Flow<Boolean> =
-        playbackStateHolder.state.map { it.isPlaying }
+    val isPlaying: StateFlow<Boolean> = playbackStateHolder.state
+        .map { it.isPlaying }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = false
+        )
 }

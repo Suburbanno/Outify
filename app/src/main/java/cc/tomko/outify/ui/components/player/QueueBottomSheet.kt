@@ -89,8 +89,8 @@ fun SharedTransitionScope.QueueBottomSheet(
     val coroutineScope = rememberCoroutineScope()
     val spirc = viewModel.spirc
 
-    val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
-    val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+    val isPlaybackPlaying by viewModel.isPlaying.collectAsState(initial = false)
+    val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
     val likedTracksId by viewModel.likedTrackIds.collectAsState()
 
     val activeQueueId by multiQueueViewModel.activeQueueId.collectAsState()

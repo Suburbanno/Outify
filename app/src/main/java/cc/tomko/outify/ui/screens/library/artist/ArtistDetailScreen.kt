@@ -132,8 +132,8 @@ fun SharedTransitionScope.ArtistDetailScreen(
 
             val popularTracks by viewModel.popularTracks.collectAsState()
 
-            val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
-            val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
+            val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
+            val isPlaybackPlaying by viewModel.isPlaying.collectAsState(initial = false)
 
             val lazyList = rememberLazyListState()
 

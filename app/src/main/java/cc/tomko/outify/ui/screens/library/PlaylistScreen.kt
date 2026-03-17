@@ -97,8 +97,8 @@ fun SharedTransitionScope.PlaylistScreen(
             val isRefreshing by viewModel.isRefreshing.collectAsState()
 
             val lazyList = rememberLazyListState()
-            val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
-            val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
+            val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
+            val isPlaybackPlaying by viewModel.isPlaying.collectAsState(initial = false)
             val spirc = viewModel.spirc
 
             var artworkUrl by remember { mutableStateOf("") }

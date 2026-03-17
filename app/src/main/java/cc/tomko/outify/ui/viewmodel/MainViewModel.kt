@@ -21,7 +21,11 @@ import cc.tomko.outify.ui.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -52,8 +56,14 @@ class MainViewModel @Inject constructor(
         override fun trackInfo(track: Track) { openTrackInfo(track) }
     }
 
-    fun currentTrack(): Flow<Track?> =
-        playbackStateHolder.state.map { it.currentTrack }
+    val currentTrack: StateFlow<Track?> = playbackStateHolder.state
+        .map { it.currentTrack }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null
+        )
 
     fun addToQueue(uri: String) {
         spirc.addToQueue(uri)

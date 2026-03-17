@@ -87,8 +87,8 @@ fun SharedTransitionScope.SearchScreen(
     val spirc = viewModel.spirc
 
     val listState = rememberLazyListState()
-    val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
-    val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
+    val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
+    val isPlaybackPlaying by viewModel.isPlaying.collectAsState(initial = false)
 
     var showTracks by rememberSaveable { mutableStateOf(true) }
     var showArtists by rememberSaveable { mutableStateOf(true) }

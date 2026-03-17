@@ -94,8 +94,8 @@ fun SharedTransitionScope.MiniPlayer(
     onClick: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
-    val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
-    val isPlaying by viewModel.isPlaying().collectAsState(initial = false)
+    val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
+    val isPlaying by viewModel.isPlaying.collectAsState(initial = false)
     val isBuffering by viewModel.isBuffering().collectAsState(initial = false)
     val currentTime by viewModel.positionMs.collectAsState(initial = 0L)
     val spirc = viewModel.spirc

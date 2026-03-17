@@ -22,10 +22,12 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,8 +43,23 @@ class PlaylistViewModel @Inject constructor(
 ): ViewModel() {
     val json = Json { ignoreUnknownKeys = true }
 
-    fun currentTrack(): Flow<Track?> =
-        playbackStateHolder.state.map { it.currentTrack }
+    val currentTrack: StateFlow<Track?> = playbackStateHolder.state
+        .map { it.currentTrack }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null
+        )
+
+    val isPlaying: StateFlow<Boolean> = playbackStateHolder.state
+        .map { it.isPlaying }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = false
+        )
 
     private val _authors = MutableStateFlow<Map<String, Profile>>(emptyMap())
     val authors: StateFlow<Map<String, Profile>> = _authors
@@ -55,9 +72,15 @@ class PlaylistViewModel @Inject constructor(
 
     val isRefreshing = MutableStateFlow(false)
 
-    val likedTrackIds =
+    val likedTrackIds: StateFlow<Set<String>> =
         likedDao.observeLikedIds()
             .map { it.toHashSet() }
+            .distinctUntilChanged()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptySet()
+            )
 
     fun loadPlaylist(playlistUri: String, cleanFetch: Boolean) {
         viewModelScope.launch {
@@ -144,9 +167,6 @@ class PlaylistViewModel @Inject constructor(
     fun setTrack(track: Track) {
         playbackStateHolder.setTrack(track)
     }
-
-    fun isPlaying(): Flow<Boolean> =
-        playbackStateHolder.state.map { it.isPlaying }
 }
 
 sealed interface PlaylistUiState {

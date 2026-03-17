@@ -97,7 +97,7 @@ fun PlayerScreen(
     val uiState by viewModel.uiState.collectAsState()
     val artworkUrl = uiState.albumArt?.let { ALBUM_COVER_URL + it }
     val positionMs by viewModel.positionMs.collectAsState()
-    val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
+    val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
 
     val lyrics by viewModel.lyrics.collectAsState()
     val currentLyric by viewModel.currentLyric.collectAsState()
