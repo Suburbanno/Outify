@@ -65,6 +65,7 @@ import cc.tomko.outify.ui.theme.OutifyTheme
 import cc.tomko.outify.ui.viewmodel.MainViewModel
 import cc.tomko.outify.ui.viewmodel.auth.LibrespotAuthProgress
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
+import cc.tomko.outify.ui.viewmodel.player.MultiQueueViewModel
 import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -173,6 +174,7 @@ class MainActivity : ComponentActivity() {
         val sheetState = rememberQueueBottomSheetState()
 
         val queueViewModel: QueueViewModel = hiltViewModel()
+        val multiQueueViewModel: MultiQueueViewModel = hiltViewModel()
         val miniPlayerViewModel: MiniPlayerViewModel = hiltViewModel()
         val playerViewModel: PlayerViewModel = hiltViewModel()
 
@@ -297,6 +299,13 @@ class MainActivity : ComponentActivity() {
                             QueueBottomSheet(
                                 sheetState = sheetState.sheetState,
                                 viewModel = queueViewModel,
+                                multiQueueViewModel = multiQueueViewModel,
+                                onArtistClick = {
+                                    backStack.add(Route.ArtistScreen(it.uri))
+                                },
+                                onArtworkClick = {
+                                    backStack.add(Route.AlbumScreenFromTrackUri(it.uri))
+                                },
                                 onDismissRequest = {
                                     sheetState.hide()
                                 }

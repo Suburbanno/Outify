@@ -1,9 +1,7 @@
 use std::{sync::Mutex, time::Duration};
 
 use jni::{
-    JNIEnv,
-    objects::{GlobalRef, JClass, JObject, JString},
-    sys::{jboolean, jlong, jstring},
+    objects::{GlobalRef, JClass, JObject, JObjectArray, JString}, sys::{jboolean, jlong, jobjectArray, jstring}, JNIEnv
 };
 use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, PlayingTrack};
 use librespot_core::SpotifyUri;
@@ -153,7 +151,13 @@ pub extern "system" fn shuffle_load(mut env: JNIEnv, _this: JClass, juri: JStrin
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_localLoad")]
 pub extern "system" fn local_load(mut env: JNIEnv, _this: JClass, juri: JString) -> jboolean {
-    let uri = SpotifyUri::Local { artist: "Linkin+Park".to_string(), album_title: "From+Zero".to_string(), track_title: "Cut+the+Bridge".to_string(), duration: Duration::from_secs(209) }.to_uri();
+    let uri = SpotifyUri::Local {
+        artist: "Linkin+Park".to_string(),
+        album_title: "From+Zero".to_string(),
+        track_title: "Cut+the+Bridge".to_string(),
+        duration: Duration::from_secs(209),
+    }
+    .to_uri();
 
     let options = LoadRequestOptions {
         start_playing: true,
@@ -199,6 +203,43 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_addToQueue(
         }
         Err(e) => {
             warn!("Failed to add to queue: {}", e);
+            0
+        }
+    }
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_setQueue")]
+pub extern "system" fn set_queue(mut env: JNIEnv, _this: JClass, tracks: jobjectArray) -> jboolean {
+    let tracks_array = unsafe { JObjectArray::from_raw(tracks) };
+
+    let len = match env.get_array_length(&tracks_array) {
+        Ok(l) => l,
+        Err(_) => return 0,
+    };
+
+    let mut uris: Vec<String> = Vec::with_capacity(len as usize);
+
+    for i in 0..len {
+        let obj = match env.get_object_array_element(&tracks_array, i) {
+            Ok(o) => o,
+            Err(_) => return 0,
+        };
+        let jstr = JString::from(obj);
+        let uri: String = match env.get_string(&jstr) {
+            Ok(s) => s.into(),
+            Err(_) => return 0,
+        };
+        uris.push(uri);
+    }
+
+    match with_spirc(|runtime| runtime.set_queue(uris)) {
+        Ok(Ok(_)) => 1,
+        Ok(Err(e)) => {
+            warn!("Failed to set queue: {}", e);
+            0
+        }
+        Err(e) => {
+            warn!("Failed to set queue: {}", e);
             0
         }
     }

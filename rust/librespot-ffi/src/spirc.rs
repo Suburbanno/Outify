@@ -179,6 +179,17 @@ impl SpircRuntime {
         self.spirc.add_to_queue(uri)
     }
 
+    pub fn set_queue(&self, tracks: Vec<String>) -> Result<(), librespot_core::Error> {
+        self.spirc.load(LoadRequest::from_tracks(
+            tracks,
+            LoadRequestOptions {
+                start_playing: true,
+                seek_to: 0,
+                ..Default::default()
+            },
+        ))
+    }
+
     pub fn set_volume(&self, volume: u16) -> Result<(), librespot_core::error::Error> {
         self.spirc.set_volume(volume)
     }
@@ -387,7 +398,10 @@ fn update_current_track(uri: SpotifyUri) {
     }
 }
 
-pub async fn initialize_spirc(gapless: bool, normalisation: bool) -> Result<(), librespot_core::Error> {
+pub async fn initialize_spirc(
+    gapless: bool,
+    normalisation: bool,
+) -> Result<(), librespot_core::Error> {
     debug!("Initializing SpircRuntime");
 
     let lock = SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));

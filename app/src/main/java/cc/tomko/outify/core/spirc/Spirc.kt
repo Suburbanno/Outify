@@ -64,6 +64,12 @@ object Spirc {
     external fun addToQueue(spotifyUri: String?): Boolean
 
     /**
+     * Loads context of given uris
+     */
+    @JvmStatic
+    external fun setQueue(uris: Array<String>): Boolean
+
+    /**
      * Activates current Spirc session
      * @return `true` if success
      */

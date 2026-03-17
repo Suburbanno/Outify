@@ -21,7 +21,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DragIndicator
+import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -63,6 +65,7 @@ import cc.tomko.outify.data.Track
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.components.rows.TrackRow
+import cc.tomko.outify.ui.viewmodel.player.MultiQueueViewModel
 import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -74,6 +77,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 fun SharedTransitionScope.QueueBottomSheet(
     sheetState: SheetState,
     viewModel: QueueViewModel,
+    multiQueueViewModel: MultiQueueViewModel,
     onDismissRequest: () -> Unit,
     onArtistClick: (Artist) -> Unit,
     onArtworkClick: (Track) -> Unit,
@@ -85,10 +89,18 @@ fun SharedTransitionScope.QueueBottomSheet(
 
     val isPlaybackPlaying by viewModel.isPlaying().collectAsState(initial = false)
     val currentTrack by viewModel.currentTrack().collectAsState(initial = null)
-
     val likedTracksId by viewModel.likedTrackIds.collectAsState()
 
-    LaunchedEffect(viewModel) {
+    val activeQueueId by multiQueueViewModel.activeQueueId.collectAsState()
+    val savedQueues by multiQueueViewModel.queues.collectAsState()
+    val activeQueueName = remember(activeQueueId, savedQueues) {
+        savedQueues.find { it.id == activeQueueId }?.name
+    }
+
+    var showSwitcher by remember { mutableStateOf(false) }
+    var showSaveDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(viewModel, activeQueueId) {
         viewModel.loadQueue(currentTrack)
     }
 
@@ -96,9 +108,7 @@ fun SharedTransitionScope.QueueBottomSheet(
     var isDragging by remember { mutableStateOf(false) }
 
     LaunchedEffect(queueState.tracks) {
-        if (!isDragging) {
-            localTracks = queueState.tracks
-        }
+        if (!isDragging) localTracks = queueState.tracks
     }
 
     val listState = rememberLazyListState()
@@ -157,7 +167,9 @@ fun SharedTransitionScope.QueueBottomSheet(
                 if (queueState.tracks.isEmpty() && !queueState.isLoading)
                     Modifier.wrapContentHeight()
                 else
-                    Modifier.heightIn(min = 300.dp).wrapContentHeight()
+                    Modifier
+                        .heightIn(min = 300.dp)
+                        .wrapContentHeight()
             ),
         tonalElevation = 3.dp,
     ) {
@@ -194,9 +206,36 @@ fun SharedTransitionScope.QueueBottomSheet(
                         Text(
                             text = "${queueState.totalSize} songs",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    activeQueueName?.let { name ->
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                }
+
+                IconButton(onClick = { showSaveDialog = true }) {
+                    Icon(
+                        Icons.Default.PlaylistAdd,
+                        contentDescription = "Save queue",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                IconButton(onClick = { showSwitcher = true }) {
+                    Icon(
+                        Icons.Default.LibraryMusic,
+                        contentDescription = "Saved queues",
+                        tint = if (activeQueueId != null)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
@@ -222,7 +261,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                             Text(
                                 text = "Loading queue…",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -243,12 +282,12 @@ fun SharedTransitionScope.QueueBottomSheet(
                                 Icons.Default.SearchOff,
                                 contentDescription = null,
                                 modifier = Modifier.size(56.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
                                 text = "The queue is empty",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -270,10 +309,9 @@ fun SharedTransitionScope.QueueBottomSheet(
                             key = { it.id },
                             contentType = { "track" },
                         ) { item ->
-                            val artworkUrl = remember(item.track.album?.getCover(CoverSize.MEDIUM)) {
-                                ALBUM_COVER_URL + item.track.album?.getCover(CoverSize.MEDIUM)?.uri
+                            val isCurrentTrack = remember(currentTrack, item.track.uri) {
+                                currentTrack?.uri == item.track.uri
                             }
-                            val isCurrentTrack = item.track.id == currentTrack?.id
 
                             ReorderableItem(reorderState, key = item.id) { isDraggingItem ->
                                 val elevation by animateDpAsState(
@@ -285,9 +323,9 @@ fun SharedTransitionScope.QueueBottomSheet(
                                     shadowElevation = elevation,
                                     shape = RoundedCornerShape(8.dp),
                                     color = when {
-                                        isDraggingItem  -> MaterialTheme.colorScheme.surfaceVariant
-                                        isCurrentTrack  -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                                        else            -> Color.Transparent
+                                        isDraggingItem -> MaterialTheme.colorScheme.surfaceVariant
+                                        isCurrentTrack -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                        else           -> Color.Transparent
                                     }
                                 ) {
                                     Row(
@@ -314,7 +352,10 @@ fun SharedTransitionScope.QueueBottomSheet(
                                             Icon(
                                                 Icons.Default.DragIndicator,
                                                 contentDescription = "Reorder",
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                tint = if (isCurrentTrack)
+                                                    MaterialTheme.colorScheme.primary
+                                                else
+                                                    MaterialTheme.colorScheme.onSurfaceVariant,
                                             )
                                         }
 
@@ -330,21 +371,6 @@ fun SharedTransitionScope.QueueBottomSheet(
                                             isLiked = item.track.id in likedTracksId,
                                             onArtistClick = { onArtistClick(it) },
                                             onArtworkClick = { onArtworkClick(item.track) }
-                                        )
-                                        TrackRow(
-                                            title = item.track.name,
-                                            artists = item.track.artists,
-                                            artworkUrl = artworkUrl,
-                                            onRowClick = remember(item.track.uri) {
-                                                {
-                                                    coroutineScope.launch {
-                                                        spirc.load(item.track.uri)
-                                                    }
-                                                }
-                                            },
-                                            onArtistClick = {},
-                                            sharedTransitionKey = null,
-                                            color = Color.Transparent
                                         )
                                     }
                                 }
@@ -369,6 +395,26 @@ fun SharedTransitionScope.QueueBottomSheet(
             Spacer(modifier = Modifier.height(6.dp))
         }
     }
+
+    if (showSwitcher) {
+        QueueSwitcherBottomSheet(
+            viewModel = multiQueueViewModel,
+            currentTrack = currentTrack,
+            onDismiss = { showSwitcher = false },
+        )
+    }
+
+    if (showSaveDialog) {
+        QueueNameDialog(
+            title = "Save queue",
+            confirmLabel = "Save",
+            onConfirm = { name ->
+                multiQueueViewModel.saveCurrentQueue(name, currentTrack)
+                showSaveDialog = false
+            },
+            onDismiss = { showSaveDialog = false },
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -381,7 +427,7 @@ fun rememberQueueBottomSheetState(): QueueBottomSheetController {
 
 class QueueBottomSheetController @OptIn(ExperimentalMaterial3Api::class) constructor(
     val sheetState: SheetState,
-    val visible: MutableState<Boolean>
+    val visible: MutableState<Boolean>,
 ) {
     fun show() { visible.value = true }
     fun hide() { visible.value = false }

@@ -57,6 +57,11 @@ class SettingsRepository @Inject constructor(
             val MONOCHROME_PLAYER = booleanPreferencesKey("monochrome_player")
             val MONOCHROME_HEADERS = booleanPreferencesKey("monochrome_headers")
         }
+
+        object Queue {
+            val QUEUES = stringPreferencesKey("saved_queues_v1")
+            val ACTIVE_ID = stringPreferencesKey("active_queue_id")
+        }
     }
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
