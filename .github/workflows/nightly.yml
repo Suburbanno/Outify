@@ -52,6 +52,13 @@ jobs:
   librespot_build:
     runs-on: ubuntu-latest
     needs: setup
+
+    strategy:
+      matrix:
+        abi:
+          - arm64-v8a
+          - armeabi-v7a
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -61,11 +68,14 @@ jobs:
       - name: Restore Cargo cache
         uses: actions/cache@v3
         with:
-          path: rust/deps/librespot/target
-          key: librespot-rust-${{ runner.os }}-${{ needs.setup.librespot_commit }}-${{ hashFiles('rust/deps/librespot/Cargo.lock') }}
-          restore-keys: |
-            librespot-rust-${{ runner.os }}-${{ needs.setup.librespot_commit }}-
-            librespot-rust-${{ runner.os }}-
+          path: |
+            rust/target
+            ~/.cargo/registry
+            ~/.cargo/git
+        key: librespot-rust-${{ runner.os }}-${{ needs.setup.outputs.librespot_commit }}-${{ matrix.abi }}
+        restore-keys: |
+          librespot-rust-${{ runner.os }}-${{ needs.setup.outputs.librespot_commit }}-
+          librespot-rust-${{ runner.os }}-
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -84,14 +94,22 @@ jobs:
 
       - name: Install Rust Android targets
         run: |
-          rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+          rustup target add aarch64-linux-android armv7-linux-androideabi
 
       - name: Build librespot
-        env:
-          CARGO_TARGET_DIR: ${{ github.workspace }}/rust/deps/librespot/target
+        working-directory: rust/librespot-ffi
         run: |
-          chmod +x ./buildLibrespot.sh
-          ./buildLibrespot.sh
+          cargo ndk \
+          -t ${{ matrix.abi }} \
+          --platform 21 \
+          build --release
+
+      - name: Upload ABI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: librespot-${{ matrix.abi }}
+          path: |
+            rust/target/*/release/liblibrespot_ffi.so
 
   android_build:
     runs-on: ubuntu-latest
@@ -102,15 +120,45 @@ jobs:
       ANDROID_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
       VERSION_NAME: ${{ needs.setup.outputs.version }}
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
 
+      - name: Downlaod arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: librespot-arm64-v8a
+          path: app/src/main/jniLibs/arm64-v8a
+
+      - name: Download armeabi
+        uses: actions/download-artifact@v4
+        with:
+          name: librespot-armeabi-v7a
+          path: app/src/main/jniLibs/armeabi-v7a
+
       - name: Decode Keystore
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+
+      - name: Enable Gradle cache
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.caching=true" >> ~/.gradle/gradle.properties
+          
+      - name: Cache Gradle
+        uses: actions/cache@v3
+        with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+          ~/.gradle/build-cache
+          ~/.android/build-cache
+        key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', '**/*.gradle*', 'settings.gradle*') }}
+        restore-keys: |
+          gradle-${{ runner.os }}-
 
       - name: Build signed release
         run: ./gradlew assembleRelease
