@@ -193,7 +193,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
                         SwipeableTrackRowConfigured(
                             track = track,
                             currentTrack = currentTrack,
-                            isLiked = track.uri in likedTrackIds,
+                            isLiked = track.id in likedTrackIds,
                             isPlaybackPlaying = isPlaybackPlaying,
                             onRowClick = remember(track.uri) {
                                 {
