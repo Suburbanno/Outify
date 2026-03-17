@@ -141,7 +141,11 @@ jobs:
 
       - name: Decode Keystore
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+          mkdir -p "${{ github.workspace }}/app"
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "${{ github.workspace }}/app/release.keystore"
+
+      - name: Verify keystore location
+        run: ls -l "${{ github.workspace }}/app/release.keystore"
 
       - name: Enable Gradle cache
         run: |
@@ -161,6 +165,11 @@ jobs:
             gradle-${{ runner.os }}-
 
       - name: Build signed release
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ github.workspace }}/app/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease
 
   publish_release:
