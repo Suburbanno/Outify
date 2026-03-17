@@ -11,11 +11,11 @@ import cc.tomko.outify.core.spirc.ISpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.services.MusicService
+import cc.tomko.outify.ui.repository.SavedQueueRepository
 import cc.tomko.outify.ui.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -29,6 +29,7 @@ class SpircWrapper @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     private val spClient: SpClient,
     private val settingsRepository: SettingsRepository,
+    private val savedQueueRepository: SavedQueueRepository,
     private val json: Json,
 ): ISpircWrapper{
     val scope = CoroutineScope(
@@ -73,6 +74,10 @@ class SpircWrapper @Inject constructor(
      * @return `true` if loaded successfully
      */
     override fun load(context: String?, playingTrackUri: String?): Boolean {
+        scope.launch {
+            savedQueueRepository.setActiveQueueId(null)
+        }
+
         ensureServiceRunning()
         return Spirc.load(context, playingTrackUri)
     }
@@ -83,6 +88,10 @@ class SpircWrapper @Inject constructor(
     }
 
     override fun localLoad(uri: String): Boolean {
+        scope.launch {
+            savedQueueRepository.setActiveQueueId(null)
+        }
+
         ensureServiceRunning()
         return Spirc.localLoad(uri)
     }
@@ -93,8 +102,10 @@ class SpircWrapper @Inject constructor(
      */
     override fun shuffle(enabled: Boolean): Boolean {
         scope.launch {
+            savedQueueRepository.setActiveQueueId(null)
             settingsRepository.setShuffle(enabled)
         }
+
         return Spirc.shuffle(enabled)
     }
 
@@ -113,6 +124,10 @@ class SpircWrapper @Inject constructor(
      * Loads the context URI and starts playing randomly within it
      */
     override fun shuffleLoad(uri: String?): Boolean {
+        scope.launch {
+            savedQueueRepository.setActiveQueueId(null)
+        }
+
         ensureServiceRunning()
         return Spirc.shuffleLoad(uri)
     }
