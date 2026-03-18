@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.components.navigation
 
+import android.content.Intent
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -12,6 +13,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -29,6 +32,7 @@ import cc.tomko.outify.ui.screens.library.PlaylistScreen
 import cc.tomko.outify.ui.screens.library.album.AlbumDetailScreen
 import cc.tomko.outify.ui.screens.library.artist.ArtistDetailScreen
 import cc.tomko.outify.ui.screens.search.SearchScreen
+import cc.tomko.outify.ui.screens.settings.AboutScreen
 import cc.tomko.outify.ui.screens.settings.AppearanceSettingScreen
 import cc.tomko.outify.ui.screens.settings.GestureSettingsScreen
 import cc.tomko.outify.ui.screens.settings.InterfaceSettingScreen
@@ -54,6 +58,8 @@ fun SharedTransitionScope.NavigationRoot(
     backStack: NavBackStack<NavKey>,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
@@ -215,6 +221,9 @@ fun SharedTransitionScope.NavigationRoot(
                     },
                     openDebugSettings = {
                         backStack.add(Route.SetupScreen)
+                    },
+                    openAboutSettings = {
+                        backStack.add(Route.AboutScreen)
                     }
                 )
             }
@@ -255,6 +264,14 @@ fun SharedTransitionScope.NavigationRoot(
                 PlaybackSettingScreen(
                     viewModel = viewModel
                 )
+            }
+
+            entry<Route.AboutScreen> {
+                AboutScreen {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, it.toUri())
+                    )
+                }
             }
         }
     )

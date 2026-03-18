@@ -52,4 +52,7 @@ sealed interface Route: NavKey {
 
     @Serializable
     data object GestureSettings: Route, NavKey
+
+    @Serializable
+    data object AboutScreen: Route, NavKey
 }

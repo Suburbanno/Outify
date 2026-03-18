@@ -15,6 +15,10 @@ extensions.configure<ApplicationExtension>("android") {
     compileSdk = 36
     namespace = "cc.tomko.outify"
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "cc.tomko.outify"
         minSdk = 26
