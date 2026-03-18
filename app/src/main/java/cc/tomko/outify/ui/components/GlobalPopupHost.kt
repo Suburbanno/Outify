@@ -17,28 +17,34 @@ fun GlobalPopupHost(
     startRadio: (Track) -> Unit,
     toggleLike: (Track) -> Unit,
 ) {
-    val track by GlobalPopupController.popup.collectAsState()
+    val data by GlobalPopupController.popup.collectAsState()
 
-    track?.let {
-        TrackInfoBottomSheet(
-            track = it,
-            onDismiss = { GlobalPopupController.dismiss() },
-            onArtworkClick = {
-                backStack.add(Route.AlbumScreenFromTrackUri(it.uri))
-            },
-            onArtistClick = { artist ->
-                backStack.add(Route.ArtistScreen(artist.uri))
-            },
-            onOpenAlbum = {
-                backStack.add(Route.AlbumScreenFromTrackUri(it.uri))
-            },
-            onOpenArtist = {
-                backStack.add(Route.ArtistScreen(it.artists.first().uri))
-            },
-            onAddToQueue = { addToQueue(it) },
-            onSaveToPlaylist = {},
-            onToggleLike = { toggleLike(it) },
-            onStartRadio = { startRadio(it) }
-        )
+    data?.let { data ->
+        data.track.let {
+            TrackInfoBottomSheet(
+                track = it,
+                onDismiss = { GlobalPopupController.dismiss() },
+                onArtworkClick = {
+                    backStack.add(Route.AlbumScreenFromTrackUri(it.uri))
+                    data.action?.invoke()
+                },
+                onArtistClick = { artist ->
+                    backStack.add(Route.ArtistScreen(artist.uri))
+                    data.action?.invoke()
+                },
+                onOpenAlbum = {
+                    backStack.add(Route.AlbumScreenFromTrackUri(it.uri))
+                    data.action?.invoke()
+                },
+                onOpenArtist = {
+                    backStack.add(Route.ArtistScreen(it.artists.first().uri))
+                    data.action?.invoke()
+                },
+                onAddToQueue = { addToQueue(it) },
+                onSaveToPlaylist = {},
+                onToggleLike = { toggleLike(it) },
+                onStartRadio = { startRadio(it) }
+            )
+        }
     }
 }

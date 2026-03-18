@@ -280,12 +280,19 @@ class MainActivity : ComponentActivity() {
                                                 viewModel = playerViewModel,
                                                 listState = playerListState,
                                                 onArtistClick = {
+                                                    scope.launch {
+                                                        playerSheetState.collapse()
+                                                    }
                                                     backStack.add(Route.ArtistScreen(it.uri))
                                                 },
                                                 onMoreOptions = {
                                                     GlobalPopupController.showTrackPopup(
                                                         currentTrack!!
-                                                    )
+                                                    ) {
+                                                        scope.launch {
+                                                            playerSheetState.collapse()
+                                                        }
+                                                    }
                                                 }
                                             )
                                         }
