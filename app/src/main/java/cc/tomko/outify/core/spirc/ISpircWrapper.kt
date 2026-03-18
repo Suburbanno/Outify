@@ -8,7 +8,7 @@ interface ISpircWrapper {
     fun repeat(enabled: Boolean): Boolean
     fun shuffleLoad(uri: String? = null): Boolean
     fun addToQueue(uri: String?): Boolean
-    fun setQueue(uris: Array<String>): Boolean
+    fun setQueue(uris: Array<String>, playingTrackUri: String? = null): Boolean
     fun activate(): Boolean
     fun transfer(): Boolean
     suspend fun seekTo(positionMs: Long): Boolean

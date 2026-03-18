@@ -1,4 +1,4 @@
-use std::{sync::Mutex, time::Duration};
+use std::{str::FromStr, sync::Mutex, time::Duration};
 
 use jni::{
     objects::{GlobalRef, JClass, JObject, JObjectArray, JString}, sys::{jboolean, jlong, jobjectArray, jstring}, JNIEnv
@@ -209,7 +209,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_addToQueue(
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_setQueue")]
-pub extern "system" fn set_queue(mut env: JNIEnv, _this: JClass, tracks: jobjectArray) -> jboolean {
+pub extern "system" fn set_queue(mut env: JNIEnv, _this: JClass, tracks: jobjectArray, playing_track: JString) -> jboolean {
     let tracks_array = unsafe { JObjectArray::from_raw(tracks) };
 
     let len = match env.get_array_length(&tracks_array) {
@@ -217,7 +217,7 @@ pub extern "system" fn set_queue(mut env: JNIEnv, _this: JClass, tracks: jobject
         Err(_) => return 0,
     };
 
-    let mut uris: Vec<String> = Vec::with_capacity(len as usize);
+    let mut uris: Vec<SpotifyUri> = Vec::with_capacity(len as usize);
 
     for i in 0..len {
         let obj = match env.get_object_array_element(&tracks_array, i) {
@@ -229,10 +229,30 @@ pub extern "system" fn set_queue(mut env: JNIEnv, _this: JClass, tracks: jobject
             Ok(s) => s.into(),
             Err(_) => return 0,
         };
-        uris.push(uri);
+        match SpotifyUri::from_uri(&uri) {
+            Ok(s) => uris.push(s),
+            Err(e) => {
+                error!("Failed to parse SpotifyUri: {}", e);
+                return 0;
+            }
+        }
     }
 
-    match with_spirc(|runtime| runtime.set_queue(uris)) {
+    let playing_track = if(playing_track.is_null()) {
+        None
+    } else {
+        match env.get_string(&playing_track) {
+            Ok(j) => {
+                Some(PlayingTrack::Uri(j.into()))
+            },
+            Err(e) => {
+                error!("failed to get string: {e}");
+                None
+            },
+        }
+    };
+
+    match with_spirc(|runtime| runtime.set_queue(uris, playing_track)) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
             warn!("Failed to set queue: {}", e);

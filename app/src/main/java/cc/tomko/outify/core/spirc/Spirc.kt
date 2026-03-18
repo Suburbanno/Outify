@@ -67,7 +67,7 @@ object Spirc {
      * Loads context of given uris
      */
     @JvmStatic
-    external fun setQueue(uris: Array<String>): Boolean
+    external fun setQueue(uris: Array<String>, playingTrackUri: String?): Boolean
 
     /**
      * Activates current Spirc session

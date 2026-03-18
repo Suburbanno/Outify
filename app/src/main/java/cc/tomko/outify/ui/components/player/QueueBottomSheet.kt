@@ -341,6 +341,8 @@ fun SharedTransitionScope.QueueBottomSheet(
                                                         HapticFeedbackType.LongPress
                                                     )
                                                     isDragging = false
+
+                                                    viewModel.setQueueEntries(localTracks)
                                                 }
                                             ),
                                             onClick = {}

@@ -4,7 +4,7 @@ use std::sync::{
 };
 
 use librespot_connect::{
-    ConnectConfig, LoadContextOptions, LoadRequest, LoadRequestOptions, Options, Spirc,
+    ConnectConfig, LoadContextOptions, LoadRequest, LoadRequestOptions, Options, PlayingTrack, Spirc
 };
 use librespot_core::{Session, SpotifyUri, authentication::Credentials, spclient::TransferRequest};
 use librespot_playback::{
@@ -12,6 +12,7 @@ use librespot_playback::{
     mixer::{self, MixerConfig},
     player::{Player, PlayerEvent},
 };
+use librespot_protocol::player::ProvidedTrack;
 use once_cell::sync::OnceCell;
 use tokio::{
     sync::{broadcast, mpsc, watch},
@@ -179,15 +180,8 @@ impl SpircRuntime {
         self.spirc.add_to_queue(uri)
     }
 
-    pub fn set_queue(&self, tracks: Vec<String>) -> Result<(), librespot_core::Error> {
-        self.spirc.load(LoadRequest::from_tracks(
-            tracks,
-            LoadRequestOptions {
-                start_playing: true,
-                seek_to: 0,
-                ..Default::default()
-            },
-        ))
+    pub fn set_queue(&self, tracks: Vec<SpotifyUri>, playing_track: Option<PlayingTrack>) -> Result<(), librespot_core::Error> {
+        self.spirc.set_queue(tracks, playing_track)
     }
 
     pub fn set_volume(&self, volume: u16) -> Result<(), librespot_core::error::Error> {

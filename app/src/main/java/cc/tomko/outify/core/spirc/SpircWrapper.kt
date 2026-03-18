@@ -82,9 +82,9 @@ class SpircWrapper @Inject constructor(
         return Spirc.load(context, playingTrackUri)
     }
 
-    override fun setQueue(uris: Array<String>): Boolean {
+    override fun setQueue(uris: Array<String>, playingTrackUri: String?): Boolean {
         ensureServiceRunning()
-        return Spirc.setQueue(uris)
+        return Spirc.setQueue(uris, playingTrackUri)
     }
 
     override fun localLoad(uri: String): Boolean {
