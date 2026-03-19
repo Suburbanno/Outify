@@ -227,7 +227,8 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 NavigationRoot(
                                     backStack,
-                                    modifier = Modifier.matchParentSize()
+                                    modifier = Modifier.matchParentSize(),
+                                    bottomPadding = if (currentTrack != null) 88.dp else 0.dp
                                 )
 
                                 InAppNotificationHost(

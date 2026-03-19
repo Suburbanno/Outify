@@ -9,11 +9,14 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
@@ -56,13 +59,14 @@ import cc.tomko.outify.ui.viewmodel.settings.SettingsViewModel
 @Composable
 fun SharedTransitionScope.NavigationRoot(
     backStack: NavBackStack<NavKey>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    bottomPadding: Dp = 0.dp
 ) {
     val context = LocalContext.current
 
     NavDisplay(
         backStack = backStack,
-        modifier = modifier,
+        modifier = modifier.padding(bottom = bottomPadding),
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
         ),
