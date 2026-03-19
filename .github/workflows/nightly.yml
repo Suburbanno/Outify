@@ -109,7 +109,7 @@ jobs:
         with:
           name: librespot-${{ matrix.abi }}
           path: |
-            rust/target/*/release/liblibrespot_ffi.so
+            rust/librespot-ffi/target/*/release/liblibrespot_ffi.so
 
   android_build:
     runs-on: ubuntu-latest
@@ -139,6 +139,12 @@ jobs:
         with:
           name: librespot-armeabi-v7a
           path: app/src/main/jniLibs/armeabi-v7a
+
+      - name: Verify .so files
+        run: |
+          ls -la app/src/main/jniLibs/arm64-v8a/ app/src/main/jniLibs/armeabi-v7a/
+          file app/src/main/jniLibs/arm64-v8a/liblibrespot_ffi.so
+          file app/src/main/jniLibs/armeabi-v7a/liblibrespot_ffi.so
 
       - name: Decode Keystore
         run: |
