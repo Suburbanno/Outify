@@ -23,7 +23,7 @@ extensions.configure<ApplicationExtension>("android") {
         applicationId = "cc.tomko.outify"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
+        versionCode = 2
         versionName = (project.findProperty("versionName") ?: "dev") as String?
     }
 
