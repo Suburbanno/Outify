@@ -11,6 +11,11 @@ plugins {
     kotlin("plugin.serialization") version "2.3.0"
 }
 
+ksp {
+    arg("dagger.fastInit", "enabled")
+    arg("dagger.formatGeneratedSource", "disabled")
+}
+
 extensions.configure<ApplicationExtension>("android") {
     compileSdk = 36
     namespace = "cc.tomko.outify"
@@ -70,6 +75,7 @@ extensions.configure<ApplicationExtension>("android") {
         debug {
             isMinifyEnabled = false
             isShrinkResources = false
+            isDebuggable = true
         }
     }
 
@@ -101,6 +107,9 @@ extensions.configure<ApplicationExtension>("android") {
 
 kotlin {
     jvmToolchain(17)
+    compilerOptions {
+        freeCompilerArgs.addAll("-Xjvm-default=all")
+    }
 }
 
 dependencies {
