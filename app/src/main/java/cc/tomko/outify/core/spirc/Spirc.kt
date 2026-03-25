@@ -24,6 +24,18 @@ interface SpircBufferCallback {
     fun stopped()
 }
 
+interface SpircDeviceCallback {
+    /**
+     * Called when this device becomes the active playback device
+     */
+    fun becameActive()
+
+    /**
+     * Called when another device becomes the active playback device
+     */
+    fun becameInactive()
+}
+
 object Spirc {
     /**
      * Initializes the SpircRuntime
@@ -36,6 +48,12 @@ object Spirc {
      */
     @JvmStatic
     external fun bufferCallback(callback: SpircBufferCallback): Boolean
+
+    /**
+     * Sets the device callback for spirc to notify of active/inactive state changes
+     */
+    @JvmStatic
+    external fun deviceCallback(callback: SpircDeviceCallback): Boolean
 
     /**
      * Loads a SpotifyURI

@@ -13,6 +13,7 @@ use crate::{
 };
 
 pub static BUFFER_CALLBACK: Mutex<Option<GlobalRef>> = Mutex::new(None);
+pub static DEVICE_CALLBACK: Mutex<Option<GlobalRef>> = Mutex::new(None);
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
@@ -96,6 +97,28 @@ pub extern "system" fn set_buffer_callback(
 
     {
         let mut lock = BUFFER_CALLBACK.lock().unwrap();
+        *lock = Some(global_callback);
+    }
+
+    1
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_deviceCallback")]
+pub extern "system" fn set_device_callback(
+    mut env: JNIEnv,
+    _this: JClass,
+    callback: JObject,
+) -> jboolean {
+    let global_callback = match env.new_global_ref(callback) {
+        Ok(g) => g,
+        Err(e) => {
+            error!("Failed to make global ref for device callback: {e}");
+            return 0;
+        }
+    };
+
+    {
+        let mut lock = DEVICE_CALLBACK.lock().unwrap();
         *lock = Some(global_callback);
     }
 

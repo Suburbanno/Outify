@@ -31,6 +31,7 @@ static IS_PLAYING: AtomicBool = AtomicBool::new(false);
 static IS_SHUFFLING: AtomicBool = AtomicBool::new(false);
 static IS_REPEATING: AtomicBool = AtomicBool::new(false);
 static LAST_POSITION: AtomicU32 = AtomicU32::new(0);
+static IS_DEVICE_ACTIVE: AtomicBool = AtomicBool::new(false);
 
 #[derive(Clone)]
 struct CurrentContext {
@@ -379,6 +380,36 @@ fn handle_event(event: PlayerEvent) {
         PlayerEvent::BufferStop {} => {
             notify_buffer_state("stopped".to_string());
         }
+        PlayerEvent::SessionClientChanged {
+            client_id,
+            client_name,
+            client_brand_name,
+            client_model_name,
+        } => {
+            info!("Session client changed: {} ({}) from {} {}", client_id, client_name, client_brand_name, client_model_name);
+            
+            let session = match with_session(|s| s.clone()) {
+                Ok(s) => s,
+                Err(_) => {
+                    error!("Session unavailable for device state check");
+                    return;
+                }
+            };
+            
+            let our_device_id = session.device_id();
+            let is_now_active = client_id == our_device_id;
+            let was_active = IS_DEVICE_ACTIVE.load(std::sync::atomic::Ordering::Relaxed);
+            
+            if is_now_active && !was_active {
+                info!("We became the active device!");
+                IS_DEVICE_ACTIVE.store(true, std::sync::atomic::Ordering::Relaxed);
+                notify_device_state(true);
+            } else if !is_now_active && was_active {
+                info!("We became inactive, another device is now active!");
+                IS_DEVICE_ACTIVE.store(false, std::sync::atomic::Ordering::Relaxed);
+                notify_device_state(false);
+            }
+        }
         _ => {
             // Not yet implemented
         }
@@ -481,6 +512,40 @@ fn notify_buffer_state(method: String) {
         if let Err(e) = env.call_method(callback.as_obj(), method, "()V", &[]) {
             log::error!("Failed to call buffer callback: {e}");
         }
+    }
+}
+
+// Notifies UI when this device becomes active or inactive
+pub fn notify_device_state(is_active: bool) {
+    let jvm = match crate::JVM.get() {
+        Some(j) => j,
+        None => {
+            error!("cannot notify device state as JVM is none!");
+            return;
+        }
+    };
+
+    let callback_opt = {
+        let lock = crate::jni_impl::spirc::DEVICE_CALLBACK.lock().unwrap();
+        lock.clone()
+    };
+
+    if let Some(callback) = callback_opt {
+        let method = if is_active { "becameActive" } else { "becameInactive" };
+        
+        std::thread::spawn(move || {
+            let mut env = match jvm.attach_current_thread() {
+                Ok(env) => env,
+                Err(e) => {
+                    error!("failed to attach env for device callback: {e}");
+                    return;
+                }
+            };
+
+            if let Err(e) = env.call_method(callback.as_obj(), method, "()V", &[]) {
+                log::error!("Failed to call device callback {}: {e}", method);
+            }
+        });
     }
 }
 

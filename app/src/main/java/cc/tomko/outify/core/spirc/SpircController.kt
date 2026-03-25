@@ -58,6 +58,16 @@ class SpircController @Inject constructor(
 
                 })
 
+                Spirc.deviceCallback(object : SpircDeviceCallback {
+                    override fun becameActive() {
+                        println("became active")
+                    }
+
+                    override fun becameInactive() {
+                        println("became inactive")
+                    }
+                })
+
                 activateAndTransfer()
             }
 
