@@ -1,13 +1,17 @@
 package cc.tomko.outify.playback
 
+import androidx.compose.runtime.rememberCoroutineScope
 import cc.tomko.outify.data.Track
 import cc.tomko.outify.playback.model.PlayState
 import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.playback.model.PositionInfo
 import cc.tomko.outify.playback.model.RepeatMode
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
@@ -97,6 +101,11 @@ class PlaybackStateHolder @Inject constructor() {
 
     fun setBuffering(buffering: Boolean) {
         _state.value = _state.value.copy(isBuffering = buffering)
+    }
+
+
+    fun setActiveDevice(active: Boolean) {
+        _state.value = _state.value.copy(isActiveDevice = active)
     }
 
     private fun computePositionLocked(): Duration {

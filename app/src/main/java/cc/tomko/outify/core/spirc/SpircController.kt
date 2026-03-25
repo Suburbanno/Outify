@@ -60,11 +60,13 @@ class SpircController @Inject constructor(
 
                 Spirc.deviceCallback(object : SpircDeviceCallback {
                     override fun becameActive() {
-                        println("became active")
+                        println("we are active")
+                        playbackStateHolder.setActiveDevice(true)
                     }
 
                     override fun becameInactive() {
-                        println("became inactive")
+                        println("we are inactive")
+                        playbackStateHolder.setActiveDevice(false)
                     }
                 })
 
@@ -87,6 +89,8 @@ class SpircController @Inject constructor(
         if (!spirc.transfer()) {
             Log.e("SpircController", "Failed to transfer Spirc session!")
         }
+
+        playbackStateHolder.setActiveDevice(true)
 
         spirc.isUsable = true
 

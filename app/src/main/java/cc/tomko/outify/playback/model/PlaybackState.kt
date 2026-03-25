@@ -16,4 +16,5 @@ data class PlaybackState(
     val shuffleEnabled: Boolean = false,
     val isPlaying: Boolean = false,
     val isBuffering: Boolean = true,
+    val isActiveDevice: Boolean = false,
 )

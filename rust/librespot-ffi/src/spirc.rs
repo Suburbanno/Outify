@@ -357,12 +357,16 @@ fn handle_event(event: PlayerEvent) {
             user_name,
         } => {
             info!("User {} connected session {}", user_name, connection_id);
+            IS_DEVICE_ACTIVE.store(true, std::sync::atomic::Ordering::Relaxed);
+            notify_device_state(true);
         }
         PlayerEvent::SessionDisconnected {
             connection_id,
             user_name,
         } => {
             info!("User {} disconnected session {}", user_name, connection_id);
+            IS_DEVICE_ACTIVE.store(false, std::sync::atomic::Ordering::Relaxed);
+            notify_device_state(false);
         }
         PlayerEvent::TimeToPreloadNextTrack {
             play_request_id: _,
@@ -398,14 +402,11 @@ fn handle_event(event: PlayerEvent) {
             
             let our_device_id = session.device_id();
             let is_now_active = client_id == our_device_id;
-            let was_active = IS_DEVICE_ACTIVE.load(std::sync::atomic::Ordering::Relaxed);
-            
-            if is_now_active && !was_active {
-                info!("We became the active device!");
+
+            if is_now_active {
                 IS_DEVICE_ACTIVE.store(true, std::sync::atomic::Ordering::Relaxed);
                 notify_device_state(true);
-            } else if !is_now_active && was_active {
-                info!("We became inactive, another device is now active!");
+            } else {
                 IS_DEVICE_ACTIVE.store(false, std::sync::atomic::Ordering::Relaxed);
                 notify_device_state(false);
             }

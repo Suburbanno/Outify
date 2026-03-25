@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.components.player
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
@@ -10,8 +11,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,8 +30,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.filled.Speaker
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -44,6 +42,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -52,33 +51,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.navigation3.runtime.NavBackStack
-import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
-import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
 import cc.tomko.outify.utils.SharedElementKey
-import coil3.ImageLoader
-import coil3.compose.AsyncImage
-import coil3.imageLoader
-import coil3.request.ImageRequest
-import coil3.request.allowHardware
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
 
 private val TAB_HEIGHT = 20.dp
@@ -97,6 +84,7 @@ fun SharedTransitionScope.MiniPlayer(
     val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
     val isPlaying by viewModel.isPlaying.collectAsState(initial = false)
     val isBuffering by viewModel.isBuffering().collectAsState(initial = false)
+    val isActiveDevice by viewModel.isActiveDevice().collectAsState(initial = true)
     val currentTime by viewModel.positionMs.collectAsState(initial = 0L)
     val spirc = viewModel.spirc
 
@@ -277,6 +265,19 @@ fun SharedTransitionScope.MiniPlayer(
                             maxLines = 1,
                         )
                     }
+                }
+
+                if(!isActiveDevice) {
+                    Icon(
+                        Icons.Default.Speaker,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .clickable {
+                                if(Spirc.activate()) {
+                                    Spirc.transfer()
+                                }
+                            }
+                    )
                 }
 
                 IconButton(onClick = showQueue) {

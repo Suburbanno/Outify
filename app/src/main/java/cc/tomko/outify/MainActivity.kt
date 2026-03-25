@@ -268,9 +268,6 @@ class MainActivity : ComponentActivity() {
                                                     vertical = 12.dp
                                                 ),
                                                 showQueue = { sheetState.show() },
-                                                onExpand = {
-                                                    println("expand")
-                                                },
                                                 onClick = {
                                                     scope.launch { playerSheetState.expand() }
                                                 }

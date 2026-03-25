@@ -23,8 +23,9 @@ import javax.inject.Inject
 class MiniPlayerViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
-): ViewModel() {
-    private val _positionMs = MutableStateFlow(playbackStateHolder.estimatePosition().inWholeMilliseconds)
+) : ViewModel() {
+    private val _positionMs =
+        MutableStateFlow(playbackStateHolder.estimatePosition().inWholeMilliseconds)
     val positionMs = _positionMs.asStateFlow()
 
     init {
@@ -55,10 +56,21 @@ class MiniPlayerViewModel @Inject constructor(
         )
 
     fun isBuffering(): Flow<Boolean> =
-        playbackStateHolder.state.map { it.isBuffering }
+        playbackStateHolder.state
+            .map { it.isBuffering }
+            .distinctUntilChanged()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = false
+            )
+
+    fun isActiveDevice(): Flow<Boolean> =
+        playbackStateHolder.state
+            .map { it.isActiveDevice }
 
     fun setTrack(track: Track?) {
-        if(track == null){
+        if (track == null) {
             spirc.playerPause()
         }
         playbackStateHolder.setTrack(track)
