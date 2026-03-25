@@ -1,11 +1,18 @@
 package cc.tomko.outify.core
 
+import android.util.Log
+import cc.tomko.outify.data.metadata.NativeError
+import cc.tomko.outify.data.metadata.NativeErrorHandler
 import kotlinx.serialization.Serializable
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SpClient @Inject constructor() {
+    companion object {
+        private const val TAG = "SpClient"
+    }
+
     external fun search(query: String, type: String, offset: Int = -1, pages: Int = -1): Array<String>
 
     external fun getUserCollection(query: String? = null): String
@@ -31,7 +38,21 @@ class SpClient @Inject constructor() {
      * Returns lyrics for track id
      */
     external fun getLyrics(trackId: String): String
+
+    fun checkAndHandleError(result: String, context: String = ""): String {
+        if (result.startsWith("{")) {
+            NativeErrorHandler.handleErrorJson(result, context)?.let {
+                throw SpClientException(it.message, it)
+            }
+        }
+        return result
+    }
 }
+
+class SpClientException(
+    message: String,
+    val error: NativeError
+) : Exception(message)
 
 @Serializable
 data class RadioResult(

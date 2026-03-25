@@ -70,10 +70,14 @@ class Metadata @Inject constructor(
     suspend fun getArtistMetadata(uri: String): Artist? {
         try {
             val raw = nativeMetadata.getNativeMetadata(uri)
-            println(raw)
+            NativeErrorHandler.handleErrorJson(raw, "getArtistMetadata:$uri")
             return json.decodeFromString<Artist>(raw)
         } catch (e: Exception) {
-            Log.e("Metadata", "fetchAlbums: failed for $uri", e)
+            Log.e("Metadata", "getArtistMetadata: failed for $uri", e)
+            NativeErrorHandler.handleError(
+                NativeError.fromJson("unknown", e.message ?: "Failed to get artist metadata"),
+                "getArtistMetadata:$uri"
+            )
             return null
         }
     }
@@ -83,14 +87,27 @@ class Metadata @Inject constructor(
             val uris = spClient.getRootlist()
             return uris.toList()
         } catch (e: Exception) {
+            NativeErrorHandler.handleError(
+                NativeError.fromJson("unknown", e.message ?: "Failed to get playlist URIs"),
+                "getPlaylistUris"
+            )
             return emptyList()
         }
     }
 
     suspend fun getLikedUris(): List<String> {
-        val jsonUris = spClient.getUserCollection()
-        val parsed = json.decodeFromString<List<String>>(jsonUris)
-        return parsed
+        try {
+            val jsonUris = spClient.getUserCollection()
+            val checked = spClient.checkAndHandleError(jsonUris, "getLikedUris")
+            val parsed = json.decodeFromString<List<String>>(checked)
+            return parsed
+        } catch (e: Exception) {
+            NativeErrorHandler.handleError(
+                NativeError.fromJson("unknown", e.message ?: "Failed to get liked URIs"),
+                "getLikedUris"
+            )
+            return emptyList()
+        }
     }
 
     suspend fun getPlaylistMetadata(uri: String, allowCached: Boolean): Playlist? {
