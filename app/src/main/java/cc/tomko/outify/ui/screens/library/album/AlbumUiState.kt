@@ -2,7 +2,9 @@ package cc.tomko.outify.ui.screens.library.album
 
 import cc.tomko.outify.data.Album
 import cc.tomko.outify.data.Track
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class AlbumUiState(
     val isLoading: Boolean = true,
     val album: Album? = null,

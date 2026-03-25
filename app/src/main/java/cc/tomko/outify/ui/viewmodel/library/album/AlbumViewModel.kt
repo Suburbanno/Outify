@@ -1,6 +1,7 @@
 package cc.tomko.outify.ui.viewmodel.library.album
 
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
@@ -27,6 +28,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
+private const val ALBUM_STATE_KEY = "album_state"
+
 /**
  * View model for album screen
  */
@@ -38,9 +41,18 @@ class AlbumViewModel @Inject constructor(
     val spClient: SpClient,
     val json: Json,
     val likedDao: LikedDao,
+    private val savedStateHandle: SavedStateHandle,
 ): ViewModel() {
 
-    private val _uiState = MutableStateFlow(AlbumUiState())
+    private val _uiState = MutableStateFlow(
+        savedStateHandle.get<String>(ALBUM_STATE_KEY)?.let {
+            try {
+                json.decodeFromString<AlbumUiState>(it)
+            } catch (e: Exception) {
+                AlbumUiState()
+            }
+        } ?: AlbumUiState()
+    )
     val uiState: StateFlow<AlbumUiState> = _uiState
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -71,6 +83,10 @@ class AlbumViewModel @Inject constructor(
             initialValue = false
         )
 
+    private fun saveState(state: AlbumUiState) {
+        savedStateHandle[ALBUM_STATE_KEY] = json.encodeToString(AlbumUiState.serializer(), state)
+    }
+
     suspend fun loadAlbum(albumUri: String) {
         try {
             val album = withContext(Dispatchers.IO) {
@@ -78,10 +94,12 @@ class AlbumViewModel @Inject constructor(
             }
 
             if (album == null) {
-                _uiState.value = AlbumUiState(
+                val newState = AlbumUiState(
                     isLoading = false,
                     error = "Album not found"
                 )
+                _uiState.value = newState
+                saveState(newState)
                 return
             }
 
@@ -93,16 +111,20 @@ class AlbumViewModel @Inject constructor(
                 }
             } else emptyList()
 
-            _uiState.value = AlbumUiState(
+            val newState = AlbumUiState(
                 isLoading = false,
                 album = album,
                 tracks = tracks,
             )
+            _uiState.value = newState
+            saveState(newState)
         } catch (e: Exception) {
-            _uiState.value = AlbumUiState(
+            val newState = AlbumUiState(
                 isLoading = false,
                 error = e.message
             )
+            _uiState.value = newState
+            saveState(newState)
         }
     }
 
@@ -113,19 +135,23 @@ class AlbumViewModel @Inject constructor(
             }
 
             if (albumId == null) {
-                _uiState.value = AlbumUiState(
+                val newState = AlbumUiState(
                     isLoading = false,
                     error = "Album for track not found"
                 )
+                _uiState.value = newState
+                saveState(newState)
                 return
             }
 
             loadAlbum("spotify:album:$albumId")
         } catch (e: Exception) {
-            _uiState.value = AlbumUiState(
+            val newState = AlbumUiState(
                 isLoading = false,
                 error = e.message
             )
+            _uiState.value = newState
+            saveState(newState)
         }
     }
 

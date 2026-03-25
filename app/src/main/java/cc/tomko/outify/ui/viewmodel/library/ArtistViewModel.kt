@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.viewmodel.library
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
@@ -31,6 +32,10 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
+private const val ARTIST_STATE_KEY = "artist_state"
+private const val POPULAR_TRACKS_KEY = "popular_tracks"
+private const val ALBUMS_KEY = "albums"
+
 @HiltViewModel
 class ArtistViewModel @Inject constructor(
     private val metadata: Metadata,
@@ -38,13 +43,24 @@ class ArtistViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
     val likedDao: LikedDao,
+    private val savedStateHandle: SavedStateHandle,
 ): ViewModel() {
     val json = Json { ignoreUnknownKeys = true }
 
-    private val _uiState = MutableStateFlow<ArtistUiState>(ArtistUiState.Loading)
+    private val _uiState = MutableStateFlow<ArtistUiState>(
+        savedStateHandle.get<String>(ARTIST_STATE_KEY)?.let {
+            try {
+                json.decodeFromString<ArtistUiState>(it)
+            } catch (e: Exception) {
+                ArtistUiState.Loading
+            }
+        } ?: ArtistUiState.Loading
+    )
     val uiState: StateFlow<ArtistUiState> = _uiState
 
-    private val currentArtistId = MutableStateFlow<String?>(null)
+    private val currentArtistId = MutableStateFlow<String?>(
+        (_uiState.value as? ArtistUiState.Success)?.artist?.id
+    )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val likedTrackIds: StateFlow<Set<String>> = currentArtistId
@@ -61,8 +77,12 @@ class ArtistViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptySet()
         )
-    private val popularTrackUris = MutableStateFlow<List<String>>(emptyList())
-    private val albumUris = MutableStateFlow<List<String>>(emptyList())
+    private val popularTrackUris = MutableStateFlow<List<String>>(
+        savedStateHandle.get<List<String>>(POPULAR_TRACKS_KEY) ?: emptyList()
+    )
+    private val albumUris = MutableStateFlow<List<String>>(
+        savedStateHandle.get<List<String>>(ALBUMS_KEY) ?: emptyList()
+    )
 
     val currentTrack: StateFlow<Track?> = playbackStateHolder.state
         .map { it.currentTrack }
@@ -123,6 +143,12 @@ class ArtistViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    private fun saveState() {
+        savedStateHandle[ARTIST_STATE_KEY] = json.encodeToString(ArtistUiState.serializer(), _uiState.value)
+        savedStateHandle[POPULAR_TRACKS_KEY] = popularTrackUris.value
+        savedStateHandle[ALBUMS_KEY] = albumUris.value
+    }
+
     suspend fun loadArtist(artistUri: String) {
         val artist = withContext(Dispatchers.IO) {
             metadata.getArtistMetadata(artistUri)
@@ -130,6 +156,7 @@ class ArtistViewModel @Inject constructor(
 
         if (artist == null) {
             _uiState.value = ArtistUiState.Error("Artist failed to fetch")
+            saveState()
             return
         }
 
@@ -138,6 +165,7 @@ class ArtistViewModel @Inject constructor(
             popularTrackUris.value = artist.tracks
             albumUris.value = artist.albums
             _uiState.value = ArtistUiState.Success(artist)
+            saveState()
         }
     }
 
@@ -146,8 +174,12 @@ class ArtistViewModel @Inject constructor(
     }
 }
 
+@kotlinx.serialization.Serializable
 sealed interface ArtistUiState {
+    @kotlinx.serialization.Serializable
     object Loading : ArtistUiState
+    @kotlinx.serialization.Serializable
     data class Success(val artist: Artist) : ArtistUiState
+    @kotlinx.serialization.Serializable
     data class Error(val message: String) : ArtistUiState
 }
