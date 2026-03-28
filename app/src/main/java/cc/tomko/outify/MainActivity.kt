@@ -42,8 +42,6 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
 import cc.tomko.outify.core.AuthManager
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.getCover
 import cc.tomko.outify.data.setting.LocalSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
 import cc.tomko.outify.data.setting.LocalUiSettings
@@ -308,7 +306,7 @@ class MainActivity : ComponentActivity() {
                                     backStack.add(Route.ArtistScreen(it.uri))
                                 },
                                 onArtworkClick = {
-                                    backStack.add(Route.AlbumScreenFromTrackUri(it.uri))
+                                    backStack.add(Route.TrackScreen(it.uri))
                                 },
                                 onDismissRequest = {
                                     sheetState.hide()
@@ -342,9 +340,9 @@ class MainActivity : ComponentActivity() {
                 val type = parts[0]
 
                 return when (type) {
-                    "album" -> Route.AlbumScreenFromAlbumUri(uri.toString())
+                    "album" -> Route.AlbumScreen(uri.toString())
                     "artist" -> Route.ArtistScreen(uri.toString())
-                    "track" -> Route.AlbumScreenFromTrackUri(uri.toString())
+                    "track" -> Route.TrackScreen(uri.toString())
                     "playlist" -> Route.PlaylistScreen(uri.toString())
                     else -> null
                 }
@@ -356,9 +354,9 @@ class MainActivity : ComponentActivity() {
             val id = uri.lastPathSegment ?: return null
             val internalUri = "spotify:${uri.host}:$id"
             return when (uri.host) {
-                "album" -> Route.AlbumScreenFromAlbumUri(internalUri)
+                "album" -> Route.AlbumScreen(internalUri)
                 "artist" -> Route.ArtistScreen(internalUri)
-                "track" -> Route.AlbumScreenFromTrackUri(internalUri)
+                "track" -> Route.TrackScreen(internalUri)
                 "playlist" -> Route.PlaylistScreen(internalUri)
                 else -> null
             }
@@ -373,9 +371,9 @@ class MainActivity : ComponentActivity() {
                 val internalUri = "spotify:$type:$id"
 
                 return when (type) {
-                    "album" -> Route.AlbumScreenFromAlbumUri(internalUri)
+                    "album" -> Route.AlbumScreen(internalUri)
                     "artist" -> Route.ArtistScreen(internalUri)
-                    "track" -> Route.AlbumScreenFromTrackUri(internalUri)
+                    "track" -> Route.TrackScreen(internalUri)
                     "playlist" -> Route.PlaylistScreen(internalUri)
                     else -> null
                 }

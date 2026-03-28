@@ -169,7 +169,7 @@ fun SharedTransitionScope.PlaylistScreen(
                                     val author = authorMap[playlistItem.attributes.addedBy]
 
                                     author?.let {
-                                        UserChipAvatar(it)
+                                        UserChipAvatar(it.imageUrl)
                                     }
                                 }
                             )
@@ -202,7 +202,7 @@ fun SharedTransitionScope.PlaylistScreen(
                             Box {
                                 authors.take(showAvatarCount).forEachIndexed { index, user ->
                                     UserChipAvatar(
-                                        profile = user,
+                                        artworkUrl = user.imageUrl,
                                         size = 20.dp,
                                         modifier = Modifier
                                             .offset(x = (index * 12).dp)

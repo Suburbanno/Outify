@@ -23,8 +23,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Queue
-import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.ContainedLoadingIndicator
@@ -63,16 +61,13 @@ import cc.tomko.outify.R
 import cc.tomko.outify.data.CoverSize
 import cc.tomko.outify.data.getCover
 import cc.tomko.outify.ui.components.navigation.Route
-import cc.tomko.outify.ui.components.navigation.Route.AlbumScreenFromTrackUri
+import cc.tomko.outify.ui.components.navigation.Route.TrackScreen
 import cc.tomko.outify.ui.components.navigation.Route.ArtistScreen
 import cc.tomko.outify.ui.components.navigation.Route.PlaylistScreen
 import cc.tomko.outify.ui.components.rows.AlbumRow
 import cc.tomko.outify.ui.components.rows.ArtistRow
 import cc.tomko.outify.ui.components.rows.PlaylistRow
-import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
-import cc.tomko.outify.ui.notifications.InAppNotificationController
-import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.viewmodel.SearchUiModel
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
 
@@ -203,7 +198,7 @@ fun SharedTransitionScope.SearchScreen(
                                 backStack.add(ArtistScreen(it.uri))
                             },
                             onArtworkClick = {
-                                backStack.add(AlbumScreenFromTrackUri(item.uri))
+                                backStack.add(TrackScreen(item.uri))
                             },
                             modifier = Modifier.animateItem()
                         )
@@ -216,7 +211,7 @@ fun SharedTransitionScope.SearchScreen(
                             album = album,
                             artworkUrl = artworkUrl,
                             onRowClick = {
-                                backStack.add(Route.AlbumScreenFromAlbumUri(album.uri))
+                                backStack.add(Route.AlbumScreen(album.uri))
                             },
                             modifier = Modifier.animateItem()
                         )

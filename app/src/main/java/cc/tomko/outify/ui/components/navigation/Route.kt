@@ -30,10 +30,10 @@ sealed interface Route: NavKey {
      * When we know only the Track uri and want to open the Album Screen
      */
     @Serializable
-    data class AlbumScreenFromAlbumUri(val albumUri: String): Route, NavKey
+    data class AlbumScreen(val albumUri: String): Route, NavKey
 
     @Serializable
-    data class AlbumScreenFromTrackUri(val trackUri: String): Route, NavKey
+    data class TrackScreen(val trackUri: String): Route, NavKey
 
     @Serializable
     data class ArtistScreen(val artistUri: String): Route, NavKey

@@ -25,7 +25,7 @@ fun GlobalPopupHost(
                 track = it,
                 onDismiss = { GlobalPopupController.dismiss() },
                 onArtworkClick = {
-                    backStack.add(Route.AlbumScreenFromTrackUri(it.uri))
+                    backStack.add(Route.TrackScreen(it.uri))
                     data.action?.invoke()
                 },
                 onArtistClick = { artist ->
@@ -33,7 +33,7 @@ fun GlobalPopupHost(
                     data.action?.invoke()
                 },
                 onOpenAlbum = {
-                    backStack.add(Route.AlbumScreenFromTrackUri(it.uri))
+                    backStack.add(Route.TrackScreen(it.uri))
                     data.action?.invoke()
                 },
                 onOpenArtist = {

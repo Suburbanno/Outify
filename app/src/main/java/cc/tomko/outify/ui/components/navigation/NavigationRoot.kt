@@ -24,14 +24,13 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.screens.HomeScreen
-import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.screens.auth.AuthScreen
 import cc.tomko.outify.ui.screens.auth.SetupOutifyScreen
 import cc.tomko.outify.ui.screens.library.LibraryScreen
 import cc.tomko.outify.ui.screens.library.LikedScreen
 import cc.tomko.outify.ui.screens.library.PlaylistScreen
+import cc.tomko.outify.ui.screens.library.TrackDetailScreen
 import cc.tomko.outify.ui.screens.library.album.AlbumDetailScreen
 import cc.tomko.outify.ui.screens.library.artist.ArtistDetailScreen
 import cc.tomko.outify.ui.screens.search.SearchScreen
@@ -48,8 +47,8 @@ import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
 import cc.tomko.outify.ui.viewmodel.library.LibraryViewModel
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
 import cc.tomko.outify.ui.viewmodel.library.PlaylistViewModel
+import cc.tomko.outify.ui.viewmodel.library.TrackViewModel
 import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModel
-import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
 import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
 import cc.tomko.outify.ui.viewmodel.settings.GestureSettingViewModel
 import cc.tomko.outify.ui.viewmodel.settings.InterfaceViewModel
@@ -122,7 +121,7 @@ fun SharedTransitionScope.NavigationRoot(
                         backStack.removeAt(backStack.lastIndex)
                     },
                     onArtworkClick = {
-                        backStack.add(Route.AlbumScreenFromAlbumUri(it.uri))
+                        backStack.add(Route.AlbumScreen(it.uri))
                     },
                     onArtistClick = {
                         backStack.add(Route.ArtistScreen(it.uri))
@@ -141,25 +140,28 @@ fun SharedTransitionScope.NavigationRoot(
                 SearchScreen(backStack,viewModel)
             }
 
-            entry<Route.AlbumScreenFromTrackUri> {
-                val viewModel: AlbumViewModel = hiltViewModel()
+            entry<Route.TrackScreen> {
+                val viewModel: TrackViewModel = hiltViewModel()
 
                 LaunchedEffect(it.trackUri) {
-                    viewModel.loadAlbumFromTrackUri(it.trackUri)
+                    viewModel.loadTrack(it.trackUri)
                 }
 
-                AlbumDetailScreen(
+                TrackDetailScreen(
                     viewModel = viewModel,
                     onBack = {
                         backStack.removeAt(backStack.lastIndex)
                     },
                     artistClick = { uri ->
                         backStack.add(Route.ArtistScreen(uri))
+                    },
+                    albumClick = { album ->
+                        backStack.add(Route.AlbumScreen(album.uri))
                     }
                 )
             }
 
-            entry<Route.AlbumScreenFromAlbumUri> {
+            entry<Route.AlbumScreen> {
                 val viewModel: AlbumViewModel = hiltViewModel()
 
                 LaunchedEffect(it.albumUri) {
@@ -186,10 +188,10 @@ fun SharedTransitionScope.NavigationRoot(
                 ArtistDetailScreen(
                     viewModel,
                     onArtworkClick = { track ->
-                        backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
+                        backStack.add(Route.TrackScreen(track.uri))
                     },
                     onAlbumClick = { album ->
-                        backStack.add(Route.AlbumScreenFromAlbumUri(album.uri))
+                        backStack.add(Route.AlbumScreen(album.uri))
                     },
                     onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) }
                 ) { }
@@ -206,7 +208,7 @@ fun SharedTransitionScope.NavigationRoot(
                         backStack.removeAt(backStack.lastIndex)
                     },
                     onArtworkClick = { track ->
-                        backStack.add(Route.AlbumScreenFromTrackUri(track.uri))
+                        backStack.add(Route.TrackScreen(track.uri))
                     },
                     onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) }
                 )

@@ -22,12 +22,10 @@ import coil3.compose.AsyncImage
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun UserChipAvatar(
-    profile: Profile,
+    artworkUrl: String?,
     modifier: Modifier = Modifier,
     size: Dp = 20.dp,
 ){
-    val artworkUrl = profile.imageUrl
-
     Box(
         modifier = modifier
             .size(size)
