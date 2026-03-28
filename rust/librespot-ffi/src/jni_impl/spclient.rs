@@ -8,7 +8,7 @@ use librespot_metadata::{Metadata, Track};
 use oauth2::reqwest;
 use regex::Regex;
 
-use crate::{jni_utils::vec_to_jstring_array, session::with_session, spotify::client::get_client};
+use crate::{jni_utils::vec_to_jstring_array, outifyuri::OutifyUri, session::with_session, spotify::client::get_client};
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_search")]
 pub extern "system" fn spotify_search(
@@ -313,7 +313,10 @@ pub extern "system" fn get_radio_for_track(mut env: JNIEnv, _class: JClass, trac
         }
     };
 
-    let track_uri = match SpotifyUri::from_uri(&track_uri_raw.as_str()) {
+    let outify_uri = OutifyUri::from_uri(&track_uri_raw);
+    let uri_string = outify_uri.to_uri();
+
+    let track_uri = match SpotifyUri::from_uri(&uri_string.as_str()) {
         Ok(u) => u,
         Err(e) => {
             error!("failed to convert uri: {e}");

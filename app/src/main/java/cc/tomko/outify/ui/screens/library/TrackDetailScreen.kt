@@ -39,7 +39,9 @@ import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.model.Album
 import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.OutifyUri
 import cc.tomko.outify.core.model.getCover
+import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
@@ -192,7 +194,7 @@ fun SharedTransitionScope.TrackDetailScreen(
                             }
                             LargeExtendedFloatingActionButton(
                                 onClick = {
-                                    spirc.startRadio(track.uri)
+                                    spirc.startRadio(track.toSpotifyUri())
                                 },
                                 shape = MaterialShapes.Cookie9Sided.toShape()
                             ) {

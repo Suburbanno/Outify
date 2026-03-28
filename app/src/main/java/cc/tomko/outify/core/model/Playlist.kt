@@ -189,3 +189,7 @@ fun Playlist.toItemEntities(): List<PlaylistItemEntity> =
             isPublic = item.attributes.isPublic,
         )
     }
+fun Playlist.toSpotifyUri(): SpotifyUri =
+    SpotifyUri.Playlist(id)
+fun Playlist.toOutifyUri(): OutifyUri =
+    OutifyUri.fromUriString(uri)

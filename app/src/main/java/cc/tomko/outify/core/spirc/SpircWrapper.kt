@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.core.RadioResult
 import cc.tomko.outify.core.SpClient
+import cc.tomko.outify.core.model.OutifyUri
 import cc.tomko.outify.core.spirc.ISpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.playback.PlaybackStateHolder
@@ -41,8 +42,8 @@ class SpircWrapper @Inject constructor(
      */
     var isUsable = false
 
-    override fun startRadio(trackUri: String, shuffle: Boolean): Boolean {
-        val jsonResult = spClient.getRadioForTrack(trackUri)
+    override fun startRadio(trackUri: OutifyUri, shuffle: Boolean): Boolean {
+        val jsonResult = spClient.getRadioForTrack(trackUri.toUriString())
         val result: RadioResult = json.decodeFromString(jsonResult)
 
         if(result.total == 0 || result.mediaItems.isEmpty()){
@@ -50,11 +51,12 @@ class SpircWrapper @Inject constructor(
         }
 
         val playlistUri = result.mediaItems.first().uri
+        val uri = OutifyUri.fromUriString(playlistUri)
 
         if(shuffle) {
             shuffleLoad(playlistUri)
         } else {
-            load(playlistUri, trackUri)
+            load(uri, trackUri)
         }
 
         return true
@@ -73,13 +75,13 @@ class SpircWrapper @Inject constructor(
      * @param playingTrackUri from which to start playing in this context. Leave empty for first/random
      * @return `true` if loaded successfully
      */
-    override fun load(context: String?, playingTrackUri: String?): Boolean {
+    override fun load(context: OutifyUri?, playingTrackUri: OutifyUri?): Boolean {
         scope.launch {
             savedQueueRepository.setActiveQueueId(null)
         }
 
         ensureServiceRunning()
-        return Spirc.load(context, playingTrackUri)
+        return Spirc.load(context?.toUriString(), playingTrackUri?.toUriString())
     }
 
     override fun setQueue(uris: Array<String>, playingTrackUri: String?): Boolean {

@@ -60,10 +60,12 @@ import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.model.Album
 import cc.tomko.outify.core.model.Artist
 import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.SpotifyUri
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.core.model.sharedTransitionKey
+import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.SmartImage
@@ -196,7 +198,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
                             isPlaybackPlaying = isPlaybackPlaying,
                             onRowClick = remember(track.uri) {
                                 {
-                                    spirc.load(artist.uri, track.uri)
+                                    spirc.load(artist.toSpotifyUri(), track.toSpotifyUri())
                                     // Optimistic UI
                                     viewModel.setTrack(track)
                                 }

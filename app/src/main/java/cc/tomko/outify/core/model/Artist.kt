@@ -22,3 +22,8 @@ data class Artist(
 fun Artist.getCover(size: CoverSize): Cover? {
     return covers.firstOrNull { it.size == size.asInt() }
 }
+
+fun Artist.toSpotifyUri(): SpotifyUri =
+    SpotifyUri.Artist(id)
+fun Artist.toOutifyUri(): OutifyUri =
+    OutifyUri.fromUriString(uri)

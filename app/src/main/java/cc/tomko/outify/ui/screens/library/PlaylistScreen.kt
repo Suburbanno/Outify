@@ -42,8 +42,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import cc.tomko.outify.core.model.Artist
+import cc.tomko.outify.core.model.OutifyUri
 import cc.tomko.outify.core.model.Profile
 import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
@@ -122,6 +124,8 @@ fun SharedTransitionScope.PlaylistScreen(
                 }
             }
 
+            val playlistUri = playlist.toSpotifyUri()
+
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
                 onRefresh = {
@@ -156,7 +160,7 @@ fun SharedTransitionScope.PlaylistScreen(
                                 isLiked = track!!.id in likedIds,
                                 onRowClick = remember(track!!.uri) {
                                     {
-                                        spirc.load(playlist.uri, track!!.uri)
+                                        spirc.load(playlistUri, track!!.toSpotifyUri())
                                         // Optimistic UI
                                         viewModel.setTrack(track!!)
                                     }

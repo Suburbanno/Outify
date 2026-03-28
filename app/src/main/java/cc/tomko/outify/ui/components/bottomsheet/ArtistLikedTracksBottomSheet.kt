@@ -39,8 +39,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.OutifyUri
+import cc.tomko.outify.core.model.SpotifyUri
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
+import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
@@ -151,10 +154,12 @@ fun SharedTransitionScope.ArtistLikedTracksBottomSheet(
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            val artistUri = artistState.toSpotifyUri()
+
                             IconButton(onClick = { spirc.shuffleLoad(artistState.uri) }) {
                                 Icon(Icons.Rounded.Shuffle, contentDescription = "Shuffle")
                             }
-                            IconButton(onClick = { spirc.load(artistState.uri) }) {
+                            IconButton(onClick = { spirc.load(artistUri) }) {
                                 Icon(Icons.Rounded.PlayArrow, contentDescription = "Play in order")
                             }
                         }
@@ -178,7 +183,7 @@ fun SharedTransitionScope.ArtistLikedTracksBottomSheet(
                                 isPlaybackPlaying = isPlaybackPlaying,
                                 onRowClick = remember(track.uri) {
                                     {
-                                        spirc.load(null, track.uri)
+                                        spirc.load(null, track.toSpotifyUri())
                                         // Optimistic UI
                                         viewModel.setTrack(track)
                                     }

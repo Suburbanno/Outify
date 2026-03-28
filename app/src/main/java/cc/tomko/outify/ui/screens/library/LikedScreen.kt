@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.model.Album
 import cc.tomko.outify.core.model.Artist
+import cc.tomko.outify.core.model.OutifyUri
+import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
@@ -157,7 +159,7 @@ fun SharedTransitionScope.LikedScreen(
                     onRowClick = remember(track.uri) {
                         {
                             transitioningTrackUri = track.uri
-                            spirc.load(null, track.uri)
+                            spirc.load(OutifyUri.Liked, track.toSpotifyUri())
                             // Optimistic UI
                             viewModel.setTrack(track)
                         }

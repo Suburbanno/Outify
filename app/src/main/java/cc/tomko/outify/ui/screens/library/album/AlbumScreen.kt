@@ -35,8 +35,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.OutifyUri
+import cc.tomko.outify.core.model.SpotifyUri
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.core.model.sharedTransitionKey
+import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
@@ -142,7 +145,7 @@ fun SharedTransitionScope.AlbumDetailScreen(
                             isPlaybackPlaying = isPlaybackPlaying,
                             onRowClick = remember(track.uri) {
                                 {
-                                    spirc.load(album.uri, track.uri)
+                                    spirc.load(album.toSpotifyUri(), track.toSpotifyUri())
                                     // Optimistic UI
                                     viewModel.setTrack(track)
                                 }

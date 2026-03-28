@@ -59,7 +59,9 @@ import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.R
 import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.SpotifyUri
 import cc.tomko.outify.core.model.getCover
+import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.navigation.Route.TrackScreen
 import cc.tomko.outify.ui.components.navigation.Route.ArtistScreen
@@ -189,7 +191,7 @@ fun SharedTransitionScope.SearchScreen(
                             isPlaybackPlaying = isPlaybackPlaying,
                             onRowClick = remember(track.uri) {
                                 {
-                                    spirc.load( item.uri) // TODO: make context be the search screen
+                                    spirc.load(track.toSpotifyUri()) // TODO: make context be the search screen
                                     // Optimistic UI
                                     viewModel.setTrack(track)
                                 }

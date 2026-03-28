@@ -5,7 +5,7 @@ use jni::{
 use librespot_core::{Session, SpotifyUri};
 use librespot_metadata::Metadata;
 
-use crate::session::with_session;
+use crate::{outifyuri::OutifyUri, session::with_session};
 
 // From librespot_metadata
 const SPOTIFY_ITEM_TYPE_ALBUM: &str = "album";
@@ -31,7 +31,10 @@ pub extern "system" fn get_native_metadata(
         }
     };
 
-    let spotify_uri = match SpotifyUri::from_uri(uri.as_str()) {
+    let outify_uri = OutifyUri::from_uri(&uri);
+    let uri_string = outify_uri.to_uri();
+
+    let spotify_uri = match SpotifyUri::from_uri(uri_string.as_str()) {
         Ok(u) => u,
         Err(e) => {
             let _ = env.throw_new(

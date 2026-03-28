@@ -8,6 +8,7 @@ use librespot_core::SpotifyUri;
 use serde::de::IntoDeserializer;
 
 use crate::{
+    outifyuri::OutifyUri,
     session::with_session,
     spirc::{SpircRuntime, with_spirc},
 };
@@ -210,7 +211,10 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_addToQueue(
         }
     };
 
-    let spotify_uri = match SpotifyUri::from_uri(uri.as_str()) {
+    let outify_uri = OutifyUri::from_uri(&uri);
+    let uri_string = outify_uri.to_uri();
+
+    let spotify_uri = match SpotifyUri::from_uri(uri_string.as_str()) {
         Ok(uri) => uri,
         Err(e) => {
             warn!("failed to get SpotifyURI: {}", e);
@@ -252,7 +256,9 @@ pub extern "system" fn set_queue(mut env: JNIEnv, _this: JClass, tracks: jobject
             Ok(s) => s.into(),
             Err(_) => return 0,
         };
-        match SpotifyUri::from_uri(&uri) {
+        let outify_uri = OutifyUri::from_uri(&uri);
+        let uri_string = outify_uri.to_uri();
+        match SpotifyUri::from_uri(&uri_string) {
             Ok(s) => uris.push(s),
             Err(e) => {
                 error!("Failed to parse SpotifyUri: {}", e);
@@ -266,7 +272,9 @@ pub extern "system" fn set_queue(mut env: JNIEnv, _this: JClass, tracks: jobject
     } else {
         match env.get_string(&playing_track) {
             Ok(j) => {
-                Some(PlayingTrack::Uri(j.into()))
+                let uri: String = j.into();
+                let outify_uri = OutifyUri::from_uri(&uri);
+                Some(PlayingTrack::Uri(outify_uri.to_uri()))
             },
             Err(e) => {
                 error!("failed to get string: {e}");
@@ -568,16 +576,15 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_nextTracks(
 // Resolves passed in JString or fallbacks to users collection
 fn resolve_uri_or_collection(env: &mut JNIEnv, juri: JString) -> Result<String, ()> {
     if juri.is_null() {
-        match with_session(|session| session.username()) {
-            Ok(user) => Ok(format!("spotify:user:{}:collection", user)),
-            Err(e) => {
-                error!("Failed to get user_id: {e}");
-                Err(())
-            }
-        }
+        let outify_uri = OutifyUri::Liked;
+        Ok(outify_uri.to_uri())
     } else {
         match env.get_string(&juri) {
-            Ok(js) => Ok(js.into()),
+            Ok(js) => {
+                let uri: String = js.into();
+                let outify_uri = OutifyUri::from_uri(&uri);
+                Ok(outify_uri.to_uri())
+            }
             Err(e) => {
                 warn!("Failed to get URI from JNI juri: {}", e);
                 Err(())

@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.data.setting.GestureSetting
 import cc.tomko.outify.data.setting.SwipeActionHandler
 import cc.tomko.outify.playback.PlaybackStateHolder
@@ -68,7 +69,7 @@ class MainViewModel @Inject constructor(
     }
 
     fun startRadio(track: Track) {
-        spirc.startRadio(track.uri, false)
+        spirc.startRadio(track.toSpotifyUri(), false)
         playbackStateHolder.setTrack(track)
         InAppNotificationController.show("Radio started", { Icon(Icons.Default.Radio, contentDescription = "Radio started") }, 1000L)
     }

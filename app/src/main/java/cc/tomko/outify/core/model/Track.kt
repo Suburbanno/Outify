@@ -106,3 +106,8 @@ fun Track.toEntities(now: Long): Triple<TrackEntity, List<ArtistEntity>, List<Tr
 
     return Triple(trackEntity, artistEntities, joins)
 }
+
+fun Track.toSpotifyUri(): SpotifyUri =
+    SpotifyUri.Track(id)
+fun Track.toOutifyUri(): OutifyUri =
+    OutifyUri.fromUriString(uri)
