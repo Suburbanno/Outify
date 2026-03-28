@@ -171,6 +171,8 @@ dependencies {
     // HTTP server for oauth
     implementation("org.nanohttpd:nanohttpd:2.3.1")
 
+    implementation(libs.kotlinx.coroutines.guava)
+
     implementation(platform(libs.compose.bom))
     implementation(libs.material)
     implementation(libs.material3.window.size.class1)

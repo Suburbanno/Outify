@@ -120,6 +120,51 @@ class TrackMetadataHelper @Inject constructor(
         return result
     }
 
+    suspend fun getTrackMetadata(trackUri: String): Track? {
+        if (!trackUri.startsWith("spotify:track:")) return null
+
+        val uris = listOf(trackUri)
+
+        val cachedMap = loadCachedTracks(uris).toMutableMap()
+
+        if (!cachedMap.containsKey(trackUri)) {
+            val fetched = fetchTracks(uris)
+            if (fetched.isNotEmpty()) {
+                persistMetadata(fetched)
+            }
+        }
+
+        var tracksWithArtists = loadCachedTracks(uris)
+        val twaInitial = tracksWithArtists[trackUri] ?: return null
+
+        val albumId = twaInitial.track.albumId
+        if (albumId != null) {
+            val albumsMap = loadAlbums(listOf(albumId))
+
+            if (albumsMap[albumId] == null) {
+                val fetchedAlbumsViaTrack = fetchTracks(listOf(trackUri))
+                if (fetchedAlbumsViaTrack.isNotEmpty()) {
+                    persistMetadata(fetchedAlbumsViaTrack)
+                }
+            }
+        }
+
+        tracksWithArtists = loadCachedTracks(uris)
+
+        val twaFinal = tracksWithArtists[trackUri]
+            ?: throw RuntimeException("Missing track metadata after fetch/persist for: $trackUri")
+
+        val result = twaFinal.toDomain()
+
+        try {
+            updateLastAccessed(listOf(result))
+        } catch (e: Exception) {
+            Log.w("Metadata", "Failed to update last accessed", e)
+        }
+
+        return result
+    }
+
     suspend fun getTrackAlbumId(trackUri: String): String? {
         return trackDao.getAlbumIdForTrack(trackUri)
     }

@@ -145,20 +145,30 @@ class Player @Inject constructor(
         val ps = stateHolder.state.value
         val track = ps.currentTrack
 
-        val mediaItem = track?.toMediaItem(
+
+        if (track == null) {
+            return State.Builder()
+                .setPlaybackState(STATE_IDLE)
+                .setAvailableCommands(determineCommands(false))
+                .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
+                .setPlaylist(emptyList())
+                .build()
+        }
+
+        val mediaItem = track.toMediaItem(
             artworkBytes = currentArtworkBytes,
             artworkUri = currentArtworkUri
         )
 
-        val playlist = track?.let {
-            listOf(MediaItemData.Builder(track.id)
-                .setMediaItem(mediaItem!!)
+        val playlist = listOf(
+            MediaItemData.Builder(track.id)
+                .setMediaItem(mediaItem)
                 .setDurationUs(track.duration * 1000L)
                 .setDefaultPositionUs(0)
                 .setIsSeekable(true)
                 .setMediaMetadata(mediaItem.mediaMetadata)
-                .build())
-        } ?: emptyList()
+                .build()
+        )
 
         val playbackState = when {
             ps.state == PlayState.BUFFERING -> STATE_BUFFERING

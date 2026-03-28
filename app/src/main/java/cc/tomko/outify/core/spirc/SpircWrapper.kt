@@ -1,17 +1,20 @@
 package cc.tomko.outify.core.Spirc
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaBrowser
+import androidx.media3.session.SessionToken
 import cc.tomko.outify.core.RadioResult
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.model.OutifyUri
 import cc.tomko.outify.core.spirc.ISpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.playback.PlaybackStateHolder
-import cc.tomko.outify.services.MusicService
+import cc.tomko.outify.services.PlaybackService
 import cc.tomko.outify.ui.repository.SavedQueueRepository
 import cc.tomko.outify.ui.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -64,7 +67,7 @@ class SpircWrapper @Inject constructor(
 
     @OptIn(UnstableApi::class)
     private fun ensureServiceRunning() {
-        val intent = Intent(context, MusicService::class.java)
+        val intent = Intent(context, PlaybackService::class.java)
         ContextCompat.startForegroundService(context, intent)
     }
 

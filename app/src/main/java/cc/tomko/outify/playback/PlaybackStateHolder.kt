@@ -84,6 +84,7 @@ class PlaybackStateHolder @Inject constructor() {
     }
 
     fun setTrack(track: Track?) {
+        if(_state.value.currentTrack?.id == track?.id) return
         _state.value = _state.value.copy(
             currentTrack = track
         )
