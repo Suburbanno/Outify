@@ -1,34 +1,34 @@
 use std::collections::HashMap;
 
-use base64::{Engine, engine::general_purpose};
+use base64::{engine::general_purpose, Engine};
 use jni::{
-    JNIEnv,
     objects::{GlobalRef, JClass, JMethodID, JObject, JValue},
     sys::jboolean,
+    JNIEnv,
 };
 use librespot_core::SpotifyUri;
 use librespot_metadata::{
-    Album, Artist, Playlist, Track,
     image::Image,
     playlist::{
         attribute::{PlaylistAttributes, PlaylistItemAttributes},
         item::PlaylistItem,
     },
+    Album, Artist, Playlist, Track,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 // Serializable Track object
 #[derive(Serialize)]
 pub struct TrackJson {
-    id: String,
-    uri: String,
-    name: String,
-    album: AlbumJson,
-    artists: Vec<ArtistJson>,
-    popularity: i32,
-    duration: i32,
-    explicit: bool,
-    files: Vec<FileJson>,
+    pub id: String,
+    pub uri: String,
+    pub name: String,
+    pub album: AlbumJson,
+    pub artists: Vec<ArtistJson>,
+    pub popularity: i32,
+    pub duration: i32,
+    pub explicit: bool,
+    pub files: Vec<FileJson>,
 }
 
 impl From<&Track> for TrackJson {
@@ -57,24 +57,24 @@ impl From<&Track> for TrackJson {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct FileJson {
-    r#type: String,
-    id: String,
+    pub r#type: String,
+    pub id: String,
 }
 
 // Serializable Artist object
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ArtistJson {
-    id: String,
-    uri: String,
-    name: String,
-    popularity: i32,
-    portraits: Vec<ImageJson>,
-    tracks: Vec<String>, // Just raw SpotifyUris
-    covers: Vec<ImageJson>,
-    albums: Vec<String>,
-    singles: Vec<String>,
+    pub id: String,
+    pub uri: String,
+    pub name: String,
+    pub popularity: i32,
+    pub portraits: Vec<ImageJson>,
+    pub tracks: Vec<String>, // Just raw SpotifyUris
+    pub covers: Vec<ImageJson>,
+    pub albums: Vec<String>,
+    pub singles: Vec<String>,
 }
 
 impl From<&Artist> for ArtistJson {
@@ -100,7 +100,7 @@ impl From<&Artist> for ArtistJson {
                 .singles
                 .0
                 .iter()
-                .flat_map(|group| group.0.0.iter())
+                .flat_map(|group| group.0 .0.iter())
                 .map(|uri| uri.to_uri())
                 .collect::<Vec<String>>(),
         }
@@ -118,7 +118,7 @@ fn unique_albums_in_order(artist: &Artist) -> Vec<String> {
         }
     };
 
-    for uri in artist.albums.0.iter().flat_map(|group| group.0.0.iter()) {
+    for uri in artist.albums.0.iter().flat_map(|group| group.0 .0.iter()) {
         push(uri);
     }
 
@@ -126,7 +126,7 @@ fn unique_albums_in_order(artist: &Artist) -> Vec<String> {
         .compilations
         .0
         .iter()
-        .flat_map(|group| group.0.0.iter())
+        .flat_map(|group| group.0 .0.iter())
     {
         push(uri);
     }
@@ -135,7 +135,7 @@ fn unique_albums_in_order(artist: &Artist) -> Vec<String> {
         .appears_on_albums
         .0
         .iter()
-        .flat_map(|group| group.0.0.iter())
+        .flat_map(|group| group.0 .0.iter())
     {
         push(uri);
     }
@@ -144,15 +144,15 @@ fn unique_albums_in_order(artist: &Artist) -> Vec<String> {
 }
 
 // Serializable Album object
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct AlbumJson {
-    id: String,
-    uri: String,
-    name: String,
-    artists: Vec<ArtistJson>,
-    popularity: i32,
-    tracks: Vec<String>, // Just Spotify URI
-    covers: Vec<ImageJson>,
+    pub id: String,
+    pub uri: String,
+    pub name: String,
+    pub artists: Vec<ArtistJson>,
+    pub popularity: i32,
+    pub tracks: Vec<String>, // Just Spotify URI
+    pub covers: Vec<ImageJson>,
 }
 
 impl From<&Album> for AlbumJson {
@@ -169,7 +169,7 @@ impl From<&Album> for AlbumJson {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ImageJson {
     pub uri: String,
     pub size: i8, // 0 -> 3 values ranging by size

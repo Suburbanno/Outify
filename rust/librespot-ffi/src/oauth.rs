@@ -47,10 +47,12 @@ pub struct OAuthSession {
 impl OAuthSession {
     pub fn new(session: &Session, redirect_uri: &str, scopes: &[&str]) -> Result<Self, Error> {
         let client_id = session.client_id();
+        debug!("Creating OAuth session with client_id: {}, redirect_uri: {}", client_id, redirect_uri);
         let client = OAuthClientBuilder::new(client_id.as_str(), redirect_uri, scopes.to_vec())
             .build()
             .map_err(|e| Error::internal(format!("Unable to build OAuth client: {e}")))?;
         let (auth_url, pkce_verifier) = client.set_auth_url();
+        debug!("OAuth session created successfully, auth_url: {}", auth_url);
 
         Ok(Self {
             client,
@@ -73,11 +75,16 @@ impl OAuthSession {
 
         let auth_code = AuthorizationCode::new(code);
 
+        debug!("Exchanging OAuth code for access token...");
         let token_response = self
             .client
             .get_access_token_with_verifier_async(pkce_verifier, auth_code)
             .await
-            .map_err(|e| Error::unavailable(format!("Unable to get OAuth token: {e}")))?;
+            .map_err(|e| {
+                error!("OAuth token exchange failed: {}", e);
+                Error::unavailable(format!("Unable to get OAuth token: {e}"))
+            })?;
+        debug!("OAuth token exchange successful!");
 
         // Refreshing token to provide consistent TokenResponse that contains refresh token
         let refresh_token = token_response.refresh_token.clone();
@@ -89,13 +96,6 @@ impl OAuthSession {
 
         Ok(token_response)
     }
-}
-
-fn oauth_session_cell() -> &'static Mutex<OAuthSession> {
-    OAUTH_SESSION.get_or_init(|| {
-        // note: we intentionally create an empty placeholder. The real session is set up later in `setup_oauth_session`.
-        Mutex::new(unsafe { std::mem::MaybeUninit::zeroed().assume_init() })
-    })
 }
 
 pub fn setup_oauth_session(session: &Session) -> Option<&'static Mutex<OAuthSession>> {
@@ -113,9 +113,41 @@ pub fn setup_oauth_session(session: &Session) -> Option<&'static Mutex<OAuthSess
         }
     };
 
-    if OAUTH_SESSION.set(Mutex::new(osession)).is_err() {
-        warn!("Failed to set OAuth Session concurrently!");
+    match OAUTH_SESSION.set(Mutex::new(osession)) {
+        Ok(_) => debug!("OAuthSession set successfully"),
+        Err(_) => warn!("Failed to set OAuth Session concurrently - may already be set!"),
     }
 
     OAUTH_SESSION.get()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_spotify_callback_uri_is_valid() {
+        assert!(SPOTIFY_CALLBACK_URI.starts_with("http://"));
+        assert!(SPOTIFY_CALLBACK_URI.contains("127.0.0.1"));
+    }
+
+    #[test]
+    fn test_oauth_scopes_not_empty() {
+        assert!(!OAUTH_SCOPES.is_empty());
+    }
+
+    #[test]
+    fn test_oauth_scopes_contains_streaming() {
+        assert!(OAUTH_SCOPES.contains(&"streaming"));
+    }
+
+    #[test]
+    fn test_oauth_scopes_contains_user_read_private() {
+        assert!(OAUTH_SCOPES.contains(&"user-read-private"));
+    }
+
+    #[test]
+    fn test_oauth_scopes_count() {
+        assert_eq!(OAUTH_SCOPES.len(), 26);
+    }
 }
