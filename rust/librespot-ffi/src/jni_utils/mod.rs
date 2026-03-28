@@ -3,7 +3,6 @@ pub mod folders;
 pub mod futures;
 pub mod logger;
 pub mod playback;
-pub mod native_metadata; // used for converting from native metadata to JNI compatible
                          
 pub fn vec_to_jstring_array(env: &mut jni::JNIEnv, vec: Vec<String>) -> jni::sys::jobjectArray {
     let string_class = env.find_class("java/lang/String").unwrap();

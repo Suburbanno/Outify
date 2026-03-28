@@ -1,19 +1,19 @@
 use std::collections::HashMap;
 
-use base64::{engine::general_purpose, Engine};
+use base64::{Engine, engine::general_purpose};
 use jni::{
+    JNIEnv,
     objects::{GlobalRef, JClass, JMethodID, JObject, JValue},
     sys::jboolean,
-    JNIEnv,
 };
 use librespot_core::SpotifyUri;
 use librespot_metadata::{
+    Album, Artist, Playlist, Track,
     image::Image,
     playlist::{
         attribute::{PlaylistAttributes, PlaylistItemAttributes},
         item::PlaylistItem,
     },
-    Album, Artist, Playlist, Track,
 };
 use serde::{Deserialize, Serialize};
 
@@ -100,7 +100,7 @@ impl From<&Artist> for ArtistJson {
                 .singles
                 .0
                 .iter()
-                .flat_map(|group| group.0 .0.iter())
+                .flat_map(|group| group.0.0.iter())
                 .map(|uri| uri.to_uri())
                 .collect::<Vec<String>>(),
         }
@@ -118,7 +118,7 @@ fn unique_albums_in_order(artist: &Artist) -> Vec<String> {
         }
     };
 
-    for uri in artist.albums.0.iter().flat_map(|group| group.0 .0.iter()) {
+    for uri in artist.albums.0.iter().flat_map(|group| group.0.0.iter()) {
         push(uri);
     }
 
@@ -126,7 +126,7 @@ fn unique_albums_in_order(artist: &Artist) -> Vec<String> {
         .compilations
         .0
         .iter()
-        .flat_map(|group| group.0 .0.iter())
+        .flat_map(|group| group.0.0.iter())
     {
         push(uri);
     }
@@ -135,7 +135,7 @@ fn unique_albums_in_order(artist: &Artist) -> Vec<String> {
         .appears_on_albums
         .0
         .iter()
-        .flat_map(|group| group.0 .0.iter())
+        .flat_map(|group| group.0.0.iter())
     {
         push(uri);
     }

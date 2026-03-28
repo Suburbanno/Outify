@@ -50,7 +50,7 @@ pub fn on_player_track_update(track_id: SpotifyUri) {
 
             let json = match maybe_metadata {
                 Some(metadata) => {
-                    let track = crate::jni_utils::native_metadata::TrackJson::from(&metadata);
+                    let track = crate::metadata::track::TrackJson::from(&metadata);
                     match serde_json::to_string(&track) {
                         Ok(s) => s,
                         Err(e) => {
@@ -146,7 +146,7 @@ pub fn on_player_position_update(position_ms: u32, track_id: SpotifyUri) {
 
             let json = match maybe_metadata {
                 Some(metadata) => {
-                    let track = crate::jni_utils::native_metadata::TrackJson::from(&metadata);
+                    let track = crate::metadata::track::TrackJson::from(&metadata);
                     match serde_json::to_string(&track) {
                         Ok(s) => s,
                         Err(e) => {

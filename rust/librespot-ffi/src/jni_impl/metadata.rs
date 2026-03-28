@@ -126,7 +126,7 @@ async fn get_album_metadata(
 ) -> Result<Option<String>, librespot_core::error::Error> {
     match librespot_metadata::Album::get(session, &spotify_uri).await {
         Ok(metadata) => {
-            let album = crate::jni_utils::native_metadata::AlbumJson::from(&metadata);
+            let album = crate::metadata::track::AlbumJson::from(&metadata);
             Ok(convert_to_string(&album))
         }
         Err(e) => Err(e),
@@ -140,13 +140,13 @@ async fn get_track_metadata(
 ) -> Result<Option<String>, librespot_core::error::Error> {
     match librespot_metadata::Track::get(session, &spotify_uri).await {
         Ok(metadata) => {
-            let mut track = crate::jni_utils::native_metadata::TrackJson::from(&metadata);
+            let mut track = crate::metadata::track::TrackJson::from(&metadata);
             
             // Fetch full album metadata to get complete artist info
             let album_uri = SpotifyUri::from_uri(&track.album.uri).ok();
             if let Some(album_uri) = album_uri {
                 if let Ok(Some(full_album_json)) = get_album_metadata(session, &album_uri).await {
-                    if let Ok(full_album) = serde_json::from_str::<crate::jni_utils::native_metadata::AlbumJson>(&full_album_json) {
+                    if let Ok(full_album) = serde_json::from_str::<crate::metadata::track::AlbumJson>(&full_album_json) {
                         track.album = full_album;
                     }
                 }
@@ -165,7 +165,7 @@ async fn get_artist_metadata(
 ) -> Result<Option<String>, librespot_core::error::Error> {
     match librespot_metadata::Artist::get(session, &spotify_uri).await {
         Ok(metadata) => {
-            let artist = crate::jni_utils::native_metadata::ArtistJson::from(&metadata);
+            let artist = crate::metadata::track::ArtistJson::from(&metadata);
             Ok(convert_to_string(&artist))
         }
         Err(e) => Err(e),
