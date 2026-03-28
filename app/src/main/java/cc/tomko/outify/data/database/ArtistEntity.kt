@@ -2,7 +2,7 @@ package cc.tomko.outify.data.database
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import cc.tomko.outify.data.Artist
+import cc.tomko.outify.core.model.Artist
 
 @Entity(tableName = "artists")
 data class ArtistEntity(

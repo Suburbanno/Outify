@@ -2,12 +2,12 @@ package cc.tomko.outify.data.metadata
 
 import android.util.Log
 import cc.tomko.outify.core.SpClient
-import cc.tomko.outify.data.Album
-import cc.tomko.outify.data.Artist
-import cc.tomko.outify.data.Cover
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.Playlist
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.Album
+import cc.tomko.outify.core.model.Artist
+import cc.tomko.outify.core.model.Cover
+import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.Playlist
+import cc.tomko.outify.core.model.Track
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.Json

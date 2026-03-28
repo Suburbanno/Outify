@@ -1,6 +1,6 @@
 package cc.tomko.outify.ui.model.player
 
-import cc.tomko.outify.data.Artist
+import cc.tomko.outify.core.model.Artist
 
 /**
  * Holds the UI state of the player

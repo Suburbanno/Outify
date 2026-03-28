@@ -13,10 +13,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.ui.components.rows.SwipeGesture
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
 @Serializable

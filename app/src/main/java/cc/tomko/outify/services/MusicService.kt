@@ -7,7 +7,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.graphics.Bitmap
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.util.UnstableApi
@@ -16,16 +15,9 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.MediaStyleNotificationHelper
 import androidx.media3.session.SessionCommand
-import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.Track
-import cc.tomko.outify.data.getCover
+import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.Player
-import coil3.imageLoader
-import coil3.request.ImageRequest
-import coil3.request.allowHardware
-import coil3.toBitmap
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

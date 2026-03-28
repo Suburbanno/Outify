@@ -2,7 +2,7 @@ package cc.tomko.outify.data.database
 
 import androidx.room.Embedded
 import androidx.room.Relation
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.database.album.AlbumWithArtists
 import cc.tomko.outify.data.database.dao.AlbumDao
 import cc.tomko.outify.data.database.dao.LikedDao

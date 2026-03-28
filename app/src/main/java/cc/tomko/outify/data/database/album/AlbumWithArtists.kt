@@ -3,10 +3,10 @@ package cc.tomko.outify.data.database.album
 import androidx.room.Embedded
 import androidx.room.Junction
 import androidx.room.Relation
-import cc.tomko.outify.data.Album
-import cc.tomko.outify.data.Cover
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.asInt
+import cc.tomko.outify.core.model.Album
+import cc.tomko.outify.core.model.Cover
+import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.asInt
 import cc.tomko.outify.data.database.AlbumEntity
 import cc.tomko.outify.data.database.ArtistEntity
 import cc.tomko.outify.data.database.toDomain

@@ -1,9 +1,6 @@
 package cc.tomko.outify.playback
 
 import android.app.Application
-import android.content.Context
-import android.graphics.drawable.BitmapDrawable
-import android.os.Bundle
 import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -14,15 +11,14 @@ import androidx.media3.common.SimpleBasePlayer
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.Spirc.SpircWrapper
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.Track
-import cc.tomko.outify.data.getCover
+import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import cc.tomko.outify.playback.model.PlayState
 import coil3.Bitmap
 import coil3.ImageLoader
 import coil3.request.ImageRequest
-import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.toBitmap
 import com.google.common.util.concurrent.ListenableFuture
@@ -38,7 +34,6 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import androidx.core.graphics.scale
 import androidx.media3.common.util.Log
-import coil3.asImage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
 

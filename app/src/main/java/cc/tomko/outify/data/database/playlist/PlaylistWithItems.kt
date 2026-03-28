@@ -2,10 +2,10 @@ package cc.tomko.outify.data.database.playlist
 
 import androidx.room.Embedded
 import androidx.room.Relation
-import cc.tomko.outify.data.Playlist
-import cc.tomko.outify.data.PlaylistAttributes
-import cc.tomko.outify.data.PlaylistItem
-import cc.tomko.outify.data.PlaylistItemAttributes
+import cc.tomko.outify.core.model.Playlist
+import cc.tomko.outify.core.model.PlaylistAttributes
+import cc.tomko.outify.core.model.PlaylistItem
+import cc.tomko.outify.core.model.PlaylistItemAttributes
 import cc.tomko.outify.data.database.PlaylistEntity
 
 data class PlaylistWithItems(

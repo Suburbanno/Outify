@@ -3,9 +3,9 @@ package cc.tomko.outify.data.database
 import androidx.room.Embedded
 import androidx.room.Junction
 import androidx.room.Relation
-import cc.tomko.outify.data.Album
-import cc.tomko.outify.data.FileId
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.Album
+import cc.tomko.outify.core.model.FileId
+import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.database.album.AlbumWithArtists
 import cc.tomko.outify.data.database.album.toDomain
 

@@ -1,4 +1,4 @@
-package cc.tomko.outify.data
+package cc.tomko.outify.core.model
 
 import androidx.compose.runtime.Immutable
 import cc.tomko.outify.data.database.ArtistEntity

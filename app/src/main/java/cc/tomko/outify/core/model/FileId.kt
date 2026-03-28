@@ -1,4 +1,4 @@
-package cc.tomko.outify.data
+package cc.tomko.outify.core.model
 
 import cc.tomko.outify.data.database.TrackFileEntity
 import kotlinx.serialization.Serializable

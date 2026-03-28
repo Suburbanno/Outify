@@ -1,4 +1,4 @@
-package cc.tomko.outify.data
+package cc.tomko.outify.core.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

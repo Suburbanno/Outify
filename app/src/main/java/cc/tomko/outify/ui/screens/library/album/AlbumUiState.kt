@@ -1,7 +1,7 @@
 package cc.tomko.outify.ui.screens.library.album
 
-import cc.tomko.outify.data.Album
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.Album
+import cc.tomko.outify.core.model.Track
 import kotlinx.serialization.Serializable
 
 @Serializable

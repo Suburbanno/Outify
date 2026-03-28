@@ -1,4 +1,4 @@
-package cc.tomko.outify.data
+package cc.tomko.outify.core.model
 
 import android.util.Base64
 import cc.tomko.outify.ALBUM_COVER_URL

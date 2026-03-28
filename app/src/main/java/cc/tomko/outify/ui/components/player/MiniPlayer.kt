@@ -1,6 +1,5 @@
 package cc.tomko.outify.ui.components.player
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
@@ -42,7 +41,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -58,8 +56,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.getCover
+import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel

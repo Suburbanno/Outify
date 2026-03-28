@@ -22,7 +22,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.rounded.Shuffle
@@ -58,13 +57,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.data.Album
-import cc.tomko.outify.data.Artist
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.Track
-import cc.tomko.outify.data.getCover
+import cc.tomko.outify.core.model.Album
+import cc.tomko.outify.core.model.Artist
+import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.setting.LocalUiSettings
-import cc.tomko.outify.data.sharedTransitionKey
+import cc.tomko.outify.core.model.sharedTransitionKey
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.SmartImage

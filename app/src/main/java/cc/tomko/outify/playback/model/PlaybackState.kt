@@ -1,6 +1,6 @@
 package cc.tomko.outify.playback.model
 
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.Track
 
 /**
  * Holds current playback state

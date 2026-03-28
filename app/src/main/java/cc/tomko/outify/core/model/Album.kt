@@ -1,4 +1,4 @@
-package cc.tomko.outify.data
+package cc.tomko.outify.core.model
 
 import cc.tomko.outify.utils.SharedElementKey
 import kotlinx.serialization.Serializable

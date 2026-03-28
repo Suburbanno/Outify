@@ -52,7 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.queue.SavedQueue
 import cc.tomko.outify.ui.viewmodel.player.MultiQueueViewModel
 import java.text.SimpleDateFormat

@@ -37,9 +37,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.data.Album
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.getCover
+import cc.tomko.outify.core.model.Album
+import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState

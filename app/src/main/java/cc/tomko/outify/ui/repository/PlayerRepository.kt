@@ -1,10 +1,9 @@
 package cc.tomko.outify.ui.repository
 
 import cc.tomko.outify.core.SpClient
-import cc.tomko.outify.data.Lyrics
-import cc.tomko.outify.data.LyricsResponse
-import cc.tomko.outify.data.SyncedLyric
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.LyricsResponse
+import cc.tomko.outify.core.model.SyncedLyric
+import cc.tomko.outify.core.model.Track
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout

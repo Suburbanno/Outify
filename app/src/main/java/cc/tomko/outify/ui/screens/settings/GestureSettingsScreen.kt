@@ -31,7 +31,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.setting.GestureSetting
 import cc.tomko.outify.data.setting.GestureTrigger
 import cc.tomko.outify.data.setting.Side

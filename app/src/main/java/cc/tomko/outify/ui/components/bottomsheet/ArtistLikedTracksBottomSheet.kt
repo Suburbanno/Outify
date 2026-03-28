@@ -38,15 +38,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.Track
-import cc.tomko.outify.data.getCover
+import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
 import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
-import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

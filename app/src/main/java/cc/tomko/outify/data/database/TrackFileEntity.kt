@@ -3,7 +3,7 @@ package cc.tomko.outify.data.database
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
-import cc.tomko.outify.data.FileType
+import cc.tomko.outify.core.model.FileType
 
 @Entity(
     tableName = "track_files",

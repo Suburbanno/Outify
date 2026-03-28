@@ -2,7 +2,7 @@ package cc.tomko.outify.data.metadata
 
 import android.util.Log
 import androidx.room.withTransaction
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.database.AlbumEntity
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.data.database.ArtistEntity
@@ -10,7 +10,6 @@ import cc.tomko.outify.data.database.TrackArtistEntity
 import cc.tomko.outify.data.database.TrackEntity
 import cc.tomko.outify.data.database.TrackFileEntity
 import cc.tomko.outify.data.database.TrackFull
-import cc.tomko.outify.data.database.TrackWithArtists
 import cc.tomko.outify.data.database.album.AlbumArtistEntity
 import cc.tomko.outify.data.database.album.AlbumTrackCrossRef
 import cc.tomko.outify.data.database.album.AlbumWithArtists
@@ -21,8 +20,8 @@ import cc.tomko.outify.data.database.dao.TrackArtistDao
 import cc.tomko.outify.data.database.dao.TrackDao
 import cc.tomko.outify.data.database.dao.TrackFileDao
 import cc.tomko.outify.data.database.toDomain
-import cc.tomko.outify.data.toEntities
-import cc.tomko.outify.data.toEntity
+import cc.tomko.outify.core.model.toEntities
+import cc.tomko.outify.core.model.toEntity
 import cc.tomko.outify.ui.repository.TrackRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async

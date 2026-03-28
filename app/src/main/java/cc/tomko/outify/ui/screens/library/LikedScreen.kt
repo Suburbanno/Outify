@@ -1,8 +1,6 @@
 package cc.tomko.outify.ui.screens.library
 
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,10 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Queue
-import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -40,20 +35,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.OutifyApplication
-import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.data.Album
-import cc.tomko.outify.data.Artist
-import cc.tomko.outify.data.Track
-import cc.tomko.outify.data.setting.LocalUiSettings
+import cc.tomko.outify.core.model.Album
+import cc.tomko.outify.core.model.Artist
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
-import cc.tomko.outify.ui.components.bottomsheet.TrackInfoBottomSheet
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
-import cc.tomko.outify.ui.components.rows.SwipeableTrackRow
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
-import cc.tomko.outify.ui.notifications.InAppNotificationController
-import cc.tomko.outify.ui.notifications.NotificationSpec
 import cc.tomko.outify.ui.screens.search.MaterialSearchBar
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
 import coil3.request.ImageRequest

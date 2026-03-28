@@ -3,12 +3,11 @@ package cc.tomko.outify.ui.viewmodel.library
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import cc.tomko.outify.core.Spirc.SpircWrapper
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.database.toDomain
-import cc.tomko.outify.data.getCover
+import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.repository.LikedRepository
 import coil3.ImageLoader

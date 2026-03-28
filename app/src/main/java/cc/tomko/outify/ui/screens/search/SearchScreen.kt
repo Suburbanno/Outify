@@ -58,8 +58,8 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.R
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.getCover
+import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.navigation.Route.TrackScreen
 import cc.tomko.outify.ui.components.navigation.Route.ArtistScreen

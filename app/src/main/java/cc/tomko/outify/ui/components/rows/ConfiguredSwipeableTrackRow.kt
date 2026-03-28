@@ -12,16 +12,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.data.Artist
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.Track
-import cc.tomko.outify.data.getCover
+import cc.tomko.outify.core.model.Artist
+import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.setting.LocalSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
-import cc.tomko.outify.data.setting.Side
 import cc.tomko.outify.data.setting.buildLongPressAction
 import cc.tomko.outify.data.setting.buildSwipeGesturesForTrack
-import cc.tomko.outify.data.sharedTransitionKey
+import cc.tomko.outify.core.model.sharedTransitionKey
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable

@@ -8,10 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
-import cc.tomko.outify.data.Track
-import cc.tomko.outify.data.setting.GestureAction
+import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.setting.GestureSetting
-import cc.tomko.outify.data.setting.Side
 import cc.tomko.outify.data.setting.SwipeActionHandler
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.GlobalPopupController
@@ -20,7 +18,6 @@ import cc.tomko.outify.ui.repository.InterfaceSettings
 import cc.tomko.outify.ui.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged

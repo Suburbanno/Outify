@@ -3,25 +3,19 @@ package cc.tomko.outify.ui.components.rows
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.AddToPhotos
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.core.spirc.Spirc
-import cc.tomko.outify.data.Artist
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.Track
-import cc.tomko.outify.data.getCover
-import cc.tomko.outify.data.sharedTransitionKey
-import cc.tomko.outify.ui.notifications.InAppNotificationController
-import cc.tomko.outify.ui.notifications.NotificationSpec
-import cc.tomko.outify.utils.SharedElementKey
+import cc.tomko.outify.core.model.Artist
+import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.core.model.getCover
+import cc.tomko.outify.core.model.sharedTransitionKey
 
 @Composable
 fun SharedTransitionScope.SwipeableTrackRow(

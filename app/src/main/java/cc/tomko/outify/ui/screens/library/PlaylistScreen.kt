@@ -41,9 +41,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import cc.tomko.outify.data.Artist
-import cc.tomko.outify.data.Profile
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.Artist
+import cc.tomko.outify.core.model.Profile
+import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState

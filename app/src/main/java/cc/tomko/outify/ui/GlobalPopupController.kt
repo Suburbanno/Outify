@@ -1,6 +1,6 @@
 package cc.tomko.outify.ui
 
-import cc.tomko.outify.data.Track
+import cc.tomko.outify.core.model.Track
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

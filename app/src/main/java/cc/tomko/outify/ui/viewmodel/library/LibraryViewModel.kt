@@ -3,10 +3,8 @@ package cc.tomko.outify.ui.viewmodel.library
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.data.CoverSize
-import cc.tomko.outify.data.Playlist
-import cc.tomko.outify.data.getCover
+import cc.tomko.outify.core.model.Playlist
+import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.metadata.Metadata
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
