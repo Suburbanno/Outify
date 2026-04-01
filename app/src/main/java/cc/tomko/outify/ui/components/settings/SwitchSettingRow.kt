@@ -5,7 +5,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.room.parser.Section
 
 @Composable
 fun SwitchSettingItem(
@@ -15,7 +14,7 @@ fun SwitchSettingItem(
     onCheckedChange: (Boolean) -> Unit
 ) {
     ListItem(
-        headlineContent = { Section.Text(title) },
+        headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
         trailingContent = {
             Switch(

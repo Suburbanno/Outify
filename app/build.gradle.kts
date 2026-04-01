@@ -178,9 +178,9 @@ dependencies {
     implementation(libs.material3.window.size.class1)
     implementation(libs.navigation.compose)
 
-    implementation(libs.room.compiler){
-        exclude(group = "com.intellij", module = "annotations")
-    }
+//    implementation(libs.room.compiler){
+//        exclude(group = "com.intellij", module = "annotations")
+//    }
     implementation(libs.room.runtime){
         exclude(group = "com.intellij", module = "annotations")
     }

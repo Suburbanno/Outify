@@ -12,7 +12,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.room.parser.Section
 
 @Composable
 fun SettingItem(
@@ -40,7 +39,7 @@ fun SettingItem(
         }
     }
     ListItem(
-        headlineContent = { Section.Text(title) },
+        headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
         modifier = Modifier
             .fillMaxWidth()
