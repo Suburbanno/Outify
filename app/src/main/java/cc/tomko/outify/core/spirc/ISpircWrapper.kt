@@ -21,4 +21,5 @@ interface ISpircWrapper {
     fun playerPrevious(): Boolean
     fun previousTracks(): String
     fun nextTracks(): String
+    fun playNext(trackUri: String): Boolean
 }

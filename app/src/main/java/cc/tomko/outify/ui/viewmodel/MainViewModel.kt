@@ -44,6 +44,10 @@ class MainViewModel @Inject constructor(
         override fun addToQueue(uri: String) {
             this@MainViewModel.addToQueue(uri)
         }
+
+        override fun playNext(uri: String) {
+            this@MainViewModel.playNext(uri)
+        }
         override fun startRadio(track: Track) {
             this@MainViewModel.startRadio(track)
         }
@@ -66,6 +70,11 @@ class MainViewModel @Inject constructor(
     fun addToQueue(uri: String) {
         spirc.addToQueue(uri)
         InAppNotificationController.show("Added to queue", { Icon(Icons.Default.Queue, contentDescription = "Added to queue") }, 1000L)
+    }
+
+    fun playNext(uri: String) {
+        spirc.playNext(uri)
+        InAppNotificationController.show("Inserted to queue", { Icon(Icons.Default.Queue, contentDescription = "Inserted to queue") }, 1000L)
     }
 
     fun startRadio(track: Track) {

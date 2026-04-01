@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoveUp
 import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.Icon
@@ -30,6 +31,7 @@ data class GestureSetting(
 @Serializable
 enum class GestureAction {
     ADD_TO_QUEUE,
+    PLAY_NEXT,
     START_RADIO,
     ADD_TO_PLAYLIST,
     ADD_TO_FAVORITE,
@@ -49,6 +51,7 @@ enum class GestureTrigger {
 
 interface SwipeActionHandler {
     fun addToQueue(uri: String)
+    fun playNext(uri: String)
     fun startRadio(track: Track)
     fun favorite(trackUri: String)
     fun addToPlaylist(track: Track)
@@ -59,6 +62,7 @@ val LocalSwipeGestureSettings = compositionLocalOf<List<GestureSetting>> { empty
 val LocalSwipeActionHandler = compositionLocalOf<SwipeActionHandler> {
     object : SwipeActionHandler {
         override fun addToQueue(uri: String) {}
+        override fun playNext(uri: String) {}
         override fun startRadio(track: Track) {}
         override fun favorite(trackUri: String) {}
         override fun addToPlaylist(track: Track) {}
@@ -80,6 +84,7 @@ fun buildSwipeGesturesForTrack(
 
         val onTrigger: (() -> Unit)? = when (s.action) {
             GestureAction.ADD_TO_QUEUE -> { { actionHandler.addToQueue(track.uri) } }
+            GestureAction.PLAY_NEXT -> { { actionHandler.playNext(track.uri) } }
             GestureAction.START_RADIO -> { { actionHandler.startRadio(track) } }
             GestureAction.ADD_TO_FAVORITE -> { { actionHandler.favorite(track.uri) } }
             GestureAction.ADD_TO_PLAYLIST -> { { actionHandler.addToPlaylist(track) } }
@@ -91,6 +96,7 @@ fun buildSwipeGesturesForTrack(
         val icon: @Composable BoxScope.() -> Unit = {
             when (s.action) {
                 GestureAction.ADD_TO_QUEUE -> Icon(Icons.Default.Queue, contentDescription = null, modifier = Modifier.fillMaxSize())
+                GestureAction.PLAY_NEXT -> Icon(Icons.Default.MoveUp, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.START_RADIO -> Icon(Icons.Default.Radio, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.ADD_TO_FAVORITE -> Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.ADD_TO_PLAYLIST -> Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, modifier = Modifier.fillMaxSize())
@@ -126,6 +132,7 @@ fun buildLongPressAction(
 
     return when (setting.action) {
         GestureAction.ADD_TO_QUEUE -> { { handler.addToQueue(track.uri) } }
+        GestureAction.PLAY_NEXT -> { { handler.playNext(track.uri) } }
         GestureAction.START_RADIO -> { { handler.startRadio(track) } }
         GestureAction.ADD_TO_FAVORITE -> { { handler.favorite(track.uri) } }
         GestureAction.ADD_TO_PLAYLIST -> { { handler.addToPlaylist(track) } }
@@ -136,6 +143,7 @@ fun buildLongPressAction(
 
 private fun colorForAction(action: GestureAction): Color = when(action) {
     GestureAction.ADD_TO_QUEUE -> Color(0xFF4CAF50) // green
+    GestureAction.PLAY_NEXT -> Color(0xFFF44336)
     GestureAction.START_RADIO -> Color(0xFFFFC107) // amber
     GestureAction.ADD_TO_PLAYLIST -> Color(0xFF2196F3) // blue
     GestureAction.ADD_TO_FAVORITE -> Color(0xFFE91E63) // pink

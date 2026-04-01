@@ -226,4 +226,20 @@ class SpircWrapper @Inject constructor(
     override fun nextTracks(): String {
         return Spirc.nextTracks()
     }
+
+    /**
+     * Adds a track to play next (inserts at the beginning of the queue)
+     * @param trackUri the track URI to play next
+     * @return `true` if successful
+     */
+    override fun playNext(trackUri: String): Boolean {
+        val nextTracksJson = nextTracks()
+        return try {
+            val nextTracks: List<String> = json.decodeFromString(nextTracksJson)
+            val newQueue = arrayOf(trackUri) + nextTracks.toTypedArray()
+            setQueue(newQueue, trackUri)
+        } catch (_: Exception) {
+            false
+        }
+    }
 }

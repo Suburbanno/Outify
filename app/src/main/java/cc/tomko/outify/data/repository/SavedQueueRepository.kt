@@ -61,6 +61,20 @@ class SavedQueueRepository @Inject constructor(
 
     fun getQueue(id: String): SavedQueue? = _queues.value.find { it.id == id }
 
+    fun playNext(queueId: String, trackUri: String) {
+        _queues.update { list ->
+            list.map { queue ->
+                if (queue.id == queueId) {
+                    val newTrackUris = listOf(trackUri) + queue.trackUris
+                    queue.copy(trackUris = newTrackUris)
+                } else {
+                    queue
+                }
+            }
+        }
+        persist()
+    }
+
     fun setActiveQueueId(id: String?) {
         _activeQueueId.value = id
         scope.launch {
