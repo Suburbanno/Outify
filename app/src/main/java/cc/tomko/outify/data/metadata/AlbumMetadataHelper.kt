@@ -14,9 +14,9 @@ import cc.tomko.outify.data.database.album.AlbumArtistEntity
 import cc.tomko.outify.data.database.album.AlbumTrackCrossRef
 import cc.tomko.outify.data.database.album.AlbumWithArtists
 import cc.tomko.outify.data.database.album.toDomain
-import cc.tomko.outify.data.database.dao.AlbumArtistDao
-import cc.tomko.outify.data.database.dao.AlbumDao
-import cc.tomko.outify.data.database.dao.AlbumTrackDao
+import cc.tomko.outify.data.dao.AlbumArtistDao
+import cc.tomko.outify.data.dao.AlbumDao
+import cc.tomko.outify.data.dao.AlbumTrackDao
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow

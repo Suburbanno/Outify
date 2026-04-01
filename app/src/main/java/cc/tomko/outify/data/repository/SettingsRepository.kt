@@ -1,4 +1,4 @@
-package cc.tomko.outify.ui.repository
+package cc.tomko.outify.data.repository
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences

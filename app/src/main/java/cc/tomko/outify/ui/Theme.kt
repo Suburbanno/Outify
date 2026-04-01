@@ -1,4 +1,4 @@
-package cc.tomko.outify.ui.theme
+package cc.tomko.outify.ui
 
 import android.annotation.SuppressLint
 import android.graphics.Bitmap

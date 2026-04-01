@@ -7,13 +7,13 @@ import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.SyncedLyric
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
-import cc.tomko.outify.data.database.dao.LikedDao
+import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.model.player.PlayerUIState
-import cc.tomko.outify.ui.repository.PlayerRepository
-import cc.tomko.outify.ui.repository.SettingsRepository
+import cc.tomko.outify.data.repository.PlayerRepository
+import cc.tomko.outify.data.repository.SettingsRepository
 import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi

@@ -12,8 +12,8 @@ import cc.tomko.outify.core.spirc.ISpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.services.PlaybackService
-import cc.tomko.outify.ui.repository.SavedQueueRepository
-import cc.tomko.outify.ui.repository.SettingsRepository
+import cc.tomko.outify.data.repository.SavedQueueRepository
+import cc.tomko.outify.data.repository.SettingsRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

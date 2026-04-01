@@ -15,8 +15,8 @@ import cc.tomko.outify.data.setting.SwipeActionHandler
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.notifications.InAppNotificationController
-import cc.tomko.outify.ui.repository.InterfaceSettings
-import cc.tomko.outify.ui.repository.SettingsRepository
+import cc.tomko.outify.data.repository.InterfaceSettings
+import cc.tomko.outify.data.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted

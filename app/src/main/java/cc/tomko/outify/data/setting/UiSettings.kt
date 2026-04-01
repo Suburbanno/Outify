@@ -1,7 +1,7 @@
 package cc.tomko.outify.data.setting
 
 import androidx.compose.runtime.compositionLocalOf
-import cc.tomko.outify.ui.repository.InterfaceSettings
+import cc.tomko.outify.data.repository.InterfaceSettings
 
 val LocalUiSettings = compositionLocalOf {
     InterfaceSettings()

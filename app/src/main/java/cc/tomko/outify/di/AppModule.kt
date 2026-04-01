@@ -1,16 +1,17 @@
-package cc.tomko.outify
+package cc.tomko.outify.di
 
 import android.content.Context
+import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.data.dao.AlbumArtistDao
+import cc.tomko.outify.data.dao.AlbumDao
+import cc.tomko.outify.data.dao.AlbumTrackDao
+import cc.tomko.outify.data.dao.ArtistDao
+import cc.tomko.outify.data.dao.LikedDao
+import cc.tomko.outify.data.dao.PlaylistDao
+import cc.tomko.outify.data.dao.TrackArtistDao
+import cc.tomko.outify.data.dao.TrackDao
+import cc.tomko.outify.data.dao.TrackFileDao
 import cc.tomko.outify.data.database.AppDatabase
-import cc.tomko.outify.data.database.dao.AlbumArtistDao
-import cc.tomko.outify.data.database.dao.AlbumDao
-import cc.tomko.outify.data.database.dao.AlbumTrackDao
-import cc.tomko.outify.data.database.dao.ArtistDao
-import cc.tomko.outify.data.database.dao.LikedDao
-import cc.tomko.outify.data.database.dao.PlaylistDao
-import cc.tomko.outify.data.database.dao.TrackArtistDao
-import cc.tomko.outify.data.database.dao.TrackDao
-import cc.tomko.outify.data.database.dao.TrackFileDao
 import coil3.ImageLoader
 import coil3.disk.DiskCache
 import coil3.disk.directory
@@ -70,7 +71,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideJson(): Json{
+    fun provideJson(): Json {
         return json
     }
 

@@ -7,7 +7,7 @@ import cc.tomko.outify.core.model.PlaylistDiff
 import cc.tomko.outify.core.model.PlaylistItem
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.data.database.PlaylistEntity
-import cc.tomko.outify.data.database.dao.PlaylistDao
+import cc.tomko.outify.data.dao.PlaylistDao
 import cc.tomko.outify.data.database.playlist.PlaylistItemEntity
 import cc.tomko.outify.data.database.playlist.PlaylistWithItems
 import cc.tomko.outify.data.database.playlist.toDomain

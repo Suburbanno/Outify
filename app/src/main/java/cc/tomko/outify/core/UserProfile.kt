@@ -1,7 +1,7 @@
-package cc.tomko.outify.profile
+package cc.tomko.outify.core
 
-import javax.inject.Inject
-import javax.inject.Singleton
+import jakarta.inject.Inject
+import jakarta.inject.Singleton
 
 @Singleton
 class UserProfile @Inject constructor() {

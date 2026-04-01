@@ -30,7 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cc.tomko.outify.ui.components.PreferenceHeader
 import cc.tomko.outify.ui.components.PreferenceSectionHeader
 import cc.tomko.outify.ui.components.SwitchPreferenceEntry
-import cc.tomko.outify.ui.repository.InterfaceSettings
+import cc.tomko.outify.data.repository.InterfaceSettings
 import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
 
 @Composable

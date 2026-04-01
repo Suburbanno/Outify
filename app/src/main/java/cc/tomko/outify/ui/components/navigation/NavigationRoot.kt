@@ -33,7 +33,7 @@ import cc.tomko.outify.ui.screens.library.PlaylistScreen
 import cc.tomko.outify.ui.screens.library.TrackDetailScreen
 import cc.tomko.outify.ui.screens.library.album.AlbumDetailScreen
 import cc.tomko.outify.ui.screens.library.artist.ArtistDetailScreen
-import cc.tomko.outify.ui.screens.search.SearchScreen
+import cc.tomko.outify.ui.screens.SearchScreen
 import cc.tomko.outify.ui.screens.settings.AboutScreen
 import cc.tomko.outify.ui.screens.settings.AppearanceSettingScreen
 import cc.tomko.outify.ui.screens.settings.GestureSettingsScreen

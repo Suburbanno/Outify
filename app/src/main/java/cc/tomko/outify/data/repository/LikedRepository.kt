@@ -1,13 +1,13 @@
-package cc.tomko.outify.ui.repository
+package cc.tomko.outify.data.repository
 
 import android.util.Log
 import androidx.room.withTransaction
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.data.database.TrackWithArtists
 import cc.tomko.outify.data.database.album.AlbumWithArtists
-import cc.tomko.outify.data.database.dao.AlbumDao
-import cc.tomko.outify.data.database.dao.LikedDao
-import cc.tomko.outify.data.database.impl.LikedTrackEntity
+import cc.tomko.outify.data.dao.AlbumDao
+import cc.tomko.outify.data.dao.LikedDao
+import cc.tomko.outify.data.database.track.LikedTrackEntity
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
 import kotlinx.coroutines.delay

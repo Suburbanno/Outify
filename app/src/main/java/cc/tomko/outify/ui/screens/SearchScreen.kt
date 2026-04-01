@@ -1,4 +1,4 @@
-package cc.tomko.outify.ui.screens.search
+package cc.tomko.outify.ui.screens
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background

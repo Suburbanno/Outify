@@ -9,7 +9,7 @@ import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.database.toDomain
 import cc.tomko.outify.playback.PlaybackStateHolder
-import cc.tomko.outify.ui.repository.LikedRepository
+import cc.tomko.outify.data.repository.LikedRepository
 import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi

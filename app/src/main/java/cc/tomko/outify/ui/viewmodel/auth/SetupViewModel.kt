@@ -6,7 +6,7 @@ import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.data.metadata.Metadata
-import cc.tomko.outify.ui.repository.LikedRepository
+import cc.tomko.outify.data.repository.LikedRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers

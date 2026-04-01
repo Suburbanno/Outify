@@ -60,9 +60,9 @@ import cc.tomko.outify.ui.components.player.QueueBottomSheet
 import cc.tomko.outify.ui.components.player.rememberPlayerSheetState
 import cc.tomko.outify.ui.components.player.rememberQueueBottomSheetState
 import cc.tomko.outify.ui.notifications.InAppNotificationHost
-import cc.tomko.outify.ui.repository.InterfaceSettings
+import cc.tomko.outify.data.repository.InterfaceSettings
 import cc.tomko.outify.ui.screens.PlayerScreen
-import cc.tomko.outify.ui.theme.OutifyTheme
+import cc.tomko.outify.ui.OutifyTheme
 import cc.tomko.outify.ui.viewmodel.MainViewModel
 import cc.tomko.outify.ui.viewmodel.auth.LibrespotAuthProgress
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel

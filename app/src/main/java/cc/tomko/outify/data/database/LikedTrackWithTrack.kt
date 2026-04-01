@@ -4,9 +4,9 @@ import androidx.room.Embedded
 import androidx.room.Relation
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.database.album.AlbumWithArtists
-import cc.tomko.outify.data.database.dao.AlbumDao
-import cc.tomko.outify.data.database.dao.LikedDao
-import cc.tomko.outify.data.database.impl.LikedTrackEntity
+import cc.tomko.outify.data.dao.AlbumDao
+import cc.tomko.outify.data.dao.LikedDao
+import cc.tomko.outify.data.database.track.LikedTrackEntity
 
 /**
  * Join for cached liked track position with the TrackEntity

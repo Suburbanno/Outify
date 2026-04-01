@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ui.components.PreferenceHeader
 import cc.tomko.outify.ui.components.SwitchPreferenceEntry
-import cc.tomko.outify.ui.repository.PlaybackSettings
+import cc.tomko.outify.data.repository.PlaybackSettings
 import cc.tomko.outify.ui.viewmodel.settings.PlaybackSettingViewModel
 
 @Composable

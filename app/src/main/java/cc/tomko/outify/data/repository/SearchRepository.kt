@@ -1,4 +1,4 @@
-package cc.tomko.outify.ui.repository
+package cc.tomko.outify.data.repository
 
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.ui.model.search.SearchResult

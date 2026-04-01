@@ -25,7 +25,7 @@ import cc.tomko.outify.R
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.Player
-import cc.tomko.outify.ui.repository.SettingsRepository
+import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.utils.CoilBitmapLoader
 import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.AndroidEntryPoint

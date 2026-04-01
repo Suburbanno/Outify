@@ -1,4 +1,4 @@
-package cc.tomko.outify.data.database.impl
+package cc.tomko.outify.data.database.track
 
 import androidx.room.Entity
 import androidx.room.Index

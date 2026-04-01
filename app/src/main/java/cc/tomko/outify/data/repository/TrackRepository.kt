@@ -1,8 +1,8 @@
-package cc.tomko.outify.ui.repository
+package cc.tomko.outify.data.repository
 
 import androidx.room.Transaction
 import cc.tomko.outify.data.database.TrackEntity
-import cc.tomko.outify.data.database.dao.TrackDao
+import cc.tomko.outify.data.dao.TrackDao
 import java.time.Clock
 import javax.inject.Inject
 

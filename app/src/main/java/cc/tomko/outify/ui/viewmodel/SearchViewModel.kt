@@ -15,7 +15,7 @@ import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.model.search.SearchResultType
-import cc.tomko.outify.ui.repository.SearchRepository
+import cc.tomko.outify.data.repository.SearchRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview

@@ -1,4 +1,4 @@
-package cc.tomko.outify.data.database.dao
+package cc.tomko.outify.data.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -7,7 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import cc.tomko.outify.data.database.LikedTrackWithTrack
 import cc.tomko.outify.data.database.TrackWithArtists
-import cc.tomko.outify.data.database.impl.LikedTrackEntity
+import cc.tomko.outify.data.database.track.LikedTrackEntity
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Singleton
 

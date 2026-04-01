@@ -1,4 +1,4 @@
-package cc.tomko.outify.data.database.dao
+package cc.tomko.outify.data.dao
 
 import androidx.room.Dao
 import androidx.room.Insert

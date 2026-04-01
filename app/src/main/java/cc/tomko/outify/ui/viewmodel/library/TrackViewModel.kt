@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.model.Track
-import cc.tomko.outify.data.database.dao.LikedDao
+import cc.tomko.outify.data.dao.LikedDao
+import cc.tomko.outify.data.database.track.LikedTrackEntity
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
 import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -59,7 +60,7 @@ class TrackViewModel @Inject constructor(
                 likedDao.delete(trackId)
             } else {
                 likedDao.insert(
-                    cc.tomko.outify.data.database.impl.LikedTrackEntity(
+                    LikedTrackEntity(
                         trackId = trackId,
                         position = 0.0,
                         addedAt = System.currentTimeMillis()

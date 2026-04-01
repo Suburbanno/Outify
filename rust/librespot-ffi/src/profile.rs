@@ -55,7 +55,7 @@ pub async fn get_user_profile(username: Option<String>) -> Option<UserJson> {
 }
 
 #[unsafe(no_mangle)]
-pub extern "system" fn Java_cc_tomko_outify_profile_UserProfile_getUserProfile(
+pub extern "system" fn Java_cc_tomko_outify_core_UserProfile_getUserProfile(
     mut env: jni::JNIEnv,
     _this: JClass,
     username: JString,
