@@ -1,5 +1,6 @@
 package cc.tomko.outify.data.setting
 
+import android.R
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -9,7 +10,9 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoveUp
 import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
@@ -73,14 +76,15 @@ val LocalSwipeActionHandler = compositionLocalOf<SwipeActionHandler> {
 fun buildSwipeGesturesForTrack(
     gestureSettings: List<GestureSetting>,
     actionHandler: SwipeActionHandler,
-    track: Track
+    track: Track,
+    colorScheme: ColorScheme,
 ): Pair<List<SwipeGesture>, List<SwipeGesture>> {
     val start = mutableListOf<SwipeGesture>()
     val end = mutableListOf<SwipeGesture>()
 
     gestureSettings.filter { it.enabled && it.side != null }.forEach { s ->
         val threshold = (s.thresholdFraction ?: 0.25f).coerceIn(0f, 1f)
-        val bgColor = s.backgroundHex?.let { Color(it) } ?: colorForAction(s.action)
+        val bgColor = s.backgroundHex?.let { Color(it) } ?: colorForAction(s.action, colorScheme)
 
         val onTrigger: (() -> Unit)? = when (s.action) {
             GestureAction.ADD_TO_QUEUE -> { { actionHandler.addToQueue(track.uri) } }
@@ -141,12 +145,12 @@ fun buildLongPressAction(
     }
 }
 
-private fun colorForAction(action: GestureAction): Color = when(action) {
-    GestureAction.ADD_TO_QUEUE -> Color(0xFF4CAF50) // green
-    GestureAction.PLAY_NEXT -> Color(0xFFF44336)
-    GestureAction.START_RADIO -> Color(0xFFFFC107) // amber
-    GestureAction.ADD_TO_PLAYLIST -> Color(0xFF2196F3) // blue
-    GestureAction.ADD_TO_FAVORITE -> Color(0xFFE91E63) // pink
-    GestureAction.SHOW_TRACK_INFO -> Color(0xFF9C27B0) // purple
+private fun colorForAction(action: GestureAction, colorScheme: ColorScheme): Color = when(action) {
+    GestureAction.ADD_TO_QUEUE -> colorScheme.primaryContainer
+    GestureAction.PLAY_NEXT -> colorScheme.secondaryContainer
+    GestureAction.START_RADIO -> colorScheme.tertiaryContainer
+    GestureAction.ADD_TO_PLAYLIST -> colorScheme.primary
+    GestureAction.ADD_TO_FAVORITE -> colorScheme.error
+    GestureAction.SHOW_TRACK_INFO -> colorScheme.secondary
     GestureAction.NONE -> Color.Unspecified
 }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -101,8 +102,10 @@ fun rememberTrackGestures(track: Track): Pair<List<SwipeGesture>, List<SwipeGest
     val settings = LocalSwipeGestureSettings.current
     val handler = LocalSwipeActionHandler.current
 
+    val colorscheme = MaterialTheme.colorScheme
+
     val (start, end) = remember(settings, track) {
-        buildSwipeGesturesForTrack(settings, handler, track)
+        buildSwipeGesturesForTrack(settings, handler, track, colorscheme)
     }
 
     return start to end
