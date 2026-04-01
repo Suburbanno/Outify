@@ -11,14 +11,12 @@ import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
-import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.MediaSessionConstants
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
-import cc.tomko.outify.ui.screens.settings.PlaybackSettingScreen
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -26,7 +24,6 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.future.future
 import kotlinx.coroutines.plus
 
 @UnstableApi

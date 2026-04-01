@@ -7,7 +7,6 @@ import androidx.room.Query
 import androidx.room.Transaction
 import cc.tomko.outify.data.database.TrackEntity
 import cc.tomko.outify.data.database.TrackFull
-import cc.tomko.outify.data.database.TrackWithArtists
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Singleton
 

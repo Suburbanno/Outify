@@ -17,22 +17,20 @@ import android.graphics.drawable.Drawable
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import androidx.media3.common.util.BitmapLoader
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.R
-import coil3.ImageLoader
 import coil3.asImage
 import coil3.decode.DataSource
 import coil3.fetch.FetchResult
 import coil3.fetch.Fetcher
 import coil3.fetch.ImageFetchResult
 import coil3.imageLoader
-import coil3.key.Keyer
 import coil3.request.CachePolicy
 import coil3.request.ErrorResult
 import coil3.request.ImageRequest
-import coil3.request.Options
 import coil3.request.allowHardware
 import coil3.toBitmap
 import com.google.common.util.concurrent.ListenableFuture
@@ -40,7 +38,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.guava.future
 import javax.inject.Inject
 import kotlin.math.min
-import androidx.core.graphics.createBitmap
 
 @UnstableApi
 class CoilBitmapLoader @Inject constructor(

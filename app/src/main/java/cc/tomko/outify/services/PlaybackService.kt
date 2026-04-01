@@ -14,7 +14,6 @@ import androidx.media3.common.Player.REPEAT_MODE_ONE
 import androidx.media3.common.Player.STATE_IDLE
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.CommandButton
-import androidx.media3.session.CommandButton.ICON_UNDEFINED
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaBrowser
 import androidx.media3.session.MediaLibraryService
@@ -23,9 +22,6 @@ import androidx.media3.session.SessionToken
 import cc.tomko.outify.MainActivity
 import cc.tomko.outify.MediaSessionConstants
 import cc.tomko.outify.R
-import cc.tomko.outify.core.Spirc.SpircWrapper
-import cc.tomko.outify.core.model.SpotifyUri
-import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.Player
@@ -36,7 +32,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch

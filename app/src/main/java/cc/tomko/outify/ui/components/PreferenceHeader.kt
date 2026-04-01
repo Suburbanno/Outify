@@ -1,6 +1,5 @@
 package cc.tomko.outify.ui.components
 
-import android.R
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text

@@ -7,6 +7,7 @@ import cc.tomko.outify.core.model.Cover
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.asInt
 import cc.tomko.outify.core.model.asSize
+import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.database.AlbumEntity
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.data.database.album.AlbumArtistEntity
@@ -16,7 +17,6 @@ import cc.tomko.outify.data.database.album.toDomain
 import cc.tomko.outify.data.database.dao.AlbumArtistDao
 import cc.tomko.outify.data.database.dao.AlbumDao
 import cc.tomko.outify.data.database.dao.AlbumTrackDao
-import cc.tomko.outify.core.model.getCover
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow

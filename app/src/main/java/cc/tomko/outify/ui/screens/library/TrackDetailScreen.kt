@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.model.Album
 import cc.tomko.outify.core.model.CoverSize
-import cc.tomko.outify.core.model.OutifyUri
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.ui.components.ArtworkBackground

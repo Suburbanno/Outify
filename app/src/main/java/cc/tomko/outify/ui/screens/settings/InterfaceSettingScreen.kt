@@ -11,21 +11,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DesignServices
 import androidx.compose.material.icons.filled.Gesture
-import androidx.compose.material.icons.filled.Interests
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ui.components.PreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceHeader
-import cc.tomko.outify.ui.components.settings.SettingItem
-import cc.tomko.outify.ui.components.settings.SettingsGroup
-import cc.tomko.outify.ui.components.settings.SwitchSettingItem
-import cc.tomko.outify.ui.repository.InterfaceSettings
 import cc.tomko.outify.ui.viewmodel.settings.InterfaceViewModel
 
 @Composable

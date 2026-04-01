@@ -4,11 +4,6 @@ import android.app.Application
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.data.database.AppDatabase
-import coil3.ImageLoader
-import coil3.disk.DiskCache
-import coil3.disk.directory
-import coil3.memory.MemoryCache
-import coil3.request.crossfade
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 

@@ -55,9 +55,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
-import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.getCover
+import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel

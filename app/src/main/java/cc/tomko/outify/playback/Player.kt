@@ -1,6 +1,7 @@
 package cc.tomko.outify.playback
 
 import android.app.Application
+import androidx.core.graphics.scale
 import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -8,6 +9,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.SimpleBasePlayer
+import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.Spirc.SpircWrapper
@@ -24,18 +26,16 @@ import coil3.toBitmap
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
-import androidx.core.graphics.scale
-import androidx.media3.common.util.Log
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.withContext
 
 @Singleton
 @UnstableApi

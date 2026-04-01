@@ -16,11 +16,11 @@ import cc.tomko.outify.core.model.Artist
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
+import cc.tomko.outify.core.model.sharedTransitionKey
 import cc.tomko.outify.data.setting.LocalSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
 import cc.tomko.outify.data.setting.buildLongPressAction
 import cc.tomko.outify.data.setting.buildSwipeGesturesForTrack
-import cc.tomko.outify.core.model.sharedTransitionKey
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable

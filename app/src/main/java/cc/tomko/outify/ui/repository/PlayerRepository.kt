@@ -8,7 +8,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
-import java.lang.Exception
 import javax.inject.Inject
 
 class PlayerRepository @Inject constructor(

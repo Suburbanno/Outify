@@ -1,7 +1,5 @@
 package cc.tomko.outify.ui.viewmodel.auth
 
-import android.content.Intent
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import cc.tomko.outify.core.AuthCallbackServer
 import cc.tomko.outify.core.AuthManager

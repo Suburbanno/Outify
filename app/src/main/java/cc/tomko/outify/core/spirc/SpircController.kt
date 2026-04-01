@@ -1,17 +1,13 @@
 package cc.tomko.outify.core.spirc
 
 import android.util.Log
-import androidx.compose.runtime.collectAsState
 import cc.tomko.outify.core.Session
 import cc.tomko.outify.core.SessionCallback
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.repository.SettingsRepository
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton

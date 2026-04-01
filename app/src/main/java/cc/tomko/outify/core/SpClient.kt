@@ -1,6 +1,5 @@
 package cc.tomko.outify.core
 
-import android.util.Log
 import cc.tomko.outify.data.metadata.NativeError
 import cc.tomko.outify.data.metadata.NativeErrorHandler
 import kotlinx.serialization.Serializable
