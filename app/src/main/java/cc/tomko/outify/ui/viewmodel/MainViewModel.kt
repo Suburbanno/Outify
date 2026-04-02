@@ -16,6 +16,7 @@ import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.data.repository.InterfaceSettings
+import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -33,6 +34,7 @@ class MainViewModel @Inject constructor(
     private val spirc: SpircWrapper,
     private val settingsRepository: SettingsRepository,
     private val spClient: SpClient,
+    private val likedRepository: LikedRepository,
 ): ViewModel() {
     val swipeSettings: Flow<List<GestureSetting>> =
         settingsRepository.interfaceSettings.map { it.gestureSettings }
@@ -89,7 +91,15 @@ class MainViewModel @Inject constructor(
 
     fun openTrackInfo(track: Track) {
         viewModelScope.launch {
-            GlobalPopupController.showTrackPopup(track)
+            val likedIndex = try {
+                likedRepository.getTrackIndex(track.uri)
+            } catch (_: Exception) {
+                -1
+            }
+            GlobalPopupController.showTrackPopup(
+                track,
+                likedTrackIndex = if (likedIndex >= 0) likedIndex else null
+            )
         }
     }
 }

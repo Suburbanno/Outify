@@ -8,8 +8,8 @@ object GlobalPopupController {
     private val _popup = MutableStateFlow<TrackPopup?>(null)
     val popup: StateFlow<TrackPopup?> = _popup
 
-    fun showTrackPopup(track: Track, action: (() -> Unit)? = null) {
-        _popup.value = TrackPopup(track, action)
+    fun showTrackPopup(track: Track, action: (() -> Unit)? = null, likedTrackIndex: Int? = null) {
+        _popup.value = TrackPopup(track, action, likedTrackIndex)
     }
 
     fun dismiss() {
@@ -20,4 +20,5 @@ object GlobalPopupController {
 data class TrackPopup(
     val track: Track,
     val action: (() -> Unit)? = null,
+    val likedTrackIndex: Int? = null,
 )

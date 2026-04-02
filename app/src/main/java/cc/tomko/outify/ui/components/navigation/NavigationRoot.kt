@@ -117,6 +117,7 @@ fun SharedTransitionScope.NavigationRoot(
                 LikedScreen(
                     viewModel = viewModel,
                     listState = listState,
+                    scrollToIndex = it.scrollToIndex,
                     onBack = {
                         backStack.removeAt(backStack.lastIndex)
                     },

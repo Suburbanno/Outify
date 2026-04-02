@@ -3,6 +3,7 @@ package cc.tomko.outify
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -90,7 +91,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val permission = Manifest.permission.POST_NOTIFICATIONS
             val permissionCheck = checkSelfPermission(permission)
-            if (permissionCheck != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
                 registerForActivityResult(ActivityResultContracts.RequestPermission()) { }.launch(permission)
             }
         }
@@ -156,7 +157,7 @@ class MainActivity : ComponentActivity() {
                     contentDescription = null
                 )
             },
-            NavDestination("liked", "Liked", Route.LikedScreen) {
+            NavDestination("liked", "Liked", Route.LikedScreen()) {
                 Icon(
                     Icons.Default.Favorite,
                     contentDescription = null
@@ -235,7 +236,8 @@ class MainActivity : ComponentActivity() {
                             }
                         ) { innerPadding ->
                             Box(
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier
+                                    .fillMaxSize()
                                     .padding(bottom = innerPadding.calculateBottomPadding())
                             ) {
                                 NavigationRoot(
@@ -298,12 +300,13 @@ class MainActivity : ComponentActivity() {
                                                 },
                                                 onMoreOptions = {
                                                     GlobalPopupController.showTrackPopup(
-                                                        currentTrack!!
-                                                    ) {
-                                                        scope.launch {
-                                                            playerSheetState.collapse()
-                                                        }
-                                                    }
+                                                        currentTrack!!,
+                                                        action = {
+                                                            scope.launch {
+                                                                playerSheetState.collapse()
+                                                            }
+                                                        },
+                                                    )
                                                 }
                                             )
                                         }

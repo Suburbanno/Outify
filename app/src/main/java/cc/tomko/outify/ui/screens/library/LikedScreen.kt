@@ -57,6 +57,7 @@ import kotlinx.coroutines.withContext
 fun SharedTransitionScope.LikedScreen(
     viewModel: LikedViewModel,
     listState: LazyListState,
+    scrollToIndex: Int = -1,
     onBack: () -> Unit,
     onArtistClick: (Artist) -> Unit,
     onArtworkClick: (Album) -> Unit,
@@ -103,6 +104,14 @@ fun SharedTransitionScope.LikedScreen(
 
     val collapsingState = rememberCollapsingHeaderState()
     val scope = rememberCoroutineScope()
+
+    // Scroll to track if provided
+    LaunchedEffect(scrollToIndex, tracks) {
+        if (scrollToIndex >= 0 && scrollToIndex < tracks.size) {
+            // Add 1 to account for the search bar item
+            listState.scrollToItem(scrollToIndex + 1)
+        }
+    }
 
     LaunchedEffect(listState.isScrollInProgress) {
         if (!listState.isScrollInProgress) {

@@ -18,7 +18,7 @@ sealed interface Route: NavKey {
     data object SearchScreen: Route, NavKey
 
     @Serializable
-    data object LikedScreen: Route, NavKey
+    data class LikedScreen(val scrollToIndex: Int = -1): Route, NavKey
 
     @Serializable
     data object LibraryScreen: Route, NavKey

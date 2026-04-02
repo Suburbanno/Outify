@@ -153,4 +153,14 @@ class LikedRepository @Inject constructor(
         if (albumIds.isEmpty()) return emptyMap()
         return albumDao.getAlbumsWithArtists(albumIds).associateBy { it.album.albumId }
     }
+
+    /**
+     * Gets the index of a track by its URI in the liked tracks list.
+     * Returns the 0-based index, or -1 if not found.
+     */
+    suspend fun getTrackIndex(trackUri: String): Int {
+        val trackId = trackUri.substringAfterLast(":")
+        val allIds = likedDao.getLikedIds()
+        return allIds.indexOf(trackId)
+    }
 }

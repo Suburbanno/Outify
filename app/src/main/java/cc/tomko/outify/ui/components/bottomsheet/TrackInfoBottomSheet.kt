@@ -54,7 +54,7 @@ fun TrackInfoBottomSheet(
     track: Track,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-
+    likedTrackIndex: Int? = null,
     onArtworkClick: (() -> Unit)? = null,
     onArtistClick: ((Artist) -> Unit)? = null,
     onOpenAlbum: (() -> Unit)? = null,
@@ -65,6 +65,7 @@ fun TrackInfoBottomSheet(
     onStartRadio: (() -> Unit)? = null,
     onShare: (() -> Unit)? = null,
     onCopyUri: (() -> Unit)? = null,
+    onScrollToLiked: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -261,6 +262,24 @@ fun TrackInfoBottomSheet(
                     Icon(Icons.Default.Radio, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Start radio")
+                }
+            }
+
+            // Show liked track index if available
+            if (likedTrackIndex != null && likedTrackIndex >= 0) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            onScrollToLiked?.invoke()
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("In liked: #${likedTrackIndex + 1}")
+                    }
                 }
             }
 
