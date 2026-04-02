@@ -194,8 +194,11 @@ fun SharedTransitionScope.NavigationRoot(
                     onAlbumClick = { album ->
                         backStack.add(Route.AlbumScreen(album.uri))
                     },
-                    onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) }
-                ) { }
+                    onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) },
+                    onBack = {
+                        backStack.removeAt(backStack.lastIndex)
+                    }
+                )
             }
 
             entry<Route.PlaylistScreen> {
