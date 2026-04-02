@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -29,6 +30,19 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
+enum class SortBy {
+    POSITION,       // Default - added index
+    ARTIST_NAME,
+    TRACK_NAME,
+    DURATION
+}
+
+enum class ExplicitFilter {
+    BOTH,               // Show all tracks
+    EXPLICIT_ONLY,      // Show only explicit tracks
+    NON_EXPLICIT_ONLY   // Show only non-explicit tracks
+}
+
 @HiltViewModel
 class LikedViewModel @Inject constructor(
     val spirc: SpircWrapper,
@@ -38,6 +52,13 @@ class LikedViewModel @Inject constructor(
 ) : ViewModel() {
     val isRefreshing = MutableStateFlow(false)
     private val query = MutableStateFlow("")
+    
+    // Filter and sort states
+    val filterExplicit = MutableStateFlow(ExplicitFilter.BOTH)
+    val filterArtistName = MutableStateFlow("")
+    val filterTrackName = MutableStateFlow("")
+    val sortBy = MutableStateFlow(SortBy.POSITION)
+    val sortAscending = MutableStateFlow(true)
 
     companion object {
         private const val PAGE_SIZE = 30
@@ -69,6 +90,18 @@ class LikedViewModel @Inject constructor(
                     runCatching {
                         twa.toDomain(twa.track.albumId?.let { albums[it] })
                     }.getOrNull()
+                }
+            }
+            .flatMapLatest { tracks ->
+                // Combine with filter/sort states
+                kotlinx.coroutines.flow.combine(
+                    filterExplicit,
+                    filterArtistName,
+                    filterTrackName,
+                    sortBy,
+                    sortAscending
+                ) { explicit, artist, trackName, sort, ascending ->
+                    applyFiltersAndSorts(tracks, explicit, artist, trackName, sort, ascending)
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -120,6 +153,74 @@ class LikedViewModel @Inject constructor(
 
     fun onQueryChange(newQuery: String) {
         query.value = newQuery
+    }
+
+    fun setFilterExplicit(value: ExplicitFilter) {
+        filterExplicit.value = value
+    }
+
+    fun setFilterArtistName(value: String) {
+        filterArtistName.value = value
+    }
+
+    fun setFilterTrackName(value: String) {
+        filterTrackName.value = value
+    }
+
+    fun setSortBy(value: SortBy) {
+        sortBy.value = value
+    }
+
+    fun setSortAscending(value: Boolean) {
+        sortAscending.value = value
+    }
+
+    private fun applyFiltersAndSorts(
+        tracks: List<Track>,
+        explicitFilter: ExplicitFilter,
+        artistNameFilter: String,
+        trackNameFilter: String,
+        sort: SortBy,
+        ascending: Boolean
+    ): List<Track> {
+        var result = tracks
+
+        // Apply explicit filter
+        result = when (explicitFilter) {
+            ExplicitFilter.EXPLICIT_ONLY -> result.filter { it.explicit }
+            ExplicitFilter.NON_EXPLICIT_ONLY -> result.filter { !it.explicit }
+            ExplicitFilter.BOTH -> result
+        }
+
+        if (artistNameFilter.isNotBlank()) {
+            result = result.filter { track ->
+                track.artists.any { artist ->
+                    artist.name.contains(artistNameFilter, ignoreCase = true)
+                }
+            }
+        }
+
+        if (trackNameFilter.isNotBlank()) {
+            result = result.filter { track ->
+                track.name.contains(trackNameFilter, ignoreCase = true)
+            }
+        }
+
+        // Apply sorting
+        result = when (sort) {
+            SortBy.POSITION -> result // Already in position order
+            SortBy.ARTIST_NAME -> result.sortedBy { track ->
+                track.artists.firstOrNull()?.name?.lowercase() ?: ""
+            }
+            SortBy.TRACK_NAME -> result.sortedBy { it.name.lowercase() }
+            SortBy.DURATION -> result.sortedBy { it.duration }
+        }
+
+        if (!ascending) {
+            result = result.reversed()
+        }
+
+        return result
     }
 
     fun getArtwork(): Flow<String?> =

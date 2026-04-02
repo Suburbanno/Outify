@@ -108,7 +108,9 @@ fun SharedTransitionScope.SearchScreen(
     Column(modifier = modifier.fillMaxSize()) {
         MaterialSearchBar(
             onQueryChange = viewModel::onQueryChange,
-            isLoading = isLoading
+            isLoading = isLoading,
+            modifier = Modifier
+                .padding(12.dp)
         )
 
         LazyColumn(
@@ -281,8 +283,7 @@ fun MaterialSearchBar(
 
     SearchBar(
         modifier = modifier
-            .fillMaxWidth()
-            .padding(12.dp),
+            .fillMaxWidth(),
         inputField = {
             SearchBarDefaults.InputField(
                 modifier = Modifier.focusRequester(focusRequester),
