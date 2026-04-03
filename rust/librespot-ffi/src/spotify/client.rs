@@ -6,6 +6,7 @@ use reqwest::{Client, StatusCode, header};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::{
+    collections::HashMap,
     fs::OpenOptions,
     os::unix::fs::OpenOptionsExt,
     path::Path,
@@ -110,17 +111,17 @@ impl SpotifyClient {
     pub async fn save_items(&self, uris: Vec<String>) -> Result<StatusCode, SpotifyApiError> {
         // let token = self.get_token().await.ok_or(SpotifyApiError::NoToken)?;
         let token = match self.load_token().await {
-            Ok(o) => {
-                match o {
-                    Some(t) => t,
-                    None => {
-                        return Err(SpotifyApiError::Generic("No account token present!".to_string()));
-                    },
+            Ok(o) => match o {
+                Some(t) => t,
+                None => {
+                    return Err(SpotifyApiError::Generic(
+                        "No account token present!".to_string(),
+                    ));
                 }
             },
             Err(e) => {
                 return Err(e);
-            },
+            }
         };
 
         let ids = uris.join(",");
@@ -181,7 +182,11 @@ impl SpotifyClient {
             .expect("Time went backwards")
             .as_secs();
 
-        let new_token = WebApiToken::new(res.access_token.clone(), now + res.expires_in);
+        let new_token = WebApiToken::new(
+            res.access_token.clone(),
+            res.refresh_token,
+            now + res.expires_in,
+        );
 
         let mut write_guard = self.token.write().await;
         *write_guard = Some(new_token);
@@ -258,7 +263,11 @@ impl SpotifyClient {
             0
         };
 
-        let new_token = WebApiToken::new(token_response.access_token, expires_in);
+        let new_token = WebApiToken::new(
+            token_response.access_token,
+            token_response.refresh_token,
+            expires_in,
+        );
 
         let mut token_guard = self.token.write().await;
         *token_guard = Some(new_token.clone());
@@ -282,15 +291,11 @@ impl SpotifyClient {
     }
 
     pub async fn save_token(&self, token: &WebApiToken) -> Result<(), SpotifyApiError> {
-        let mut path: &mut std::path::PathBuf = match crate::FILES_DIR.get() {
-            Some(p) => &mut p.clone(),
-            None => {
-                error!("Android file path is not set!");
-                return Err(SpotifyApiError::Generic(
-                    "Android file path is not set!".to_string(),
-                ));
-            }
-        };
+        let mut path = crate::FILES_DIR
+            .get()
+            .ok_or_else(|| SpotifyApiError::Generic("Android file path is not set!".to_string()))?
+            .clone();
+
         path.push("account.json");
 
         let mut file = OpenOptions::new()
@@ -298,16 +303,11 @@ impl SpotifyClient {
             .create(true)
             .truncate(true)
             .mode(0o600)
-            .open(path)?;
+            .open(&path)?;
 
-        let json = match serde_json::to_string(token) {
-            Ok(j) => j,
-            Err(e) => {
-                return Err(SpotifyApiError::Generic(
-                    "Failed to serialize WebApiToken: {e}".to_string(),
-                ));
-            }
-        };
+        let json = serde_json::to_string(token).map_err(|e| {
+            SpotifyApiError::Generic(format!("Failed to serialize WebApiToken: {e}"))
+        })?;
 
         std::io::Write::write_all(&mut file, json.as_bytes())?;
         Ok(())
@@ -315,25 +315,48 @@ impl SpotifyClient {
 
     /// Loads the token from the session's cache if available
     pub async fn load_token(&self) -> Result<Option<WebApiToken>, SpotifyApiError> {
-        let mut path: &mut std::path::PathBuf = match crate::FILES_DIR.get() {
-            Some(p) => &mut p.clone(),
-            None => {
-                error!("Android file path is not set!");
-                return Err(SpotifyApiError::Generic(
-                    "Android file path is not set!".to_string(),
-                ));
-            }
-        };
+        let mut path = crate::FILES_DIR
+            .get()
+            .ok_or_else(|| SpotifyApiError::Generic("Android file path is not set!".to_string()))?
+            .clone();
+
         path.push("account.json");
 
-        match std::fs::read_to_string(path) {
-            Ok(contents) => {
-                let token: WebApiToken = serde_json::from_str(&contents)?;
-                Ok(Some(token))
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
-            Err(e) => Err(SpotifyApiError::IO(e)),
+        let token = match std::fs::read_to_string(&path) {
+            Ok(contents) => serde_json::from_str::<WebApiToken>(&contents).map_err(|e| {
+                SpotifyApiError::Generic(format!("Failed to parse token JSON: {e}"))
+            })?,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+            Err(e) => return Err(SpotifyApiError::IO(e)),
+        };
+
+        if token.is_expired() {
+            let refreshed = self.refresh_token(&token).await?;
+            return Ok(Some(refreshed));
         }
+
+        Ok(Some(token))
+    }
+
+    async fn refresh_token(&self, token: &WebApiToken) -> Result<WebApiToken, SpotifyApiError> {
+        let mut form = HashMap::new();
+        form.insert("grant_type", "refresh_token");
+        form.insert("refresh_token", &token.refresh_token);
+        form.insert("client_id", &self.client_id);
+
+        let response = self
+            .client
+            .post("https://accounts.spotify.com/api/token")
+            .form(&form)
+            .send()
+            .await?
+            .error_for_status()?
+            .json::<TokenResponse>()
+            .await?;
+
+        let new_token = WebApiToken::from(response);
+        self.save_token(&new_token).await?;
+        Ok(new_token)
     }
 }
 
