@@ -87,7 +87,38 @@ class MainViewModel @Inject constructor(
     }
 
     fun favorite(trackUri: String) {
-        spClient.saveItems(arrayOf(trackUri))
+        viewModelScope.launch {
+            val trackId = trackUri.substringAfterLast(":")
+            val wasLiked = likedRepository.isLiked(trackId)
+
+            // Optimistic UI update
+            if (wasLiked) {
+                // Remove from liked
+                likedRepository.removeLiked(trackId)
+            } else {
+                // Add to liked
+                likedRepository.addLiked(trackId)
+            }
+
+            // Make the API call
+            val success = if (wasLiked) {
+                spClient.deleteItems(arrayOf(trackUri))
+            } else {
+                spClient.saveItems(arrayOf(trackUri))
+            }
+
+            // Rollback if failed
+            if (!success) {
+                if (wasLiked) {
+                    // Restore to liked
+                    likedRepository.addLiked(trackId)
+                } else {
+                    // Restore to not liked
+                    likedRepository.removeLiked(trackId)
+                }
+                InAppNotificationController.show("Failed to update favorite", durationMillis = 2000L)
+            }
+        }
     }
 
     fun openTrackInfo(track: Track) {

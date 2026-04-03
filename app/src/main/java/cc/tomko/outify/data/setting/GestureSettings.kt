@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoveUp
 import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material.icons.filled.ThumbDown
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -78,13 +80,14 @@ fun buildSwipeGesturesForTrack(
     actionHandler: SwipeActionHandler,
     track: Track,
     colorScheme: ColorScheme,
+    isLiked: Boolean = false,
 ): Pair<List<SwipeGesture>, List<SwipeGesture>> {
     val start = mutableListOf<SwipeGesture>()
     val end = mutableListOf<SwipeGesture>()
 
     gestureSettings.filter { it.enabled && it.side != null }.forEach { s ->
         val threshold = (s.thresholdFraction ?: 0.25f).coerceIn(0f, 1f)
-        val bgColor = s.backgroundHex?.let { Color(it) } ?: colorForAction(s.action, colorScheme)
+        val bgColor = s.backgroundHex?.let { Color(it) } ?: colorForAction(s.action, colorScheme, isLiked)
 
         val onTrigger: (() -> Unit)? = when (s.action) {
             GestureAction.ADD_TO_QUEUE -> { { actionHandler.addToQueue(track.uri) } }
@@ -102,7 +105,14 @@ fun buildSwipeGesturesForTrack(
                 GestureAction.ADD_TO_QUEUE -> Icon(Icons.Default.Queue, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.PLAY_NEXT -> Icon(Icons.Default.MoveUp, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.START_RADIO -> Icon(Icons.Default.Radio, contentDescription = null, modifier = Modifier.fillMaxSize())
-                GestureAction.ADD_TO_FAVORITE -> Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.fillMaxSize())
+                GestureAction.ADD_TO_FAVORITE -> {
+                    Icon(
+                        imageVector = if (isLiked) Icons.Default.ThumbDown else Icons.Default.Favorite,
+                        contentDescription = if (isLiked) "Remove from favorite" else "Add to favorite",
+                        modifier = Modifier.fillMaxSize(),
+                        tint = if (isLiked) MaterialTheme.colorScheme.error else Color.White,
+                    )
+                }
                 GestureAction.ADD_TO_PLAYLIST -> Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.SHOW_TRACK_INFO -> Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.NONE -> Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.fillMaxSize())
@@ -145,12 +155,12 @@ fun buildLongPressAction(
     }
 }
 
-private fun colorForAction(action: GestureAction, colorScheme: ColorScheme): Color = when(action) {
+private fun colorForAction(action: GestureAction, colorScheme: ColorScheme, isLiked: Boolean = false): Color = when(action) {
     GestureAction.ADD_TO_QUEUE -> colorScheme.primaryContainer
     GestureAction.PLAY_NEXT -> colorScheme.secondaryContainer
     GestureAction.START_RADIO -> colorScheme.tertiaryContainer
     GestureAction.ADD_TO_PLAYLIST -> colorScheme.primary
-    GestureAction.ADD_TO_FAVORITE -> colorScheme.error
+    GestureAction.ADD_TO_FAVORITE -> if (isLiked) Color(0xC4E53935) else colorScheme.error
     GestureAction.SHOW_TRACK_INFO -> colorScheme.secondary
     GestureAction.NONE -> Color.Unspecified
 }

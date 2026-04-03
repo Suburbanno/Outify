@@ -44,7 +44,7 @@ fun SharedTransitionScope.SwipeableTrackRowConfigured(
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
     BoxWithConstraints(modifier = modifier) {
-        val (start, end) = rememberTrackGestures(track)
+        val (start, end) = rememberTrackGestures(track, isLiked)
 
         val settings = LocalSwipeGestureSettings.current
         val handler = LocalSwipeActionHandler.current
@@ -98,14 +98,14 @@ fun SharedTransitionScope.SwipeableTrackRowConfigured(
 }
 
 @Composable
-fun rememberTrackGestures(track: Track): Pair<List<SwipeGesture>, List<SwipeGesture>> {
+fun rememberTrackGestures(track: Track, isLiked: Boolean = false): Pair<List<SwipeGesture>, List<SwipeGesture>> {
     val settings = LocalSwipeGestureSettings.current
     val handler = LocalSwipeActionHandler.current
 
     val colorscheme = MaterialTheme.colorScheme
 
-    val (start, end) = remember(settings, track) {
-        buildSwipeGesturesForTrack(settings, handler, track, colorscheme)
+    val (start, end) = remember(settings, track, isLiked) {
+        buildSwipeGesturesForTrack(settings, handler, track, colorscheme, isLiked)
     }
 
     return start to end

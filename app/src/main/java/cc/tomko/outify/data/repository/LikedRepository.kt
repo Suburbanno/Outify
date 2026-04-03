@@ -138,6 +138,30 @@ class LikedRepository @Inject constructor(
 
     fun observeCount(): Flow<Int> = likedDao.observeCount()
 
+    suspend fun isLiked(trackId: String): Boolean = likedDao.containsTrack(trackId)
+
+    /**
+     * Adds a track to the liked list (optimistic UI update)
+     * Appends to the end of the list
+     */
+    suspend fun addLiked(trackId: String) {
+        val currentCount = likedDao.getLikedIds().size
+        likedDao.insert(
+            LikedTrackEntity(
+                trackId = trackId,
+                position = currentCount.toDouble(),
+                addedAt = System.currentTimeMillis()
+            )
+        )
+    }
+
+    /**
+     * Removes a track from the liked list (optimistic UI update)
+     */
+    suspend fun removeLiked(trackId: String) {
+        likedDao.delete(trackId)
+    }
+
     /**
      * Fetches (or confirms cached) metadata for a window of liked tracks.
      */

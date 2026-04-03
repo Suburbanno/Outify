@@ -109,7 +109,6 @@ impl SpotifyClient {
 
     // Saves tracks/episodes/albums/..
     pub async fn save_items(&self, uris: Vec<String>) -> Result<StatusCode, SpotifyApiError> {
-        // let token = self.get_token().await.ok_or(SpotifyApiError::NoToken)?;
         let token = match self.load_token().await {
             Ok(o) => match o {
                 Some(t) => t,
@@ -136,20 +135,36 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        // Debug purposes
-        if res.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
-            if let Some(retry_after) = res.headers().get("Retry-After") {
-                let seconds = match retry_after.to_str() {
-                    Ok(s) => {
-                        debug!("wait: {s}");
-                    }
-                    Err(e) => {
-                        debug!("failed: {e}");
-                    }
-                };
-            }
-        }
+        Ok(res.status())
+    }
 
+    // Deletes tracks/episodes/albums/..
+    pub async fn delete_items(&self, uris: Vec<String>) -> Result<StatusCode, SpotifyApiError> {
+        let token = match self.load_token().await {
+            Ok(o) => match o {
+                Some(t) => t,
+                None => {
+                    return Err(SpotifyApiError::Generic(
+                        "No account token present!".to_string(),
+                    ));
+                }
+            },
+            Err(e) => {
+                return Err(e);
+            }
+        };
+
+        let ids = uris.join(",");
+
+        let res = self
+            .client
+            .delete(format!("{}/v1/me/library", SPOTIFY_API_URL))
+            .query(&[("uris", ids)])
+            .header(header::CONTENT_LENGTH, "0")
+            .bearer_auth(token.access_token)
+            .timeout(REQUEST_TIMEOUT)
+            .send()
+            .await?;
         Ok(res.status())
     }
 

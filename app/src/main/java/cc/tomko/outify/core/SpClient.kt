@@ -22,6 +22,11 @@ class SpClient @Inject constructor() {
     external fun saveItems(uris: Array<String>): Boolean
 
     /**
+     * Removes given uris from users library
+     */
+    external fun deleteItems(uris: Array<String>): Boolean
+
+    /**
      * Retrieves the metadata for singular track by its ID
      */
     external fun getTrackData(id: String): String
