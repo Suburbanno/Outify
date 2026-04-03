@@ -15,5 +15,11 @@ pub enum SpotifyApiError {
     Reqwest(#[from] reqwest::Error),
 
     #[error("Librespot error: {0}")]
-    Librespot(#[from] librespot_core::Error)
+    Librespot(#[from] librespot_core::Error),
+
+    #[error("IO erorr: {0}")]
+    IO(#[from] std::io::Error),
+
+    #[error("{0}")]
+    Generic(String),
 }

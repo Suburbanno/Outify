@@ -27,6 +27,8 @@ class AuthViewModel @Inject constructor(
     fun verifyCode(code: String, state: String?) {
         val success = authManager.handleOAuthCode(code, state)
         _progress.value = if (success) LibrespotAuthProgress.SUCCESS else LibrespotAuthProgress.FAILED
+        server?.stop()
+        server = null
     }
 
     fun navigateToImport(){

@@ -13,52 +13,56 @@ class AuthCallbackServer(
     private val stopDelayMs = 350L
 
     override fun serve(session: IHTTPSession): Response {
-        try {
-            if (session.uri == "/login") {
-                val code = session.parameters["code"]?.firstOrNull()
-                val state = session.parameters["state"]?.firstOrNull()
-
-                if (code != null) {
-                    thread {
-                        try {
-                            // give the server time to finish sending the response
-                            Thread.sleep( stopDelayMs )
-                            onCodeReceived(code, state)
-                        } catch (t: Throwable) { } finally {
-                            try {
-                                stop()
-                            } catch (_: Throwable) {}
-                        }
-                    }
-
-                    val intentUri =
-                        "intent://auth_complete#Intent;scheme=outify;package=$packageName;end"
-
-                    val response = newFixedLengthResponse(
-                        Response.Status.REDIRECT,
-                        "text/plain",
-                        ""
-                    )
-                    response.addHeader("Location", intentUri)
-                    response.addHeader("Connection", "close")
-                    return response
-                }
-
-                val failIntent = "intent://auth_failed#Intent;scheme=outify;package=$packageName;end"
-                val fallback = newFixedLengthResponse(Response.Status.REDIRECT, "text/plain", "")
-                fallback.addHeader("Location", failIntent)
-                fallback.addHeader("Connection", "close")
-                return fallback
+        return try {
+            when (session.uri) {
+                "/login" -> handleCallback(
+                    session,
+                    success = "auth_complete",
+                    failure = "auth_failed"
+                )
+                "/account/login" -> handleCallback(
+                    session,
+                    success = "account_auth_complete",
+                    failure = "account_auth_failed"
+                )
+                else -> newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Not Found")
             }
-
-            return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "Not Found")
-
         } catch (e: SocketException) {
             println("AuthCallbackServer: socket closed while responding")
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "")
+            newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "")
         } catch (t: Throwable) {
             t.printStackTrace()
-            return newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "Error")
+            newFixedLengthResponse(Response.Status.INTERNAL_ERROR, "text/plain", "Error")
         }
     }
+
+    private fun handleCallback(
+        session: IHTTPSession,
+        success: String,
+        failure: String
+    ): Response {
+        val code = session.parameters["code"]?.firstOrNull()
+        val state = session.parameters["state"]?.firstOrNull()
+
+        if (code == null) {
+            return redirect("intent://$failure#Intent;scheme=outify;package=$packageName;end")
+        }
+
+        thread {
+            try {
+                Thread.sleep(stopDelayMs)
+                onCodeReceived(code, state)
+            } finally {
+                try { stop() } catch (_: Throwable) {}
+            }
+        }
+
+        return redirect("intent://$success#Intent;scheme=outify;package=$packageName;end")
+    }
+
+    private fun redirect(location: String): Response =
+        newFixedLengthResponse(Response.Status.REDIRECT, "text/plain", "").apply {
+            addHeader("Location", location)
+            addHeader("Connection", "close")
+        }
 }

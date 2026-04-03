@@ -35,6 +35,7 @@ import cc.tomko.outify.ui.screens.library.album.AlbumDetailScreen
 import cc.tomko.outify.ui.screens.library.artist.ArtistDetailScreen
 import cc.tomko.outify.ui.screens.SearchScreen
 import cc.tomko.outify.ui.screens.settings.AboutScreen
+import cc.tomko.outify.ui.screens.settings.AccountsScreen
 import cc.tomko.outify.ui.screens.settings.AppearanceSettingScreen
 import cc.tomko.outify.ui.screens.settings.GestureSettingsScreen
 import cc.tomko.outify.ui.screens.settings.InterfaceSettingScreen
@@ -49,6 +50,7 @@ import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
 import cc.tomko.outify.ui.viewmodel.library.PlaylistViewModel
 import cc.tomko.outify.ui.viewmodel.library.TrackViewModel
 import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModel
+import cc.tomko.outify.ui.viewmodel.settings.AccountsViewModel
 import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
 import cc.tomko.outify.ui.viewmodel.settings.GestureSettingViewModel
 import cc.tomko.outify.ui.viewmodel.settings.InterfaceViewModel
@@ -234,6 +236,9 @@ fun SharedTransitionScope.NavigationRoot(
                     },
                     openAboutSettings = {
                         backStack.add(Route.AboutScreen)
+                    },
+                    openAccountSettings = {
+                        backStack.add(Route.AccountsScreen)
                     }
                 )
             }
@@ -272,6 +277,14 @@ fun SharedTransitionScope.NavigationRoot(
                 val viewModel: PlaybackSettingViewModel = hiltViewModel()
 
                 PlaybackSettingScreen(
+                    viewModel = viewModel
+                )
+            }
+
+            entry<Route.AccountsScreen> {
+                val viewModel: AccountsViewModel = hiltViewModel()
+
+                AccountsScreen(
                     viewModel = viewModel
                 )
             }

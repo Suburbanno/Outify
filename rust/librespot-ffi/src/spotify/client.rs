@@ -1,11 +1,16 @@
-use librespot_core::token::Token;
+use librespot_core::{authentication::Credentials, token::Token};
+use librespot_oauth::{OAuthClient, OAuthClientBuilder, OAuthToken};
+use oauth2::{AuthorizationCode, PkceCodeVerifier, url::Url};
 use once_cell::sync::{Lazy, OnceCell};
 use reqwest::{Client, StatusCode, header};
-use serde::Deserialize;
-use serde_json::Value;
+use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
 use std::{
+    fs::OpenOptions,
+    os::unix::fs::OpenOptionsExt,
+    path::Path,
     sync::Arc,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tokio::sync::RwLock;
 
@@ -20,8 +25,23 @@ use crate::{
 
 const SPOTIFY_API_URL: &str = "https://api.spotify.com";
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
+const SPOTIFY_OAUTH_CALLBACK_URI: &str = "http://127.0.0.1:5588/account/login";
+const SPOTIFY_OAUTH_SCOPES: &[&str] = &[
+    "streaming",
+    "user-read-private",
+    "user-read-email",
+    "user-library-modify",
+    "user-library-read",
+];
 
 static SPOTIFY_CLIENT: OnceCell<SpotifyClient> = OnceCell::new();
+
+/// OAuth state for SpotifyClient's user authentication flow
+pub struct OAuthState {
+    pub oauth_client: OAuthClient,
+    pub pkce_verifier: Option<PkceCodeVerifier>,
+    pub created_at: Instant,
+}
 
 #[derive(Clone)]
 pub struct SpotifyClient {
@@ -29,6 +49,7 @@ pub struct SpotifyClient {
     client_secret: String,
     client: Client,
     token: Arc<RwLock<Option<WebApiToken>>>,
+    oauth_state: Arc<RwLock<Option<OAuthState>>>,
 }
 
 impl SpotifyClient {
@@ -41,6 +62,7 @@ impl SpotifyClient {
                 .build()
                 .expect("failed to build client"),
             token: Arc::new(RwLock::new(None)),
+            oauth_state: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -87,20 +109,19 @@ impl SpotifyClient {
     // Saves tracks/episodes/albums/..
     pub async fn save_items(&self, uris: Vec<String>) -> Result<StatusCode, SpotifyApiError> {
         // let token = self.get_token().await.ok_or(SpotifyApiError::NoToken)?;
-        let token: Token = crate::session::with_session_async(|ses| {
-            Box::pin(async move {
-                // Attempt to get a token
-                match ses.login5().auth_token().await {
-                    Ok(t) => Ok(t),
-                    Err(e) => {
-                        // Log the error for debugging
-                        log::error!("Failed to get Spotify token: {:?}", e);
-                        Err(SpotifyApiError::NoToken)
-                    }
+        let token = match self.load_token().await {
+            Ok(o) => {
+                match o {
+                    Some(t) => t,
+                    None => {
+                        return Err(SpotifyApiError::Generic("No account token present!".to_string()));
+                    },
                 }
-            })
-        })
-        .await??;
+            },
+            Err(e) => {
+                return Err(e);
+            },
+        };
 
         info!("token: {}", &token.access_token);
 
@@ -125,7 +146,7 @@ impl SpotifyClient {
                     }
                     Err(e) => {
                         debug!("failed: {e}");
-                    },
+                    }
                 };
             }
         }
@@ -157,23 +178,171 @@ impl SpotifyClient {
             .await
             .ok()?;
 
-        let new_token = WebApiToken {
-            access_token: res.access_token.clone(),
-            expires_at: Instant::now() + Duration::from_secs(res.expires_in),
-        };
+        let now = std::time::SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("Time went backwards")
+            .as_secs();
+
+        let new_token = WebApiToken::new(res.access_token.clone(), now + res.expires_in);
 
         let mut write_guard = self.token.write().await;
         *write_guard = Some(new_token);
 
         Some(res.access_token)
     }
+
+    pub async fn get_oauth_url(&self) -> String {
+        format!("{}", SPOTIFY_OAUTH_CALLBACK_URI)
+    }
+
+    /// Starts the OAuth flow and returns the authorization URL
+    pub async fn start_oauth_flow(&self) -> Result<String, SpotifyApiError> {
+        // Build OAuthClient using librespot_oauth
+        let oauth_client = OAuthClientBuilder::new(
+            &self.client_id,
+            SPOTIFY_OAUTH_CALLBACK_URI,
+            SPOTIFY_OAUTH_SCOPES.to_vec(),
+        )
+        .build()
+        .map_err(|e| SpotifyApiError::Generic(format!("Failed to build OAuth client: {}", e)))?;
+
+        // Get authorization URL and PKCE verifier
+        let (auth_url, pkce_verifier) = oauth_client.set_auth_url();
+
+        let state = OAuthState {
+            oauth_client,
+            pkce_verifier: Some(pkce_verifier),
+            created_at: Instant::now(),
+        };
+
+        let mut oauth_state_guard = self.oauth_state.write().await;
+        *oauth_state_guard = Some(state);
+
+        debug!("OAuth flow started with URL: {}", auth_url);
+        Ok(auth_url.to_string())
+    }
+
+    /// Completes the OAuth flow by exchanging the authorization code for tokens
+    pub async fn complete_oauth_flow(&self, code: String) -> Result<WebApiToken, SpotifyApiError> {
+        let mut oauth_state_guard = self.oauth_state.write().await;
+        let state = oauth_state_guard.as_mut().ok_or(SpotifyApiError::Generic(
+            "OAuth flow not started. Call start_oauth_flow first.".to_string(),
+        ))?;
+
+        // Check if state is still valid (not expired)
+        if state.created_at.elapsed() > Duration::from_secs(600) {
+            error!("OAuth state expired");
+            return Err(SpotifyApiError::Generic(
+                "OAuth state expired. Please restart the flow.".to_string(),
+            ));
+        }
+
+        let pkce_verifier = state.pkce_verifier.take().ok_or(SpotifyApiError::Generic(
+            "PKCE verifier not found. OAuth flow may have already completed.".to_string(),
+        ))?;
+        let oauth_client = &state.oauth_client;
+
+        // Use the OAuthClient to exchange code for token
+        let auth_code = AuthorizationCode::new(code);
+        let token_response: OAuthToken = oauth_client
+            .get_access_token_with_verifier_async(pkce_verifier, auth_code)
+            .await
+            .map_err(|e| {
+                error!("OAuth token exchange failed: {}", e);
+                SpotifyApiError::Generic(format!("Token exchange failed: {}", e))
+            })?;
+
+        // Calculate remaining seconds until expiration
+        let now = Instant::now();
+        let expires_in = if token_response.expires_at > now {
+            token_response.expires_at.duration_since(now).as_secs()
+        } else {
+            0
+        };
+
+        let new_token = WebApiToken::new(token_response.access_token, expires_in);
+
+        info!("token: {}", new_token.access_token);
+
+        let mut token_guard = self.token.write().await;
+        *token_guard = Some(new_token.clone());
+
+        // Clear OAuth state after successful exchange
+        drop(oauth_state_guard);
+        let mut oauth_state_guard = self.oauth_state.write().await;
+        *oauth_state_guard = None;
+
+        debug!("OAuth flow completed successfully");
+
+        // Save token to account.json
+        match self.save_token(&new_token).await {
+            Ok(_) => debug!("Account token saved!"),
+            Err(e) => {
+                error!("Failed to save account token: {e}");
+            }
+        };
+
+        Ok(new_token)
+    }
+
+    pub async fn save_token(&self, token: &WebApiToken) -> Result<(), SpotifyApiError> {
+        let mut path: &mut std::path::PathBuf = match crate::FILES_DIR.get() {
+            Some(p) => &mut p.clone(),
+            None => {
+                error!("Android file path is not set!");
+                return Err(SpotifyApiError::Generic(
+                    "Android file path is not set!".to_string(),
+                ));
+            }
+        };
+        path.push("account.json");
+
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .mode(0o600)
+            .open(path)?;
+
+        let json = match serde_json::to_string(token) {
+            Ok(j) => j,
+            Err(e) => {
+                return Err(SpotifyApiError::Generic(
+                    "Failed to serialize WebApiToken: {e}".to_string(),
+                ));
+            }
+        };
+
+        std::io::Write::write_all(&mut file, json.as_bytes())?;
+        Ok(())
+    }
+
+    /// Loads the token from the session's cache if available
+    pub async fn load_token(&self) -> Result<Option<WebApiToken>, SpotifyApiError> {
+        let mut path: &mut std::path::PathBuf = match crate::FILES_DIR.get() {
+            Some(p) => &mut p.clone(),
+            None => {
+                error!("Android file path is not set!");
+                return Err(SpotifyApiError::Generic(
+                    "Android file path is not set!".to_string(),
+                ));
+            }
+        };
+        path.push("account.json");
+
+        match std::fs::read_to_string(path) {
+            Ok(contents) => {
+                let token: WebApiToken = serde_json::from_str(&contents)?;
+                Ok(Some(token))
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(e) => Err(SpotifyApiError::IO(e)),
+        }
+    }
 }
 
-pub fn init_client() {
-    let client = SpotifyClient::new(
-        "819a62c83de24821b2654387bc84f136".to_string(),
-        "6db424c706d34cf7810a5c8c59324182".to_string(),
-    );
+pub fn init_client(client_id: String, client_secret: String) {
+    let client = SpotifyClient::new(client_id, client_secret);
     SPOTIFY_CLIENT.set(client);
 }
 

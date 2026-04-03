@@ -409,3 +409,71 @@ pub extern "system" fn get_lyrics_for_track(mut env: JNIEnv, _class: JClass, tra
         }
     }
 }
+
+/// Starts the OAuth flow for SpotifyClient and returns the authorization URL
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_startOAuthFlow")]
+pub extern "system" fn start_oauth_flow(mut env: JNIEnv, _class: JClass) -> jstring {
+    let client = get_client();
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let auth_url_result = rt.block_on(async { client.start_oauth_flow().await });
+
+    let auth_url = match auth_url_result {
+        Ok(url) => url,
+        Err(e) => {
+            error!("Failed to start OAuth flow: {e}");
+            return std::ptr::null_mut();
+        }
+    };
+
+    match env.new_string(auth_url) {
+        Ok(java_str) => java_str.into_raw(),
+        Err(e) => {
+            error!("Failed to create Java string: {:?}", e);
+            std::ptr::null_mut()
+        }
+    }
+}
+
+/// Completes the OAuth flow by exchanging the authorization code for tokens
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_completeOAuthFlow")]
+pub extern "system" fn complete_oauth_flow(mut env: JNIEnv, _class: JClass, code: JString) -> jboolean {
+    let client = get_client();
+
+    // Extract the code string before async operations
+    let code: String = match env.get_string(&code) {
+        Ok(js) => js.into(),
+        Err(e) => {
+            error!("JNI failed to read code: {}", e);
+            return 0;
+        }
+    };
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return 0;
+        }
+    };
+
+    let result = rt.block_on(async { client.complete_oauth_flow(code).await });
+
+    match result {
+        Ok(token) => {
+            debug!("OAuth flow completed successfully, token: {}", token.access_token);
+            1
+        }
+        Err(e) => {
+            error!("OAuth flow completion failed: {e}");
+            0
+        }
+    }
+}

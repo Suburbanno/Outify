@@ -38,6 +38,19 @@ class SpClient @Inject constructor() {
      */
     external fun getLyrics(trackId: String): String
 
+    /**
+     * Starts the OAuth flow for SpotifyClient user authentication.
+     * Returns the authorization URL to be opened in a webview.
+     */
+    external fun startOAuthFlow(): String
+
+    /**
+     * Completes the OAuth flow by exchanging the authorization code for tokens.
+     * Call this after the user completes authorization.
+     * Returns true on success, false on failure.
+     */
+    external fun completeOAuthFlow(code: String): Boolean
+
     fun checkAndHandleError(result: String, context: String = ""): String {
         if (result.startsWith("{")) {
             NativeErrorHandler.handleErrorJson(result, context)?.let {

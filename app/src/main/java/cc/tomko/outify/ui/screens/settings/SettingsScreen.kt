@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.DeveloperMode
 import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Info
@@ -30,6 +31,7 @@ fun SettingsScreen(
     openPlaybackSettings: (() -> Unit),
     openDebugSettings: (() -> Unit),
     openAboutSettings: (() -> Unit),
+    openAccountSettings: (() -> Unit),
 ) {
     LazyColumn(
         modifier = modifier
@@ -79,6 +81,19 @@ fun SettingsScreen(
                     title = { Text("About") },
                     icon = { Icon(Icons.Default.Info, contentDescription = null) },
                     onClick = openAboutSettings,
+                )
+            }
+        }
+
+        item {
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+                PreferenceEntry(
+                    title = { Text("Accounts") },
+                    icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
+                    onClick = openAccountSettings,
                 )
             }
         }
