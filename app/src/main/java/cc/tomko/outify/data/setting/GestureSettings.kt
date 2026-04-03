@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import cc.tomko.outify.MyIcons
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.ui.components.rows.SwipeGesture
 import kotlinx.serialization.Serializable
@@ -107,10 +108,10 @@ fun buildSwipeGesturesForTrack(
                 GestureAction.START_RADIO -> Icon(Icons.Default.Radio, contentDescription = null, modifier = Modifier.fillMaxSize())
                 GestureAction.ADD_TO_FAVORITE -> {
                     Icon(
-                        imageVector = if (isLiked) Icons.Default.ThumbDown else Icons.Default.Favorite,
+                        imageVector = if (isLiked) MyIcons.BrokenHeart else Icons.Default.Favorite,
                         contentDescription = if (isLiked) "Remove from favorite" else "Add to favorite",
                         modifier = Modifier.fillMaxSize(),
-                        tint = if (isLiked) MaterialTheme.colorScheme.error else Color.White,
+                        tint = Color.White,
                     )
                 }
                 GestureAction.ADD_TO_PLAYLIST -> Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null, modifier = Modifier.fillMaxSize())
