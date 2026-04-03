@@ -75,12 +75,20 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
 
-                <!-- OAuth callback -->
+                <!-- Playback OAuth callback -->
                 <data
                     android:host="auth_complete"
                     android:scheme="outify" />
                 <data
                     android:host="auth_failed"
+                    android:scheme="outify" />
+
+                <!-- Account OAuth callback -->
+                <data
+                    android:host="account_auth_complete"
+                    android:scheme="outify" />
+                <data
+                    android:host="account_auth_failed"
                     android:scheme="outify" />
 
                 <!-- Opening spotify URLs -->
@@ -97,23 +105,6 @@
             android:exported="false"
             android:label="@string/title_activity_home_screen"
             android:theme="@style/Theme.Material3Expressive" />
-        <activity
-            android:name=".ui.screens.auth.CallbackActivity"
-            android:exported="true"
-            android:label="@string/title_activity_callback"
-            android:theme="@style/Theme.Material3Expressive">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data
-                    android:host="oauth"
-                    android:pathPrefix="/verify"
-                    android:scheme="outify" />
-            </intent-filter>
-        </activity>
     </application>
 
 </manifest>
