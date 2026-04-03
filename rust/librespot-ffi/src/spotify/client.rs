@@ -123,8 +123,6 @@ impl SpotifyClient {
             },
         };
 
-        info!("token: {}", &token.access_token);
-
         let ids = uris.join(",");
 
         let res = self
@@ -261,8 +259,6 @@ impl SpotifyClient {
         };
 
         let new_token = WebApiToken::new(token_response.access_token, expires_in);
-
-        info!("token: {}", new_token.access_token);
 
         let mut token_guard = self.token.write().await;
         *token_guard = Some(new_token.clone());
