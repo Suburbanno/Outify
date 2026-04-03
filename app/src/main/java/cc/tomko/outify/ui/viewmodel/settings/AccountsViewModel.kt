@@ -6,6 +6,8 @@ import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import cc.tomko.outify.core.AuthCallbackServer
 import cc.tomko.outify.core.SpClient
+import cc.tomko.outify.ui.GlobalPopupController
+import cc.tomko.outify.ui.PopupSpec
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -17,8 +19,8 @@ class AccountsViewModel @Inject constructor(
 
     fun startAccountAuth(context: Context) {
         server = AuthCallbackServer(onCodeReceived = {code, state ->
-            spClient.completeOAuthFlow(code)
-            println("handling code: $code")
+            val success = spClient.completeOAuthFlow(code)
+            GlobalPopupController.show(PopupSpec.AuthResult(success))
         })
 
         server?.start()

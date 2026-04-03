@@ -8,6 +8,8 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.ui.GlobalPopupController
+import cc.tomko.outify.ui.PopupSpec
+import cc.tomko.outify.ui.components.bottomsheet.AuthResultBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.TrackInfoBottomSheet
 import cc.tomko.outify.ui.components.navigation.Route
 import kotlinx.coroutines.launch
@@ -19,42 +21,56 @@ fun GlobalPopupHost(
     startRadio: (Track) -> Unit,
     toggleLike: (Track) -> Unit,
 ) {
-    val data by GlobalPopupController.popup.collectAsState()
+    val popups by GlobalPopupController.popups.collectAsState()
     val scope = rememberCoroutineScope()
 
-    data?.let { data ->
-        data.track.let {
-            TrackInfoBottomSheet(
-                track = it,
-                likedTrackIndex = data.likedTrackIndex,
-                onDismiss = { GlobalPopupController.dismiss() },
-                onArtworkClick = {
-                    backStack.add(Route.TrackScreen(it.uri))
-                    data.action?.invoke()
-                },
-                onArtistClick = { artist ->
-                    backStack.add(Route.ArtistScreen(artist.uri))
-                    data.action?.invoke()
-                },
-                onOpenAlbum = {
-                    backStack.add(Route.TrackScreen(it.uri))
-                    data.action?.invoke()
-                },
-                onOpenArtist = {
-                    backStack.add(Route.ArtistScreen(it.artists.first().uri))
-                    data.action?.invoke()
-                },
-                onAddToQueue = { addToQueue(it) },
-                onSaveToPlaylist = {},
-                onToggleLike = { toggleLike(it) },
-                onStartRadio = { startRadio(it) },
-                onScrollToLiked = {
-                    scope.launch {
-                        backStack.add(Route.LikedScreen(scrollToIndex = data.likedTrackIndex ?: -1))
-                        GlobalPopupController.dismiss()
+    popups.forEach { popup ->
+        when (popup) {
+            is PopupSpec.TrackInfo -> {
+                TrackInfoBottomSheet(
+                    track = popup.track,
+                    likedTrackIndex = popup.likedTrackIndex,
+                    onDismiss = { GlobalPopupController.dismiss(popup.id) },
+                    onArtworkClick = {
+                        backStack.add(Route.TrackScreen(popup.track.uri))
+                        popup.action?.invoke()
+                    },
+                    onArtistClick = { artist ->
+                        backStack.add(Route.ArtistScreen(artist.uri))
+                        popup.action?.invoke()
+                    },
+                    onOpenAlbum = {
+                        backStack.add(Route.TrackScreen(popup.track.uri))
+                        popup.action?.invoke()
+                    },
+                    onOpenArtist = {
+                        backStack.add(Route.ArtistScreen(popup.track.artists.first().uri))
+                        popup.action?.invoke()
+                    },
+                    onAddToQueue = { addToQueue(popup.track) },
+                    onSaveToPlaylist = {},
+                    onToggleLike = { toggleLike(popup.track) },
+                    onStartRadio = { startRadio(popup.track) },
+                    onScrollToLiked = {
+                        scope.launch {
+                            backStack.add(Route.LikedScreen(scrollToIndex = popup.likedTrackIndex ?: -1))
+                            GlobalPopupController.dismiss(popup.id)
+                        }
                     }
-                }
-            )
+                )
+            }
+
+            is PopupSpec.AuthResult -> {
+                AuthResultBottomSheet(
+                    isSuccess = popup.isSuccess,
+                    message = popup.message,
+                    errorDetails = popup.errorDetails,
+                    onDismiss = {
+                        GlobalPopupController.dismiss(popup.id)
+                        popup.onDismiss?.invoke()
+                    },
+                )
+            }
         }
     }
 }

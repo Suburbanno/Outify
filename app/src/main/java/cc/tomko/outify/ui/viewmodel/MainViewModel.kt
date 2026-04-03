@@ -18,6 +18,7 @@ import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.data.repository.InterfaceSettings
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.SettingsRepository
+import cc.tomko.outify.ui.PopupSpec
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -96,10 +97,8 @@ class MainViewModel @Inject constructor(
             } catch (_: Exception) {
                 -1
             }
-            GlobalPopupController.showTrackPopup(
-                track,
-                likedTrackIndex = if (likedIndex >= 0) likedIndex else null
-            )
+
+            GlobalPopupController.show(PopupSpec.TrackInfo(track, likedTrackIndex =  if (likedIndex >= 0) likedIndex else null ))
         }
     }
 }

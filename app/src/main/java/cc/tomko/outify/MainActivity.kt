@@ -64,6 +64,7 @@ import cc.tomko.outify.ui.notifications.InAppNotificationHost
 import cc.tomko.outify.data.repository.InterfaceSettings
 import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.OutifyTheme
+import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.viewmodel.MainViewModel
 import cc.tomko.outify.ui.viewmodel.auth.LibrespotAuthProgress
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
@@ -299,14 +300,11 @@ class MainActivity : ComponentActivity() {
                                                     backStack.add(Route.ArtistScreen(it.uri))
                                                 },
                                                 onMoreOptions = {
-                                                    GlobalPopupController.showTrackPopup(
-                                                        currentTrack!!,
-                                                        action = {
-                                                            scope.launch {
-                                                                playerSheetState.collapse()
-                                                            }
-                                                        },
-                                                    )
+                                                    GlobalPopupController.show(PopupSpec.TrackInfo(currentTrack!!, action = {
+                                                        scope.launch {
+                                                            playerSheetState.collapse()
+                                                        }
+                                                    }))
                                                 }
                                             )
                                         }
