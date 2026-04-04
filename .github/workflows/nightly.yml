@@ -55,10 +55,11 @@ jobs:
 
     strategy:
       matrix:
-        abi:
-          - arm64-v8a
-          - armeabi-v7a
-
+        include:
+          - abi: arm64-v8a
+            triple: aarch64-linux-android
+          - abi: armeabi-v7a
+            triple: armv7-linux-androideabi
     steps:
       - uses: actions/checkout@v4
         with:
@@ -85,35 +86,54 @@ jobs:
 
       - name: Install Android NDK
         id: ndk
-        uses: nttld/setup-ndk@v1
-        with:
-          ndk-version: r29
+        run: |
+          NDK_VERSION="r29"
+          
+          # Try standard GitHub Actions location first
+          if [ -d "/opt/hostedtoolcache/ndk/r29/x64" ]; then
+            NDK_HOME="/opt/hostedtoolcache/ndk/r29/x64"
+            echo "Found NDK at GitHub Actions cache: $NDK_HOME"
+          else
+            # For local act or custom environments, download NDK
+            NDK_HOME="$HOME/android-ndk-${NDK_VERSION}"
+            
+            if [ ! -d "$NDK_HOME" ]; then
+              echo "Downloading Android NDK ${NDK_VERSION}..."
+              cd "$HOME"
+              wget -q https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip
+              unzip -q android-ndk-${NDK_VERSION}-linux.zip
+              rm android-ndk-${NDK_VERSION}-linux.zip
+            else
+              echo "NDK already installed at: $NDK_HOME"
+            fi
+          fi
+          
+          echo "ndk-path=$NDK_HOME" >> $GITHUB_OUTPUT
 
-      - name: Export NDK path
-        run: echo "ANDROID_NDK=${{ steps.ndk.outputs.ndk-path }}" >> $GITHUB_ENV
+      - name: Export tool paths
+        run: |
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          echo "ANDROID_NDK_HOME=${{ steps.ndk.outputs.ndk-path }}" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK=${{ steps.ndk.outputs.ndk-path }}" >> "$GITHUB_ENV"
 
       - name: Install Rust Android targets
-        run: |
-          rustup target add aarch64-linux-android armv7-linux-androideabi
+        run: rustup target add ${{ matrix.triple }}
 
       - name: Build librespot
         working-directory: rust/librespot-ffi
         run: |
-          cargo ndk \
-          -t ${{ matrix.abi }} \
-          --platform 21 \
-          build --release
+          cargo ndk -t ${{ matrix.abi }} --platform 21 build --release
 
       - name: Upload ABI artifact
         uses: actions/upload-artifact@v4
         with:
           name: librespot-${{ matrix.abi }}
-          path: |
-            rust/librespot-ffi/target/*/release/liblibrespot_ffi.so
+          path: rust/target/${{ matrix.triple }}/release/liblibrespot_ffi.so
+          if-no-files-found: error
 
   android_build:
     runs-on: ubuntu-latest
-    needs: librespot_build
+    needs: [setup, librespot_build]
     environment: Nightly
     env:
       ANDROID_KEYSTORE_FILE: app/release.keystore
@@ -171,6 +191,15 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
       - name: Build signed release
         env:
           ANDROID_KEYSTORE_FILE: ${{ github.workspace }}/app/release.keystore
@@ -187,7 +216,7 @@ jobs:
 
   publish_release:
     runs-on: ubuntu-latest
-    needs: android_build
+    needs: [setup, android_build]
     environment: Nightly
     env:
       VERSION_NAME: ${{ needs.setup.outputs.version }}
