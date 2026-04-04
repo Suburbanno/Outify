@@ -93,27 +93,26 @@ jobs:
         run: echo "ANDROID_NDK=${{ steps.ndk.outputs.ndk-path }}" >> $GITHUB_ENV
 
       - name: Install Rust Android targets
-        run: |
-          rustup target add aarch64-linux-android armv7-linux-androideabi
+        run: rustup target add aarch64-linux-android armv7-linux-androideabi
 
       - name: Build librespot
         working-directory: rust/librespot-ffi
         run: |
-          cargo ndk \
-          -t ${{ matrix.abi }} \
-          --platform 21 \
-          build --release
+          cargo ndk -t ${{ matrix.abi }} --platform 21 build --release
+
+      - name: Verify build output
+        run: find rust/librespot-ffi/target -name 'liblibrespot_ffi.so' -print
 
       - name: Upload ABI artifact
         uses: actions/upload-artifact@v4
         with:
           name: librespot-${{ matrix.abi }}
-          path: |
-            rust/librespot-ffi/target/*/release/liblibrespot_ffi.so
+          path: rust/librespot-ffi/target/${{ matrix.triple }}/release/liblibrespot_ffi.so
+          if-no-files-found: error
 
   android_build:
     runs-on: ubuntu-latest
-    needs: librespot_build
+    needs: [setup, librespot_build]
     environment: Nightly
     env:
       ANDROID_KEYSTORE_FILE: app/release.keystore
