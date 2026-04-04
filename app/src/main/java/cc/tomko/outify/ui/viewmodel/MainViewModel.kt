@@ -57,7 +57,9 @@ class MainViewModel @Inject constructor(
         override fun favorite(trackUri: String) {
             this@MainViewModel.favorite(trackUri)
         }
-        override fun addToPlaylist(track: Track) { }
+        override fun addToPlaylist(track: Track) {
+            this@MainViewModel.addToPlaylist(track)
+        }
         override fun trackInfo(track: Track) { openTrackInfo(track) }
     }
 
@@ -84,6 +86,10 @@ class MainViewModel @Inject constructor(
         spirc.startRadio(track.toSpotifyUri(), false)
         playbackStateHolder.setTrack(track)
         InAppNotificationController.show("Radio started", { Icon(Icons.Default.Radio, contentDescription = "Radio started") }, 1000L)
+    }
+
+    fun addToPlaylist(track: Track) {
+        GlobalPopupController.show(PopupSpec.AddToPlaylist(track))
     }
 
     fun favorite(trackUri: String) {

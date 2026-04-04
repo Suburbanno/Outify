@@ -43,4 +43,9 @@ sealed class PopupSpec(
         val onDismiss: (() -> Unit)? = null,
         override val id: String = UUID.randomUUID().toString(),
     ) : PopupSpec(id)
+
+    data class AddToPlaylist(
+        val track: Track,
+        override val id: String = UUID.randomUUID().toString(),
+    ) : PopupSpec(id)
 }

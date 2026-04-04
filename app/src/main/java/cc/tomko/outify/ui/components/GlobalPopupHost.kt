@@ -9,6 +9,7 @@ import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
+import cc.tomko.outify.ui.components.bottomsheet.AddToPlaylistBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.AuthResultBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.TrackInfoBottomSheet
 import cc.tomko.outify.ui.components.navigation.Route
@@ -69,6 +70,15 @@ fun GlobalPopupHost(
                         GlobalPopupController.dismiss(popup.id)
                         popup.onDismiss?.invoke()
                     },
+                )
+            }
+
+            is PopupSpec.AddToPlaylist -> {
+                AddToPlaylistBottomSheet(
+                    track = popup.track,
+                    onDismiss = {
+                        GlobalPopupController.dismiss(popup.id)
+                    }
                 )
             }
         }

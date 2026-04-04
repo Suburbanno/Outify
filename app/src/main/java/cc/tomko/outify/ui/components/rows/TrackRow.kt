@@ -43,7 +43,7 @@ enum class TrackRowDensity { Compact, Default, Spacious }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SharedTransitionScope.TrackRow(
+fun TrackRow(
     title: String,
     artists: List<Artist>,
     artworkUrl: String?,
@@ -65,6 +65,7 @@ fun SharedTransitionScope.TrackRow(
 
     contentDescription: String? = null,
 
+    sharedTransitionScope: SharedTransitionScope? = null,
     sharedTransitionKey: String? = "${SharedElementKey.ALBUM_ARTWORK}_${artworkUrl}",
     color: Color = MaterialTheme.colorScheme.surfaceVariant,
 ) {
@@ -84,14 +85,15 @@ fun SharedTransitionScope.TrackRow(
         modifier.fillMaxWidth()
     }
 
-    val modifierWithSharedBounds = if (sharedTransitionKey != null) {
-        modifier.sharedBounds(
-            rememberSharedContentState(sharedTransitionKey),
-            animatedVisibilityScope = LocalNavAnimatedContentScope.current
-        )
-    } else {
-        modifier
-    }
+    val artworkModifier =
+        if (sharedTransitionScope != null && sharedTransitionKey != null) {
+            with(sharedTransitionScope) {
+                Modifier.sharedBounds(
+                    rememberSharedContentState(sharedTransitionKey),
+                    animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                )
+            }
+        } else Modifier
 
     Surface(
         modifier = combinedModifier.semantics {
@@ -118,7 +120,7 @@ fun SharedTransitionScope.TrackRow(
                 SmartImage(
                     url = artworkUrl,
                     contentDescription = "Artwork",
-                    modifier = modifierWithSharedBounds
+                    modifier = artworkModifier
                         .then(
                             if (onArtworkClick != null) {
                                 Modifier.combinedClickable(

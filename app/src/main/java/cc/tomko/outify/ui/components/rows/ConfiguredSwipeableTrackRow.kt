@@ -90,6 +90,7 @@ fun SharedTransitionScope.SwipeableTrackRowConfigured(
                     trailingContent?.invoke()
                 },
 
+                sharedTransitionScope = this@SwipeableTrackRowConfigured,
                 sharedTransitionKey = if(isTransitioning)
                     track.album?.sharedTransitionKey() else null
             )
