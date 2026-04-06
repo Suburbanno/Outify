@@ -14,7 +14,6 @@ data class PlaylistEntity(
     val name: String,
     val description: String,
     val pictureId: String,
-    val cachedArtworkUrl: String? = null,
     val isCollaborative: Boolean,
     val isDeletedByOwner: Boolean,
     val timestamp: Long,

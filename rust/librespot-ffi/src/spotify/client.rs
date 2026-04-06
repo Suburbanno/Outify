@@ -18,9 +18,7 @@ use tokio::sync::RwLock;
 use crate::{
     session::with_session,
     spotify::{
-        error::SpotifyApiError,
-        search::extract_all_uris,
-        token::{TokenResponse, WebApiToken},
+        error::SpotifyApiError, requests::AddItemRequest, search::extract_all_uris, token::{TokenResponse, WebApiToken}
     },
 };
 
@@ -33,6 +31,8 @@ const SPOTIFY_OAUTH_SCOPES: &[&str] = &[
     "user-read-email",
     "user-library-modify",
     "user-library-read",
+    "playlist-modify-private",
+    "playlist-modify-public",
 ];
 
 static SPOTIFY_CLIENT: OnceCell<SpotifyClient> = OnceCell::new();
@@ -131,6 +131,38 @@ impl SpotifyClient {
             .query(&[("uris", ids)])
             .header(header::CONTENT_LENGTH, "0")
             .bearer_auth(token.access_token)
+            .timeout(REQUEST_TIMEOUT)
+            .send()
+            .await?;
+
+        Ok(res.status())
+    }
+
+    pub async fn add_to_playlist(&self, playlist_id: String, uris: Vec<String>) -> Result<StatusCode, SpotifyApiError> {
+        let token = match self.load_token().await {
+            Ok(o) => match o {
+                Some(t) => t,
+                None => {
+                    return Err(SpotifyApiError::Generic(
+                        "No account token present!".to_string(),
+                    ));
+                }
+            },
+            Err(e) => {
+                return Err(e);
+            }
+        };
+
+        let body = AddItemRequest {
+            uris,
+            position: Some(0)
+        };
+
+        let res = self
+            .client
+            .post(format!("{}/v1/playlists/{}/items", SPOTIFY_API_URL, playlist_id))
+            .bearer_auth(token.access_token)
+            .json(&body)
             .timeout(REQUEST_TIMEOUT)
             .send()
             .await?;

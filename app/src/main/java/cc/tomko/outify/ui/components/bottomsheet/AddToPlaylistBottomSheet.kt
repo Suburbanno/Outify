@@ -168,6 +168,9 @@ fun AddToPlaylistBottomSheet(
                             },
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
+                                .clickable {
+                                    viewModel.addToPlaylist(track, it.playlist)
+                                }
                         )
                     }
                 }

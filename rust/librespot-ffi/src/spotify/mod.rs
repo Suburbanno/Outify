@@ -8,3 +8,4 @@ pub mod token;
 pub mod error;
 
 mod search;
+mod requests;

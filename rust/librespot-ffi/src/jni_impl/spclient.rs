@@ -20,7 +20,7 @@ pub extern "system" fn username(mut env: JNIEnv, _class: JClass) -> jstring {
         Err(e) => {
             error!("failed to get username: {e}");
             return std::ptr::null_mut();
-        },
+        }
     };
 
     match env.new_string(username) {
@@ -28,7 +28,7 @@ pub extern "system" fn username(mut env: JNIEnv, _class: JClass) -> jstring {
         Err(e) => {
             error!("Failed to convert JString: {e}");
             return std::ptr::null_mut();
-        },
+        }
     }
 }
 
@@ -162,6 +162,59 @@ pub extern "system" fn delete_items(
         }
         Err(e) => {
             error!("delete_items failed: {e}");
+            0
+        }
+    }
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_addToPlaylist")]
+pub extern "system" fn add_to_playlist(
+    mut env: JNIEnv,
+    _class: JClass,
+    playlist_id: JString,
+    uris: JObjectArray,
+) -> jboolean {
+    let client = get_client();
+
+    let playlist_id: String = match env.get_string(&playlist_id) {
+        Ok(p) => p.into(),
+        Err(e) => {
+            error!("failed to get playlist_id: {e}");
+            return 0 as jboolean;
+        },
+    };
+
+    let length = env.get_array_length(&uris).unwrap();
+    let mut rust_uris = Vec::with_capacity(length as usize);
+
+    for i in 0..length {
+        let obj = env.get_object_array_element(&uris, i).unwrap();
+        let jstr: JString = JString::from(obj);
+        let rust_string: String = env.get_string(&jstr).unwrap().into();
+        rust_uris.push(rust_string);
+    }
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return 0;
+        }
+    };
+
+    let result = rt.block_on(async { client.add_to_playlist(playlist_id, rust_uris).await });
+
+    match result {
+        Ok(status) => {
+            let success = status.is_success();
+            if !success {
+                warn!("failed to add to playlist with status: {}", status.as_str());
+            }
+
+            success as jboolean
+        }
+        Err(e) => {
+            error!("add_to_playlist failed: {e}");
             0
         }
     }

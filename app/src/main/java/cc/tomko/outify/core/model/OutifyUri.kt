@@ -97,7 +97,12 @@ sealed class OutifyUri {
         override fun toUriString(): String = "outify:liked:artist:$artistId"
     }
 
+    override fun toString(): String {
+        return this.toUriString()
+    }
+
     companion object {
+
         fun fromUriString(uri: String): OutifyUri {
             val parts = uri.split(":").filter { it.isNotEmpty() }
 
