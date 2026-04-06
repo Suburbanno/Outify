@@ -3,12 +3,34 @@ use jni::{
     objects::{JClass, JObject, JObjectArray, JString},
     sys::{jboolean, jint, jobjectArray, jstring},
 };
-use librespot_core::{spclient::SpClient, SpotifyId, SpotifyUri};
+use librespot_core::{SpotifyId, SpotifyUri, spclient::SpClient};
 use librespot_metadata::{Metadata, Track};
 use oauth2::reqwest;
 use regex::Regex;
 
-use crate::{jni_utils::vec_to_jstring_array, outifyuri::OutifyUri, session::with_session, spotify::client::get_client};
+use crate::{
+    jni_utils::vec_to_jstring_array, outifyuri::OutifyUri, session::with_session,
+    spotify::client::get_client,
+};
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_username")]
+pub extern "system" fn username(mut env: JNIEnv, _class: JClass) -> jstring {
+    let username = match crate::spclient::get_username() {
+        Ok(u) => u,
+        Err(e) => {
+            error!("failed to get username: {e}");
+            return std::ptr::null_mut();
+        },
+    };
+
+    match env.new_string(username) {
+        Ok(u) => u.into_raw(),
+        Err(e) => {
+            error!("Failed to convert JString: {e}");
+            return std::ptr::null_mut();
+        },
+    }
+}
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_search")]
 pub extern "system" fn spotify_search(
@@ -102,7 +124,11 @@ pub extern "system" fn save_item(mut env: JNIEnv, _class: JClass, uris: JObjectA
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_deleteItems")]
-pub extern "system" fn delete_items(mut env: JNIEnv, _class: JClass, uris: JObjectArray) -> jboolean {
+pub extern "system" fn delete_items(
+    mut env: JNIEnv,
+    _class: JClass,
+    uris: JObjectArray,
+) -> jboolean {
     let client = get_client();
 
     let length = env.get_array_length(&uris).unwrap();
@@ -336,7 +362,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_SpClient_getRootlist(
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getRadioForTrack")]
-pub extern "system" fn get_radio_for_track(mut env: JNIEnv, _class: JClass, track_uri: JString) -> jstring {
+pub extern "system" fn get_radio_for_track(
+    mut env: JNIEnv,
+    _class: JClass,
+    track_uri: JString,
+) -> jstring {
     let rt = match crate::TOKIO_RUNTIME.get() {
         Some(r) => r,
         None => {
@@ -361,7 +391,7 @@ pub extern "system" fn get_radio_for_track(mut env: JNIEnv, _class: JClass, trac
         Err(e) => {
             error!("failed to convert uri: {e}");
             return std::ptr::null_mut();
-        },
+        }
     };
 
     let json_opt = rt.block_on(async {
@@ -395,7 +425,11 @@ pub extern "system" fn get_radio_for_track(mut env: JNIEnv, _class: JClass, trac
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getLyrics")]
-pub extern "system" fn get_lyrics_for_track(mut env: JNIEnv, _class: JClass, track_id: JString) -> jstring {
+pub extern "system" fn get_lyrics_for_track(
+    mut env: JNIEnv,
+    _class: JClass,
+    track_id: JString,
+) -> jstring {
     let rt = match crate::TOKIO_RUNTIME.get() {
         Some(r) => r,
         None => {
@@ -417,7 +451,7 @@ pub extern "system" fn get_lyrics_for_track(mut env: JNIEnv, _class: JClass, tra
         Err(e) => {
             error!("failed to convert uri: {e}");
             return std::ptr::null_mut();
-        },
+        }
     };
 
     let json_opt = rt.block_on(async {
@@ -484,7 +518,11 @@ pub extern "system" fn start_oauth_flow(mut env: JNIEnv, _class: JClass) -> jstr
 
 /// Completes the OAuth flow by exchanging the authorization code for tokens
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_completeOAuthFlow")]
-pub extern "system" fn complete_oauth_flow(mut env: JNIEnv, _class: JClass, code: JString) -> jboolean {
+pub extern "system" fn complete_oauth_flow(
+    mut env: JNIEnv,
+    _class: JClass,
+    code: JString,
+) -> jboolean {
     let client = get_client();
 
     // Extract the code string before async operations
@@ -508,7 +546,10 @@ pub extern "system" fn complete_oauth_flow(mut env: JNIEnv, _class: JClass, code
 
     match result {
         Ok(token) => {
-            debug!("OAuth flow completed successfully, token: {}", token.access_token);
+            debug!(
+                "OAuth flow completed successfully, token: {}",
+                token.access_token
+            );
             1
         }
         Err(e) => {

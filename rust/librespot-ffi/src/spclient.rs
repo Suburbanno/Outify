@@ -54,3 +54,13 @@ pub async fn get_lyrics(track_id: &SpotifyId) -> SpClientResult {
     let spclient = session.spclient();
     spclient.get_lyrics(track_id).await
 }
+
+pub fn get_username() -> Result<String, librespot_core::error::Error> {
+    match with_session(|s| s.clone()) {
+        Ok(s) => Ok(s.username()),
+        Err(e) => {
+            error!("Failed to get session: {}", e);
+            Err(e)
+        }
+    }
+}
