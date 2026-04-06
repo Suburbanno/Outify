@@ -21,6 +21,7 @@ use std::collections::HashMap;
 pub struct PlaylistJson {
     id: String,
     uri: String,
+    owner_username: String,
     revision: String,
     length: i32,
     attributes: PlaylistAttributesJson,
@@ -165,6 +166,7 @@ impl From<&Playlist> for PlaylistJson {
         Self {
             id: playlist.id.to_id(),
             uri: playlist.id.to_uri(),
+            owner_username: playlist.owner_username.clone(),
             revision: playlist
                 .revision
                 .clone()
