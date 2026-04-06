@@ -55,8 +55,13 @@ class AddToPlaylistViewModel @Inject constructor(
 
     val ownedPlaylists = playlistsWithArtwork
 
-    fun addToPlaylist(track: Track, playlist: Playlist) {
-        // TODO: Add optimistic UI
+    fun addToPlaylist(tracks: List<Track>, playlist: Playlist) {
+        viewModelScope.launch {
+            spClient.addToPlaylist(playlist.id, tracks.map { it.uri }.toTypedArray())
+        }
+    }
+
+    fun addTrackToPlaylist(track: Track, playlist: Playlist) {
         viewModelScope.launch {
             spClient.addToPlaylist(playlist.id, arrayOf(track.uri))
         }

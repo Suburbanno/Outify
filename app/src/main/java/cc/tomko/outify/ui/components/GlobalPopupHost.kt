@@ -79,7 +79,7 @@ fun GlobalPopupHost(
             is PopupSpec.AddToPlaylist -> {
                 AddToPlaylistBottomSheet(
                     viewModel = addToPlaylistViewModel,
-                    track = popup.track,
+                    tracks = popup.tracks,
                     onDismiss = {
                         GlobalPopupController.dismiss(popup.id)
                     }

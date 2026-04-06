@@ -89,7 +89,11 @@ class MainViewModel @Inject constructor(
     }
 
     fun addToPlaylist(track: Track) {
-        GlobalPopupController.show(PopupSpec.AddToPlaylist(track))
+        GlobalPopupController.show(PopupSpec.AddToPlaylist(listOf(track)))
+    }
+
+    fun addToPlaylist(tracks: List<Track>) {
+        GlobalPopupController.show(PopupSpec.AddToPlaylist(tracks))
     }
 
     fun favorite(trackUri: String) {
