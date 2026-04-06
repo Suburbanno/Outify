@@ -20,6 +20,7 @@ data class AlbumEntity(
     val lastUpdated: Long,
 
     // Covers
+    val albumCoverBaseUrl: String? = null,
     val smallCoverUri: String?,
     val mediumCoverUri: String?,
     val largeCoverUri: String?,

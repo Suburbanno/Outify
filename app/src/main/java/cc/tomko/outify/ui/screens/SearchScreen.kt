@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.R
 import cc.tomko.outify.core.model.CoverSize
@@ -249,6 +250,7 @@ fun SharedTransitionScope.SearchScreen(
                                 // TODO: Add author page
                             },
                             contentDescription = playlist.attributes.description,
+                            sharedTransitionScope = this@SearchScreen,
                             modifier = Modifier.animateItem()
                         )
                     }

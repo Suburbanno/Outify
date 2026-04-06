@@ -13,6 +13,7 @@ import cc.tomko.outify.ui.components.bottomsheet.AddToPlaylistBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.AuthResultBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.TrackInfoBottomSheet
 import cc.tomko.outify.ui.components.navigation.Route
+import cc.tomko.outify.ui.viewmodel.bottomsheet.AddToPlaylistViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -21,6 +22,8 @@ fun GlobalPopupHost(
     addToQueue: (Track) -> Unit,
     startRadio: (Track) -> Unit,
     toggleLike: (Track) -> Unit,
+
+    addToPlaylistViewModel: AddToPlaylistViewModel,
 ) {
     val popups by GlobalPopupController.popups.collectAsState()
     val scope = rememberCoroutineScope()
@@ -75,6 +78,7 @@ fun GlobalPopupHost(
 
             is PopupSpec.AddToPlaylist -> {
                 AddToPlaylistBottomSheet(
+                    viewModel = addToPlaylistViewModel,
                     track = popup.track,
                     onDismiss = {
                         GlobalPopupController.dismiss(popup.id)

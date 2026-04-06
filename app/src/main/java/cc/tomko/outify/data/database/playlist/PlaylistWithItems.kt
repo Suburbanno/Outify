@@ -28,6 +28,7 @@ fun PlaylistWithItems.toDomain(): Playlist {
     return Playlist(
         id = playlist.id,
         uri = playlist.uri,
+        ownerUsername = playlist.ownerUsername,
         revision = playlist.revision,
         length = orderedItems.size,
         attributes = PlaylistAttributes(
@@ -55,3 +56,5 @@ fun PlaylistWithItems.toDomain(): Playlist {
         timestamp = System.currentTimeMillis(),
     )
 }
+fun PlaylistWithItems.canModify(username: String): Boolean =
+    playlist.isCollaborative || playlist.ownerUsername == username

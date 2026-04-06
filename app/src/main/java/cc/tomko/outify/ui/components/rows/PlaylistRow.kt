@@ -41,7 +41,7 @@ import cc.tomko.outify.utils.SharedElementKey
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun SharedTransitionScope.PlaylistRow(
+fun PlaylistRow(
     playlist: Playlist,
     artworkUrl: String?,
 
@@ -60,6 +60,7 @@ fun SharedTransitionScope.PlaylistRow(
 
     contentDescription: String? = null,
 
+    sharedTransitionScope: SharedTransitionScope? = null,
     sharedTransitionKey: String? = "${SharedElementKey.PLAYLIST_ARTWORK}_${playlist.uri}",
     color: Color = MaterialTheme.colorScheme.surfaceVariant,
 ) {
@@ -80,15 +81,15 @@ fun SharedTransitionScope.PlaylistRow(
         modifier.fillMaxWidth()
     }
 
-    // Morphing the album cover only if sharedTransitionKey != null
-    val modifierWithSharedBounds = if (sharedTransitionKey != null) {
-        modifier.sharedBounds(
-            rememberSharedContentState(sharedTransitionKey),
-            animatedVisibilityScope = LocalNavAnimatedContentScope.current
-        )
-    } else {
-        modifier
-    }
+    val artworkModifier =
+        if (sharedTransitionScope != null && sharedTransitionKey != null) {
+            with(sharedTransitionScope) {
+                Modifier.sharedBounds(
+                    rememberSharedContentState(sharedTransitionKey),
+                    animatedVisibilityScope = LocalNavAnimatedContentScope.current
+                )
+            }
+        } else Modifier
 
     Surface(
         modifier = combinedModifier.semantics {
@@ -115,7 +116,7 @@ fun SharedTransitionScope.PlaylistRow(
                 SmartImage(
                     url = artworkUrl,
                     contentDescription = "Artwork",
-                    modifier = modifierWithSharedBounds
+                    modifier = artworkModifier
                         .then(
                             if (onArtworkClick != null) {
                                 Modifier.combinedClickable(

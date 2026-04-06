@@ -35,7 +35,7 @@ import cc.tomko.outify.data.database.playlist.PlaylistItemEntity
         PlaylistTrackEntity::class,
         LikedTrackEntity::class,
     ],
-    version = 10,
+    version = 14,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase() {

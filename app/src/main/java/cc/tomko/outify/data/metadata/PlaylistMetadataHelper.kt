@@ -51,6 +51,7 @@ class PlaylistMetadataHelper @Inject constructor(
                         nativeMetadata.fetchMetadata(uri)
                     }
                 }
+                println(raw)
 
                 withContext(Dispatchers.Default) {
                     json.decodeFromString<Playlist>(raw.toString())
@@ -156,6 +157,7 @@ class PlaylistMetadataHelper @Inject constructor(
         val playlistEntity = PlaylistEntity(
             id = playlistId,
             uri = playlist.uri,
+            ownerUsername = playlist.ownerUsername,
             revision = playlist.revision,
             name = playlist.attributes.name,
             description = playlist.attributes.description,
@@ -297,6 +299,7 @@ class PlaylistMetadataHelper @Inject constructor(
         val updatedPlaylistEntity = PlaylistEntity(
             id = playlistId,
             uri = remoteFull.uri,
+            ownerUsername = remoteFull.ownerUsername,
             revision = remoteFull.revision,
             name = remoteFull.attributes.name,
             description = remoteFull.attributes.description,

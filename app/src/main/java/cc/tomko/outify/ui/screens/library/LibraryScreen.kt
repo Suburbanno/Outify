@@ -130,7 +130,8 @@ fun SharedTransitionScope.LibraryScreen(
                             artworkUrl = artworkUrl,
                             onRowClick = {
                                 backStack.add(Route.PlaylistScreen(playlist.uri))
-                            }
+                            },
+                            sharedTransitionScope = this@LibraryScreen
                         )
                     }
                 }

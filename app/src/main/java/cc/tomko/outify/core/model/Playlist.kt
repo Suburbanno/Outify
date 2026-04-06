@@ -14,6 +14,10 @@ import kotlinx.serialization.json.JsonElement
 data class Playlist(
     val id: String,
     val uri: String,
+
+    @SerialName("owner_username")
+    val ownerUsername: String,
+
     val revision: String,
     val length: Int, // Rust used i32
     val attributes: PlaylistAttributes,
@@ -168,6 +172,7 @@ fun Playlist.toEntity(): PlaylistEntity =
     PlaylistEntity(
         id = id,
         uri = uri,
+        ownerUsername = ownerUsername,
         revision = revision,
         name = attributes.name,
         description = attributes.description,
@@ -193,3 +198,6 @@ fun Playlist.toSpotifyUri(): SpotifyUri =
     SpotifyUri.Playlist(id)
 fun Playlist.toOutifyUri(): OutifyUri =
     OutifyUri.fromUriString(uri)
+
+fun Playlist.canModify(username: String): Boolean =
+    this.attributes.isCollaborative || this.ownerUsername == username

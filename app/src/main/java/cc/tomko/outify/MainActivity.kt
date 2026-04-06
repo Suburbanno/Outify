@@ -67,6 +67,7 @@ import cc.tomko.outify.ui.OutifyTheme
 import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.viewmodel.MainViewModel
 import cc.tomko.outify.ui.viewmodel.auth.LibrespotAuthProgress
+import cc.tomko.outify.ui.viewmodel.bottomsheet.AddToPlaylistViewModel
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
 import cc.tomko.outify.ui.viewmodel.player.MultiQueueViewModel
 import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
@@ -192,6 +193,7 @@ class MainActivity : ComponentActivity() {
         val multiQueueViewModel: MultiQueueViewModel = hiltViewModel()
         val miniPlayerViewModel: MiniPlayerViewModel = hiltViewModel()
         val playerViewModel: PlayerViewModel = hiltViewModel()
+        val addToPlaylistViewModel: AddToPlaylistViewModel = hiltViewModel()
 
         val playerSheetState = rememberPlayerSheetState()
         val playerListState = rememberLazyListState()
@@ -256,7 +258,9 @@ class MainActivity : ComponentActivity() {
                                     backStack = backStack,
                                     addToQueue = { viewModel.addToQueue(it.uri) },
                                     startRadio = { viewModel.startRadio(it) },
-                                    toggleLike = { viewModel.favorite(it.uri) }
+                                    toggleLike = { viewModel.favorite(it.uri) },
+
+                                    addToPlaylistViewModel = addToPlaylistViewModel,
                                 )
 
                                 AnimatedVisibility(

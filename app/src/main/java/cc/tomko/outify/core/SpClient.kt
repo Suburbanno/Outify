@@ -12,6 +12,11 @@ class SpClient @Inject constructor() {
         private const val TAG = "SpClient"
     }
 
+    /**
+     * Returns currently logged-in user's username
+     * Requires playback login
+     */
+    external fun username(): String
     external fun search(query: String, type: String, offset: Int = -1, pages: Int = -1): Array<String>
 
     external fun getUserCollection(query: String? = null): String
