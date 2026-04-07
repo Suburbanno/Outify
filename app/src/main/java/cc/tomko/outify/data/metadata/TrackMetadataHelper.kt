@@ -39,9 +39,6 @@ import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
 
-/**
- * Helper class for track metadata
- */
 @Singleton
 class TrackMetadataHelper @Inject constructor(
     private val db: AppDatabase,
@@ -56,113 +53,47 @@ class TrackMetadataHelper @Inject constructor(
     private val json: Json,
     @Named("metadataConcurrency") private val concurrency: Int,
 ) {
-    /**
-     * Returns list of Tracks with their metadata
-     */
     suspend fun getTrackMetadata(trackUris: List<String>): List<Track> {
         if (trackUris.isEmpty()) return emptyList()
         val uris = trackUris.filter { it.startsWith("spotify:track:") }
 
-        val cachedMap = loadCachedTracks(uris).toMutableMap()
+        var cached = loadCached(uris)
 
-        val missingUris = uris.filterNot { cachedMap.containsKey(it) }
-        if (missingUris.isNotEmpty()) {
-            val fetched = fetchTracks(missingUris)
-            if (fetched.isNotEmpty()) {
-                persistMetadata(fetched)
-                fetched.forEach { (uri, _) ->
-                    cachedMap.remove(uri)
+        val missing = uris.filterNot { cached.containsKey(it) }
+        if (missing.isNotEmpty()) {
+            try {
+                fetchAndPersist(missing)
+                cached = loadCached(uris)
+            } catch (e: Exception) {
+                Log.w("Metadata", "Failed to fetch missing tracks", e)
+            }
+        }
+
+        return uris.mapNotNull { uri ->
+            cached[uri]?.let { twa ->
+                try { twa.toDomain() } catch (e: Exception) {
+                    Log.w("Metadata", "Failed to map $uri", e)
+                    null
                 }
             }
         }
-
-        var tracksWithArtists = loadCachedTracks(uris)
-        val toRefetchForAlbum = mutableListOf<String>()
-
-        val albumIdsNeeded = tracksWithArtists.values.mapNotNull { it.track.albumId }.distinct()
-        val albumsMap = loadAlbums(albumIdsNeeded)
-
-        val missingAlbumIds = albumIdsNeeded.filter { albumsMap[it] == null }
-        if (missingAlbumIds.isNotEmpty()) {
-            val albumIdToUris = tracksWithArtists.values
-                .groupBy { it.track.albumId ?: "" }
-                .mapKeys { it.key }
-
-            missingAlbumIds.forEach { missingAlbumId ->
-                val candidates = albumIdToUris[missingAlbumId]
-                val pickUri = candidates?.firstOrNull()?.track?.trackUri
-                if (pickUri != null) toRefetchForAlbum += pickUri
-            }
-
-            if (toRefetchForAlbum.isNotEmpty()) {
-                val fetchedAlbumsViaTracks = fetchTracks(toRefetchForAlbum)
-                if (fetchedAlbumsViaTracks.isNotEmpty()) {
-                    persistMetadata(fetchedAlbumsViaTracks)
-                }
-            }
-        }
-
-        tracksWithArtists = loadCachedTracks(uris)
-
-        val result = uris.map { uri ->
-            val twa = tracksWithArtists[uri]
-                ?: throw RuntimeException("Missing track metadata after fetch/persist for: $uri")
-
-            twa.toDomain()
-        }
-
-        try {
-            updateLastAccessed(result)
-        } catch (e: Exception) {
-            Log.w("Metadata", "Failed to update last accessed", e)
-        }
-
-        return result
     }
 
     suspend fun getTrackMetadata(trackUri: String): Track? {
         if (!trackUri.startsWith("spotify:track:")) return null
 
-        val uris = listOf(trackUri)
-
-        val cachedMap = loadCachedTracks(uris).toMutableMap()
-
-        if (!cachedMap.containsKey(trackUri)) {
-            val fetched = fetchTracks(uris)
-            if (fetched.isNotEmpty()) {
-                persistMetadata(fetched)
-            }
+        val cached = loadCached(listOf(trackUri))
+        if (cached.containsKey(trackUri)) {
+            return cached[trackUri]?.toDomain()
         }
 
-        var tracksWithArtists = loadCachedTracks(uris)
-        val twaInitial = tracksWithArtists[trackUri] ?: return null
-
-        val albumId = twaInitial.track.albumId
-        if (albumId != null) {
-            val albumsMap = loadAlbums(listOf(albumId))
-
-            if (albumsMap[albumId] == null) {
-                val fetchedAlbumsViaTrack = fetchTracks(listOf(trackUri))
-                if (fetchedAlbumsViaTrack.isNotEmpty()) {
-                    persistMetadata(fetchedAlbumsViaTrack)
-                }
-            }
-        }
-
-        tracksWithArtists = loadCachedTracks(uris)
-
-        val twaFinal = tracksWithArtists[trackUri]
-            ?: throw RuntimeException("Missing track metadata after fetch/persist for: $trackUri")
-
-        val result = twaFinal.toDomain()
-
-        try {
-            updateLastAccessed(listOf(result))
+        return try {
+            val fetched = fetchAndPersist(listOf(trackUri))
+            fetched[trackUri]?.toDomain()
         } catch (e: Exception) {
-            Log.w("Metadata", "Failed to update last accessed", e)
+            Log.w("Metadata", "Failed to fetch $trackUri", e)
+            null
         }
-
-        return result
     }
 
     suspend fun getTrackAlbumId(trackUri: String): String? {
@@ -176,110 +107,80 @@ class TrackMetadataHelper @Inject constructor(
         return flow {
             coroutineScope {
                 launch {
-                    try {
-                        val cached = loadCachedTracks(uris)
-                        val missing = uris.filterNot { cached.containsKey(it) }
-                        if (missing.isNotEmpty()) {
-                            val fetched = fetchTracks(missing)
-                            if (fetched.isNotEmpty()) persistMetadata(fetched)
+                    val cached = loadCached(uris)
+                    val missing = uris.filterNot { cached.containsKey(it) }
+                    if (missing.isNotEmpty()) {
+                        try { fetchAndPersist(missing) } catch (e: Exception) {
+                            Log.w("Metadata", "Background fetch failed", e)
                         }
-                    } catch (e: Exception) {
-                        Log.w("Metadata", "observeTracks: background fetch failed", e)
                     }
                 }
             }
 
-            // Now emit DB-backed flow — Room will re-emit when rows change
             emitAll(
-                trackDao.observeTracksFullFlow(uris)
-                    .mapLatest { rows: List<TrackFull> ->
-                        if (rows.isEmpty()) return@mapLatest emptyList()
+                trackDao.observeTracksFullFlow(uris).mapLatest { rows ->
+                    if (rows.isEmpty()) return@mapLatest emptyList()
 
-                        // we need album data for domain mapping — collect all albumIds and load them
-                        val albumIds = rows.mapNotNull { it.track.albumId }.distinct()
-                        val albumsMap = loadAlbums(albumIds) // returns Map<albumId, AlbumWithArtists>
+                    val albumIds = rows.mapNotNull { it.track.albumId }.distinct()
+                    val albumsMap = loadAlbums(albumIds)
 
-                        // preserve requested order and skip missing items
-                        val rowsByUri = rows.associateBy { it.track.trackUri }
-
-                        uris.mapNotNull { uri ->
-                            val tf = rowsByUri[uri] ?: return@mapNotNull null
-                            try {
-                                tf.toDomain()
-                            } catch (e: Exception) {
-                                Log.w("Metadata", "observeTracks: mapping failed for $uri", e)
-                                null
-                            }
+                    rows.associateBy { it.track.trackUri }
+                        .mapNotNull { (_, tf) ->
+                            try { tf.toDomain() } catch (e: Exception) { null }
                         }
-                    }
+                }
             )
         }
     }
 
-    /**
-     * Fetches tracks metadata, that aren't cached.
-     */
-    private suspend fun fetchTracks(uris: List<String>): List<Pair<String, Track>> =
-        supervisorScope {
-            if (uris.isEmpty()) return@supervisorScope emptyList()
-            val filtered = uris.filter { it.startsWith("spotify:track:") }
-
-            val results = mutableListOf<Pair<String, Track>>()
-            filtered.chunked(concurrency).forEach { chunk ->
-                val deferred = chunk.map { uri ->
-                    async {
-                        try {
-                            // Retry on rate limit
-                            val raw = nativeMetadata.retryOnRateLimit {
-                                nativeMetadata.fetchMetadata(uri)
-                            }
-
-                            val t = json.decodeFromString<Track>(raw.toString())
-                            uri to t
-                        } catch (e: RateLimitException) {
-                            Log.w("Metadata", "fetchTracks: rate-limited for $uri, giving up", e)
-                            null
-                        } catch (e: Exception) {
-                            Log.e("Metadata", "fetchTracks: failed for $uri", e)
-                            null
-                        }
-                    }
-                }
-                results += deferred.awaitAll().filterNotNull()
-            }
-            results
-        }
-
-    /**
-     * Loads tracks by given URI
-     */
-    private suspend fun loadCachedTracks(
-        uris: List<String>
-    ): Map<String, TrackFull> {
+    private suspend fun fetchAndPersist(uris: List<String>): Map<String, TrackFull> {
         if (uris.isEmpty()) return emptyMap()
 
-        return trackDao
-            .getTracksFull(uris)
-            .associateBy { it.track.trackUri }
+        val fetched = fetch(uris)
+        if (fetched.isNotEmpty()) {
+            persist(fetched)
+        }
+
+        return loadCached(uris)
     }
 
-    /**
-     * Loads albums by album IDs
-     */
+    private suspend fun fetch(uris: List<String>): List<Pair<String, Track>> = supervisorScope {
+        if (uris.isEmpty()) return@supervisorScope emptyList()
+
+        uris.chunked(concurrency).flatMap { chunk ->
+            chunk.map { uri ->
+                async {
+                    try {
+                        val raw = nativeMetadata.retryOnRateLimit {
+                            nativeMetadata.fetchMetadata(uri)
+                        }
+                        uri to json.decodeFromString<Track>(raw.toString())
+                    } catch (e: RateLimitException) {
+                        Log.w("Metadata", "Rate limited: $uri", e)
+                        null
+                    } catch (e: Exception) {
+                        Log.e("Metadata", "Fetch failed: $uri", e)
+                        null
+                    }
+                }
+            }.awaitAll().filterNotNull()
+        }
+    }
+
+    private suspend fun loadCached(uris: List<String>): Map<String, TrackFull> {
+        if (uris.isEmpty()) return emptyMap()
+        return trackDao.getTracksFull(uris).associateBy { it.track.trackUri }
+    }
+
     private suspend fun loadAlbums(albumIds: List<String>): Map<String, AlbumWithArtists?> {
-        if(albumIds.isEmpty()) return emptyMap()
-        val albums = albumDao.getAlbumsWithArtists(albumIds)
-        return albums.associateBy { it.album.albumId }
+        if (albumIds.isEmpty()) return emptyMap()
+        return albumDao.getAlbumsWithArtists(albumIds).associateBy { it.album.albumId }
     }
 
-    /**
-     * Caches the Tracks in Room database.
-     */
-    private suspend fun persistMetadata(metadata: List<Pair<String, Track>>) {
-        if(metadata.isEmpty()) return
+    private suspend fun persist(metadata: List<Pair<String, Track>>) {
+        if (metadata.isEmpty()) return
 
         val now = System.currentTimeMillis()
-
         val trackEntities = mutableListOf<TrackEntity>()
         val artistEntities = mutableListOf<ArtistEntity>()
         val trackArtistJoins = mutableListOf<TrackArtistEntity>()
@@ -288,53 +189,40 @@ class TrackMetadataHelper @Inject constructor(
         val albumTrackJoins = mutableListOf<AlbumTrackCrossRef>()
         val trackFileEntities = mutableListOf<TrackFileEntity>()
 
-        metadata.forEach { (_, domainTrack) ->
-            val (tEntity, aEntities, joins) = domainTrack.toEntities(now)
+        metadata.forEach { (_, track) ->
+            val (tEntity, aEntities, joins) = track.toEntities(now)
             trackEntities += tEntity
             artistEntities += aEntities
             trackArtistJoins += joins
 
-            domainTrack.album?.let { album ->
-                val sortedByArea = album.covers
-                    .sortedBy { it.width * it.height }
+            track.album?.let { album ->
+                val sortedCovers = album.covers.sortedBy { it.width * it.height }
+                val small = sortedCovers.firstOrNull()
+                val large = sortedCovers.lastOrNull()
+                val medium = sortedCovers.getOrNull(sortedCovers.size / 2)
 
-                val small = sortedByArea.firstOrNull()
-                val large = sortedByArea.lastOrNull()
-                val medium = sortedByArea.getOrNull(sortedByArea.size / 2)
-
-
-                val albumEntity = AlbumEntity(
+                albumEntities += AlbumEntity(
                     albumId = album.id,
                     uri = album.uri,
                     name = album.name,
                     artistNames = album.artists.joinToString(", ") { it.name },
                     popularity = album.popularity,
                     lastUpdated = now,
-
                     smallCoverUri = small?.uri,
                     mediumCoverUri = medium?.uri,
                     largeCoverUri = large?.uri
                 )
-                albumEntities += albumEntity
 
                 album.artists.forEachIndexed { idx, art ->
-                    albumArtistJoins += AlbumArtistEntity(
-                        albumId = album.id,
-                        artistId = art.id,
-                        position = idx
-                    )
+                    albumArtistJoins += AlbumArtistEntity(album.id, art.id, idx)
                 }
 
-                album.tracks.forEachIndexed { index, track ->
-                    albumTrackJoins += AlbumTrackCrossRef(
-                        albumId = album.id,
-                        trackId = track,
-                        position = index,
-                    )
+                album.tracks.forEachIndexed { index, trackId ->
+                    albumTrackJoins += AlbumTrackCrossRef(album.id, trackId, index)
                 }
             }
 
-            domainTrack.files.forEach { file ->
+            track.files.forEach { file ->
                 trackFileEntities += file.toEntity(tEntity.id)
             }
         }
@@ -345,28 +233,11 @@ class TrackMetadataHelper @Inject constructor(
             if (albumArtistJoins.isNotEmpty()) albumArtistDao.insertAll(albumArtistJoins)
             if (trackEntities.isNotEmpty()) trackRepo.upsertTracks(trackEntities, isLibrary = true)
             if (trackArtistJoins.isNotEmpty()) trackArtistDao.insertAll(trackArtistJoins)
-            if (trackArtistJoins.isNotEmpty()) trackArtistDao.insertAll(trackArtistJoins)
 
-            if(trackFileEntities.isNotEmpty()) {
-                val trackIds = trackEntities.map { it.id }
-                trackFileDao.deleteFilesForTracks(trackIds)
+            if (trackFileEntities.isNotEmpty()) {
+                trackFileDao.deleteFilesForTracks(trackEntities.map { it.id })
                 trackFileDao.insertTrackFiles(trackFileEntities)
             }
-        }
-    }
-
-    /**
-     * Updates the last accessed time for given tracks
-     */
-    private suspend fun updateLastAccessed(tracks: List<Track>) {
-        if (tracks.isEmpty()) return
-        val now = System.currentTimeMillis()
-        val uris = tracks.map { it.uri }
-        try {
-            trackDao.updateLastAccessedBatch(uris, now)
-        } catch (e: Exception) {
-            // fallback: touch individually via trackRepo
-            uris.forEach { id -> try { trackRepo.touchTrack(id) } catch (_: Exception) {} }
         }
     }
 }
