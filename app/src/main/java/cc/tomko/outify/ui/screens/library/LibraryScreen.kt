@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LibraryMusic
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +36,6 @@ import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.PlaylistRow
-import cc.tomko.outify.ui.viewmodel.library.LibraryUiState
 import cc.tomko.outify.ui.viewmodel.library.LibraryViewModel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -50,128 +48,96 @@ fun SharedTransitionScope.LibraryScreen(
     val playlists by viewModel.playlists.collectAsState()
     LaunchedEffect(Unit) { viewModel.loadPlaylistUris() }
 
-    val uiState by viewModel.uiState.collectAsState()
     val density = LocalDensity.current
+    val sharedTransitionScope = this
 
-    when (uiState) {
-        is LibraryUiState.Loading -> {
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-                contentAlignment = Alignment.Center) {
-                ContainedLoadingIndicator()
-            }
+    val lazyListState = rememberLazyListState()
+    val collapsingState = rememberCollapsingHeaderState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
+
+    LaunchedEffect(lazyListState.isScrollInProgress) {
+        if (!lazyListState.isScrollInProgress) {
+            val canExpand =
+                lazyListState.firstVisibleItemIndex == 0 &&
+                        lazyListState.firstVisibleItemScrollOffset == 0
+
+            collapsingState.snapIfNeeded(canExpand)
         }
-        is LibraryUiState.Error -> {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = (uiState as LibraryUiState.Error).error,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyLarge
+    }
+
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = { viewModel.refresh() },
+        modifier = modifier
+            .fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.surface)
+            .nestedScroll(collapsingState.nestedScrollConnection)
+    ) {
+        val currentTopBarHeightDp = with(density) { collapsingState.height.value.toDp() }
+
+        LazyColumn(
+            state = lazyListState,
+            contentPadding = PaddingValues(top = currentTopBarHeightDp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(
+                items = playlists,
+                key = { it.uri },
+                contentType = { "playlist" }
+            ) { playlist ->
+                val artworkUrl by produceState<String?>(
+                    initialValue = null,
+                    key1 = playlist.uri
+                ) {
+                    value = viewModel.getArtworkUrl(playlist)
+                }
+
+                PlaylistRow(
+                    playlist = playlist,
+                    artworkUrl = artworkUrl,
+                    onRowClick = {
+                        backStack.add(Route.PlaylistScreen(playlist.uri))
+                    },
+                    sharedTransitionScope = this@LibraryScreen
                 )
             }
         }
-        is LibraryUiState.Success -> {
-            val lazyListState = rememberLazyListState()
-            val collapsingState = rememberCollapsingHeaderState()
 
-            val isRefreshing by viewModel.isRefreshing.collectAsState()
-
-            LaunchedEffect(lazyListState.isScrollInProgress) {
-                if (!lazyListState.isScrollInProgress) {
-                    val canExpand =
-                        lazyListState.firstVisibleItemIndex == 0 &&
-                                lazyListState.firstVisibleItemScrollOffset == 0
-
-                    collapsingState.snapIfNeeded(canExpand)
+        CollapsingHeader(
+            collapseFraction = collapsingState.collapseFraction,
+            headerHeight = currentTopBarHeightDp,
+            onBackPressed = {
+                backStack.removeAt(backStack.lastIndex)
+            },
+            backgroundContent = {
+                var artworkUrl by viewModel.headerArtwork
+                LaunchedEffect(playlists) {
+                    viewModel.loadHeaderArtwork(playlists)
                 }
-            }
 
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = {
-                    viewModel.refresh()
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color = MaterialTheme.colorScheme.surface)
-                    .nestedScroll(collapsingState.nestedScrollConnection)
-            ) {
-                val currentTopBarHeightDp =
-                    with(density) { collapsingState.height.value.toDp() }
-
-                LazyColumn(
-                    state = rememberLazyListState(),
-                    contentPadding = PaddingValues(
-                        top = currentTopBarHeightDp,
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    items(
-                        items = playlists,
-                        key = { it.uri },
-                        contentType = { "playlist" }
-                    ) { playlist ->
-                        val artworkUrl by produceState<String?>(
-                            initialValue = null,
-                            key1 = playlist.uri
-                        ) {
-                            value = viewModel.getArtworkUrl(playlist)
-                        }
-
-                        PlaylistRow(
-                            playlist = playlist,
-                            artworkUrl = artworkUrl,
-                            onRowClick = {
-                                backStack.add(Route.PlaylistScreen(playlist.uri))
-                            },
-                            sharedTransitionScope = this@LibraryScreen
+                ArtworkBackground(
+                    artworkUrl = artworkUrl,
+                    fallback = {
+                        Icon(
+                            Icons.Default.LibraryMusic,
+                            contentDescription = null
                         )
                     }
-                }
-
-                CollapsingHeader(
-                    collapseFraction = collapsingState.collapseFraction,
-                    headerHeight = currentTopBarHeightDp,
-                    onBackPressed = {
-                        backStack.removeAt(backStack.lastIndex)
-                    },
-                    backgroundContent = {
-                        var artworkUrl by viewModel.headerArtwork
-                        LaunchedEffect(playlists) {
-                            viewModel.loadHeaderArtwork(playlists)
-                        }
-
-                        ArtworkBackground(
-                            artworkUrl = artworkUrl,
-                            fallback = {
-                                Icon(
-                                    Icons.Default.LibraryMusic,
-                                    contentDescription = null
-                                )
-                            }
-                        )
-                    },
-                    titleContent = {
-                        Text(
-                            text = "Your library",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Text(
-                            text = "• ${playlists.count()} playlists",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    },
                 )
-            }
-        }
+            },
+            titleContent = {
+                Text(
+                    text = "Your library",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = "• ${playlists.count()} playlists",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+        )
     }
 }

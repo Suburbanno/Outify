@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.viewmodel.library
 
+import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -24,11 +25,6 @@ import kotlinx.serialization.json.Json
 class LibraryViewModel @Inject constructor(
     private val metadata: Metadata,
 ): ViewModel() {
-    val json = Json { ignoreUnknownKeys = true }
-
-    private val _uiState = MutableStateFlow<LibraryUiState>(LibraryUiState.Loading)
-    val uiState: StateFlow<LibraryUiState> = _uiState
-
     private val _headerArtwork = mutableStateOf<String?>(null)
     val headerArtwork = _headerArtwork
 
@@ -60,16 +56,13 @@ class LibraryViewModel @Inject constructor(
 
     fun loadPlaylistUris() {
         viewModelScope.launch {
-            _uiState.value = LibraryUiState.Loading
-
             isRefreshing.value = true
             runCatching {
                 metadata.getPlaylistUris()
             }.onSuccess { uris ->
                 playlistUris.value = uris
-                _uiState.value = LibraryUiState.Success
             }.onFailure {
-                _uiState.value = LibraryUiState.Error(it.message ?: "Unknown error")
+                Log.w("LibraryViewModel", "Failed to load playlist URIs", it)
             }
             isRefreshing.value = false
         }
@@ -88,10 +81,4 @@ class LibraryViewModel @Inject constructor(
     fun refresh(){
         loadPlaylistUris()
     }
-}
-
-sealed interface LibraryUiState {
-    object Loading : LibraryUiState
-    object Success : LibraryUiState
-    data class Error(val error: String) : LibraryUiState
 }
