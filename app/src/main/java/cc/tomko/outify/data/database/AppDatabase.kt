@@ -60,7 +60,7 @@ abstract class AppDatabase: RoomDatabase() {
                     AppDatabase::class.java,
                     "outify_database"
                 )
-                    .fallbackToDestructiveMigration(true) // IMPORTANT TODO: REMOVE IN PROD
+//                    .fallbackToDestructiveMigration(true) // IMPORTANT TODO: REMOVE IN PROD
                     .build()
                 INSTANCE = instance
                 instance
