@@ -2,8 +2,8 @@ import com.android.build.api.dsl.ApplicationExtension
 
 plugins {
     id("eclipse")
-    id("com.google.devtools.ksp") version "2.3.4"
-    id("com.google.dagger.hilt.android") version "2.59.1"
+    id("com.google.devtools.ksp") version "2.3.5"
+    id("com.google.dagger.hilt.android") version "2.59.2"
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
@@ -28,7 +28,7 @@ extensions.configure<ApplicationExtension>("android") {
         applicationId = "cc.tomko.outify"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
+        versionCode = 3
         versionName = (project.findProperty("versionName") ?: "dev") as String?
     }
 
@@ -56,8 +56,8 @@ extensions.configure<ApplicationExtension>("android") {
 
     buildTypes {
         release {
-//            isMinifyEnabled = true
-//            isShrinkResources = true
+            isMinifyEnabled = true
+            isShrinkResources = true
 
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = if (
@@ -140,25 +140,25 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
 
     // Hilt
-    implementation("com.google.dagger:hilt-android:2.59.1")
+    implementation(libs.hilt.android)
     implementation(libs.androidx.lifecycle.service)
-    ksp("com.google.dagger:hilt-compiler:2.59.1")
-    ksp("com.google.dagger:hilt-android-compiler:2.59.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
+    ksp(libs.hilt.compiler)
+    ksp(libs.hilt.android.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.material.icons.extended)
 
     // Coil images
-    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
-    implementation("io.coil-kt.coil3:coil-network-okhttp:3.4.0")
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     implementation(libs.androidx.palette)
-    implementation("com.google.android.material:material:1.13.0")
+    implementation(libs.google.material)
 
     // Native metadata serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
 
     // Reorderable lists
     implementation(libs.reorderable)
@@ -169,7 +169,7 @@ dependencies {
     implementation(libs.androidx.media3.session)
 
     // HTTP server for oauth
-    implementation("org.nanohttpd:nanohttpd:2.3.1")
+    implementation(libs.nanohttpd)
 
     implementation(libs.kotlinx.coroutines.guava)
 
