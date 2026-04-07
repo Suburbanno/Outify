@@ -8,5 +8,10 @@ pub struct AddItemRequest {
 
 #[derive(Serialize)]
 pub struct RemoveItemRequest {
-    pub items: Vec<String>,
+    pub items: Vec<RemoveItem>,
+}
+
+#[derive(Serialize)]
+pub struct RemoveItem {
+    pub uri: String,
 }
