@@ -51,7 +51,6 @@ class PlaylistMetadataHelper @Inject constructor(
                         nativeMetadata.fetchMetadata(uri)
                     }
                 }
-                println(raw)
 
                 withContext(Dispatchers.Default) {
                     json.decodeFromString<Playlist>(raw.toString())
