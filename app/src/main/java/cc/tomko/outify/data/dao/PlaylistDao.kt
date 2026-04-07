@@ -39,6 +39,12 @@ interface PlaylistDao {
     @Query("DELETE FROM playlist_items WHERE playlistId = :playlistId")
     suspend fun deleteItems(playlistId: String)
 
+    @Query("DELETE FROM playlist_items WHERE playlistId = :playlistId AND trackUri IN (:trackUris)")
+    suspend fun deleteItemsByUris(playlistId: String, trackUris: List<String>)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertItems(items: List<PlaylistItemEntity>)
+
+    @Query("SELECT COALESCE(MAX(position), -1) FROM playlist_items WHERE playlistId = :playlistId")
+    suspend fun getMaxPosition(playlistId: String): Int
 }

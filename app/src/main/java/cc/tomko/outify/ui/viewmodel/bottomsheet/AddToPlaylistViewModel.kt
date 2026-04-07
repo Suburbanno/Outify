@@ -9,6 +9,7 @@ import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.core.model.toOutifyUri
 import cc.tomko.outify.data.dao.PlaylistDao
+import cc.tomko.outify.data.database.playlist.PlaylistItemEntity
 import cc.tomko.outify.data.database.playlist.canModify
 import cc.tomko.outify.data.database.playlist.toDomain
 import cc.tomko.outify.data.metadata.Metadata
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -57,25 +59,92 @@ class AddToPlaylistViewModel @Inject constructor(
 
     fun addToPlaylist(tracks: List<Track>, playlist: Playlist) {
         viewModelScope.launch {
-            spClient.addToPlaylist(playlist.id, tracks.map { it.uri }.toTypedArray())
+            val trackUris = tracks.map { it.uri }
+            val maxPosition = playlistDao.getMaxPosition(playlist.id)
+            
+            val newItems = tracks.mapIndexed { index, track ->
+                PlaylistItemEntity(
+                    playlistId = playlist.id,
+                    position = maxPosition + 1 + index,
+                    trackUri = track.uri,
+                    addedBy = spClient.username(),
+                    timestamp = System.currentTimeMillis(),
+                    seenAt = 0L,
+                    isPublic = false,
+                )
+            }
+            
+            playlistDao.insertItems(newItems)
+            
+            val success = withContext(Dispatchers.IO) {
+                spClient.addToPlaylist(playlist.id, trackUris.toTypedArray())
+            }
+            
+            if (!success) {
+                playlistDao.deleteItemsByUris(playlist.id, trackUris)
+            }
         }
     }
 
     fun addTrackToPlaylist(track: Track, playlist: Playlist) {
         viewModelScope.launch {
-            spClient.addToPlaylist(playlist.id, arrayOf(track.uri))
+            val maxPosition = playlistDao.getMaxPosition(playlist.id)
+            
+            val newItem = PlaylistItemEntity(
+                playlistId = playlist.id,
+                position = maxPosition + 1,
+                trackUri = track.uri,
+                addedBy = spClient.username(),
+                timestamp = System.currentTimeMillis(),
+                seenAt = 0L,
+                isPublic = false,
+            )
+            
+            playlistDao.insertItems(listOf(newItem))
+            
+            val success = withContext(Dispatchers.IO) {
+                spClient.addToPlaylist(playlist.id, arrayOf(track.uri))
+            }
+            
+            if (!success) {
+                playlistDao.deleteItemsByUris(playlist.id, listOf(track.uri))
+            }
         }
     }
 
     fun removeFromPlaylist(tracks: List<Track>, playlist: Playlist) {
         viewModelScope.launch {
-            spClient.deleteFromPlaylist(playlist.id, tracks.map { it.uri }.toTypedArray())
+            val trackUris = tracks.map { it.uri }
+            val playlistWithItems = playlistDao.getPlaylistWithItems(playlist.id)
+            val removedItems = playlistWithItems?.items?.filter { it.trackUri in trackUris } ?: emptyList()
+            
+            playlistDao.deleteItemsByUris(playlist.id, trackUris)
+            
+            val success = withContext(Dispatchers.IO) {
+                spClient.deleteFromPlaylist(playlist.id, trackUris.toTypedArray())
+            }
+            
+            if (!success) {
+                playlistDao.insertItems(removedItems)
+            }
         }
     }
 
     fun removeTrackFromPlaylist(track: Track, playlist: Playlist) {
         viewModelScope.launch {
-            spClient.deleteFromPlaylist(playlist.id, arrayOf(track.uri))
+            val trackUris = listOf(track.uri)
+            val playlistWithItems = playlistDao.getPlaylistWithItems(playlist.id)
+            val removedItem = playlistWithItems?.items?.find { it.trackUri == track.uri }
+            
+            playlistDao.deleteItemsByUris(playlist.id, trackUris)
+            
+            val success = withContext(Dispatchers.IO) {
+                spClient.deleteFromPlaylist(playlist.id, arrayOf(track.uri))
+            }
+            
+            if (!success && removedItem != null) {
+                playlistDao.insertItems(listOf(removedItem))
+            }
         }
     }
 
