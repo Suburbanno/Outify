@@ -67,6 +67,18 @@ class AddToPlaylistViewModel @Inject constructor(
         }
     }
 
+    fun removeFromPlaylist(tracks: List<Track>, playlist: Playlist) {
+        viewModelScope.launch {
+            spClient.deleteFromPlaylist(playlist.id, tracks.map { it.uri }.toTypedArray())
+        }
+    }
+
+    fun removeTrackFromPlaylist(track: Track, playlist: Playlist) {
+        viewModelScope.launch {
+            spClient.deleteFromPlaylist(playlist.id, arrayOf(track.uri))
+        }
+    }
+
     data class PlaylistUi(
         val playlist: Playlist,
         val artworkUrl: String?

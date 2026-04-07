@@ -37,6 +37,11 @@ class SpClient @Inject constructor() {
     external fun addToPlaylist(playlist_id: String, track_uris: Array<String>): Boolean
 
     /**
+     * Removes tracks in array from the playlist by given id
+     */
+    external fun deleteFromPlaylist(playlist_id: String, track_uris: Array<String>): Boolean
+
+    /**
      * Retrieves the metadata for singular track by its ID
      */
     external fun getTrackData(id: String): String

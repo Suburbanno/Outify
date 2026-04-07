@@ -17,14 +17,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -39,8 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -52,7 +47,6 @@ import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.viewmodel.bottomsheet.AddToPlaylistViewModel
-import com.google.common.math.LinearTransformation.vertical
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,6 +55,7 @@ fun TrackSelectionBottomSheet(
     viewModel: AddToPlaylistViewModel,
     tracks: List<Track>,
     playlist: Playlist,
+    isRemoveMode: Boolean = false,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
@@ -78,9 +73,8 @@ fun TrackSelectionBottomSheet(
         mutableStateOf(tracks.map { it.id }.toSet())
     }
 
-    val tracksToAdd = tracks.filter { it.id in selectedTrackIds }
+    val tracksToProcess = tracks.filter { it.id in selectedTrackIds }
     val alreadyPresentCount = tracks.count { it.id in playlistTrackIds }
-    val newTracksCount = tracks.count { it.id in playlistTrackIds && it.id in selectedTrackIds }
 
     ModalBottomSheet(
         onDismissRequest = {
@@ -111,16 +105,20 @@ fun TrackSelectionBottomSheet(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "Select tracks to add",
+                        text = if (isRemoveMode) "Select tracks to remove" else "Select tracks to add",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
-                if (tracksToAdd.isNotEmpty()) {
+                if (tracksToProcess.isNotEmpty()) {
                     Button(
                         onClick = {
-                            viewModel.addToPlaylist(tracksToAdd, playlist)
+                            if (isRemoveMode) {
+                                viewModel.removeFromPlaylist(tracksToProcess, playlist)
+                            } else {
+                                viewModel.addToPlaylist(tracksToProcess, playlist)
+                            }
                             onConfirm()
                         },
                         modifier = Modifier
@@ -128,7 +126,7 @@ fun TrackSelectionBottomSheet(
                             .clip(RoundedCornerShape(16.dp))
                     ) {
                         Text(
-                            text = "Add ${tracksToAdd.size}",
+                            text = if (isRemoveMode) "Remove ${tracksToProcess.size}" else "Add ${tracksToProcess.size}",
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onPrimary
                         )
@@ -140,7 +138,7 @@ fun TrackSelectionBottomSheet(
 
             if (alreadyPresentCount > 0) {
                 Text(
-                    text = "Already in playlist: $alreadyPresentCount",
+                    text = if (isRemoveMode) "Tracks in playlist: $alreadyPresentCount" else "Already in playlist: $alreadyPresentCount",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -154,18 +152,23 @@ fun TrackSelectionBottomSheet(
                     val isAlreadyInPlaylist = track.id in playlistTrackIds
                     val isSelected = track.id in selectedTrackIds
 
-                    TrackSelectionRow(
-                        track = track,
-                        isSelected = isSelected,
-                        isAlreadyInPlaylist = isAlreadyInPlaylist,
-                        onToggle = {
-                            selectedTrackIds = if (isSelected) {
-                                selectedTrackIds - track.id
-                            } else {
-                                selectedTrackIds + track.id
+                    val showInList = if (isRemoveMode) isAlreadyInPlaylist else !isAlreadyInPlaylist
+
+                    if (showInList) {
+                        TrackSelectionRow(
+                            track = track,
+                            isSelected = isSelected,
+                            isAlreadyInPlaylist = isAlreadyInPlaylist,
+                            showCheckbox = !isRemoveMode,
+                            onToggle = {
+                                selectedTrackIds = if (isSelected) {
+                                    selectedTrackIds - track.id
+                                } else {
+                                    selectedTrackIds + track.id
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -177,6 +180,7 @@ private fun TrackSelectionRow(
     track: Track,
     isSelected: Boolean,
     isAlreadyInPlaylist: Boolean,
+    showCheckbox: Boolean = true,
     onToggle: () -> Unit,
 ) {
     val artworkUrl = remember(track) { ALBUM_COVER_URL + (track.album?.getCover(CoverSize.SMALL)?.uri ?: "") }
@@ -205,12 +209,14 @@ private fun TrackSelectionRow(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Checkbox(
-            checked = isSelected,
-            onCheckedChange = { onToggle() }
-        )
+        if (showCheckbox) {
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onToggle() }
+            )
 
-        Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+        }
 
         Surface(
             shape = RoundedCornerShape(4.dp),
@@ -270,9 +276,9 @@ private fun TrackSelectionRow(
             }
         }
 
-        if (isAlreadyInPlaylist && !isSelected) {
+        if (isAlreadyInPlaylist && !showCheckbox) {
             Text(
-                text = "Already added",
+                text = "In playlist",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

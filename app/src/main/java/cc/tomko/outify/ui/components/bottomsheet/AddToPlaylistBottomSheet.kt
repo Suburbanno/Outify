@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,16 +16,26 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowForwardIos
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -38,9 +49,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.model.CoverSize
@@ -49,7 +59,6 @@ import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
-import cc.tomko.outify.ui.components.rows.PlaylistRow
 import cc.tomko.outify.ui.viewmodel.bottomsheet.AddToPlaylistViewModel
 import kotlinx.coroutines.launch
 
@@ -69,16 +78,17 @@ fun AddToPlaylistBottomSheet(
 
     val playlists by viewModel.ownedPlaylists.collectAsState(initial = emptyList())
 
-    val imageSize = 56.dp
-    val previewSize = 40.dp
-
+    val trackIds = remember(tracks) { tracks.map { it.id }.toSet() }
+    
     var selectedPlaylist by remember { mutableStateOf<Playlist?>(null) }
+    var isRemoveMode by remember { mutableStateOf(false) }
 
     if (selectedPlaylist != null) {
         TrackSelectionBottomSheet(
             viewModel = viewModel,
             tracks = tracks,
             playlist = selectedPlaylist!!,
+            isRemoveMode = isRemoveMode,
             onDismiss = { selectedPlaylist = null },
             onConfirm = {
                 selectedPlaylist = null
@@ -100,215 +110,284 @@ fun AddToPlaylistBottomSheet(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 16.dp)
             ) {
-                Text(
-                    text = if (tracks.size > 1) "Add ${tracks.size} tracks to playlist" else "Add to playlist",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
+                // Header with track info
+                TrackInfoHeader(tracks = tracks)
 
-                if (tracks.size > 1) {
-                    TracksPreviewRowComponent(
-                        tracks = tracks,
-                        previewSize = previewSize,
-                        totalCount = tracks.size
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Action buttons
+                if (tracks.size == 1) {
+                    Text(
+                        text = "Your Playlists",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
                 } else {
-                    val track = tracks.first()
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                    Text(
+                        text = "${tracks.size} tracks",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Playlist list
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false),
+                    contentPadding = PaddingValues(vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(
+                        items = playlists,
+                        key = { it.playlist.id }
+                    ) { playlistUi ->
+                        val playlist = playlistUi.playlist
+                        val existingCount = playlist.contents.count { it.id in trackIds }
+                        val isInPlaylist = existingCount > 0
+                        
+                        PlaylistItem(
+                            playlistName = playlist.attributes.name,
+                            artworkUrl = playlistUi.artworkUrl,
+                            trackCount = playlist.length,
+                            existingCount = existingCount,
+                            isInPlaylist = isInPlaylist,
+                            onAddClick = {
+                                if (tracks.size == 1) {
+                                    viewModel.addTrackToPlaylist(tracks.first(), playlist)
+                                    onDismiss?.invoke()
+                                } else {
+                                    isRemoveMode = false
+                                    selectedPlaylist = playlist
+                                }
+                            },
+                            onRemoveClick = {
+                                if (tracks.size == 1) {
+                                    viewModel.removeTrackFromPlaylist(tracks.first(), playlist)
+                                    onDismiss?.invoke()
+                                } else {
+                                    isRemoveMode = true
+                                    selectedPlaylist = playlist
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TrackInfoHeader(tracks: List<Track>) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        if (tracks.size == 1) {
+            val track = tracks.first()
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    val artworkUrl = remember(track) { 
+                        ALBUM_COVER_URL + (track.album?.getCover(CoverSize.MEDIUM)?.uri ?: "") 
+                    }
+                    SmartImage(
+                        url = artworkUrl,
+                        contentDescription = "Artwork",
+                        modifier = Modifier.fillMaxSize(),
+                        monochrome = LocalUiSettings.current.monochromeTracks
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = track.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = track.artists.joinToString(", ") { it.name },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        } else {
+            // Multiple tracks - show preview
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                tracks.take(3).forEach { track ->
+                    val artworkUrl = remember(track) { 
+                        ALBUM_COVER_URL + (track.album?.getCover(CoverSize.SMALL)?.uri ?: "") 
+                    }
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.size(48.dp)
                     ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(6.dp),
-                            modifier = Modifier.size(imageSize)
-                        ) {
-                            val artworkUrl = remember(track) { ALBUM_COVER_URL + (track.album?.getCover(CoverSize.MEDIUM)?.uri ?: "") }
+                        if (artworkUrl.isNotBlank()) {
                             SmartImage(
                                 url = artworkUrl,
-                                contentDescription = "Artwork",
-                                modifier = Modifier.fillMaxWidth(),
+                                contentDescription = null,
+                                modifier = Modifier.fillMaxSize(),
                                 monochrome = LocalUiSettings.current.monochromeTracks
                             )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = track.name,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 2
-                            )
-
-                            val artists = track.artists
-
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        } else {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
                             ) {
-                                artists.forEachIndexed { index, artist ->
-                                    Text(
-                                        text = artist.name,
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    )
-
-                                    if (index < artists.lastIndex) {
-                                        Text(
-                                            text = ", ",
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
-                                }
+                                Icon(
+                                    imageVector = Icons.Outlined.MusicNote,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }
                 }
-
-                Text(
-                    text = "Available playlists:",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Surface(
-                    tonalElevation = 16.dp,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                ) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .weight(1f, fill = false),
-                    ) {
-                        items(
-                            items = playlists,
-                            key = { it.playlist.id }
-                        ) {
-                            PlaylistRowWithAdd(
-                                tracks = tracks,
-                                playlist = it.playlist,
-                                artworkUrl = it.artworkUrl,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .clickable {
-                                        selectedPlaylist = it.playlist
-                                    }
-                            )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(6.dp))
             }
-        }
-    }
-}
-
-@Composable
-private fun PlaylistRowWithAdd(
-    tracks: List<Track>,
-    playlist: Playlist,
-    artworkUrl: String?,
-    modifier: Modifier = Modifier,
-) {
-    val trackIds = tracks.map { it.id }.toSet()
-
-    val existingTracksCount = playlist.contents.count { playlistTrack ->
-        playlistTrack.id in trackIds
-    }
-    val missingTracksCount = tracks.count() - existingTracksCount
-
-    PlaylistRow(
-        playlist = playlist,
-        artworkUrl = artworkUrl,
-        color = Color.Transparent,
-        trailingContent = {
-            Row {
-                if (missingTracksCount > 0) {
-                    Text(
-                        text = "+${missingTracksCount}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowForwardIos,
-                    contentDescription = null
-                )
-            }
-        },
-        modifier = modifier
-    )
-}
-
-@Composable
-private fun TracksPreviewRowComponent(
-    tracks: List<Track>,
-    previewSize: Dp,
-    totalCount: Int,
-) {
-    val previewsToShow = tracks.take(3)
-    val extraCount = totalCount - previewsToShow.size
-
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy((-8).dp)) {
-            previewsToShow.forEach { track ->
-                val artworkUrl = remember(track) { ALBUM_COVER_URL + (track.album?.getCover(CoverSize.SMALL)?.uri ?: "") }
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 2.dp,
-                    modifier = Modifier.size(previewSize)
-                ) {
-                    if (artworkUrl.isNotBlank()) {
-                        SmartImage(
-                            url = artworkUrl,
-                            contentDescription = "Preview artwork",
-                            modifier = Modifier.fillMaxSize(),
-                            monochrome = LocalUiSettings.current.monochromeTracks
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .background(MaterialTheme.colorScheme.surfaceVariant),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.MusicNote,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
             Text(
-                text = "$totalCount tracks selected",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                text = "${tracks.size} tracks selected",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (extraCount > 0) {
+        }
+    }
+}
+
+@Composable
+private fun PlaylistItem(
+    playlistName: String,
+    artworkUrl: String?,
+    trackCount: Int,
+    existingCount: Int,
+    isInPlaylist: Boolean,
+    onAddClick: () -> Unit,
+    onRemoveClick: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp)),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isInPlaylist) 
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            else 
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        ListItem(
+            modifier = Modifier.clickable { 
+                if (isInPlaylist) onRemoveClick() else onAddClick() 
+            },
+            headlineContent = {
                 Text(
-                    text = "+ $extraCount more",
+                    text = playlistName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
+            supportingContent = {
+                Text(
+                    text = if (isInPlaylist) "$existingCount track${if (existingCount > 1) "s" else ""} in playlist" else "$trackCount tracks",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            }
-        }
+            },
+            leadingContent = {
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    if (!artworkUrl.isNullOrBlank()) {
+                        SmartImage(
+                            url = artworkUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            monochrome = LocalUiSettings.current.monochromeImages
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            },
+            trailingContent = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (!isInPlaylist) {
+                        FilledTonalButton(
+                            onClick = onAddClick,
+                            modifier = Modifier.height(36.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Add",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Add", style = MaterialTheme.typography.labelMedium)
+                        }
+                    } else {
+                        Button(
+                            onClick = onRemoveClick,
+                            modifier = Modifier.height(36.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error
+                            ),
+                            contentPadding = PaddingValues(horizontal = 12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Remove,
+                                contentDescription = "Remove",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Remove", style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+            },
+            colors = ListItemDefaults.colors(
+                containerColor = androidx.compose.ui.graphics.Color.Transparent
+            )
+        )
     }
 }

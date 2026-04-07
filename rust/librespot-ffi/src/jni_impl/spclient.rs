@@ -220,6 +220,59 @@ pub extern "system" fn add_to_playlist(
     }
 }
 
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_deleteFromPlaylist")]
+pub extern "system" fn delete_from_playlist(
+    mut env: JNIEnv,
+    _class: JClass,
+    playlist_id: JString,
+    uris: JObjectArray,
+) -> jboolean {
+    let client = get_client();
+
+    let playlist_id: String = match env.get_string(&playlist_id) {
+        Ok(p) => p.into(),
+        Err(e) => {
+            error!("failed to get playlist_id: {e}");
+            return 0 as jboolean;
+        },
+    };
+
+    let length = env.get_array_length(&uris).unwrap();
+    let mut rust_uris = Vec::with_capacity(length as usize);
+
+    for i in 0..length {
+        let obj = env.get_object_array_element(&uris, i).unwrap();
+        let jstr: JString = JString::from(obj);
+        let rust_string: String = env.get_string(&jstr).unwrap().into();
+        rust_uris.push(rust_string);
+    }
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return 0;
+        }
+    };
+
+    let result = rt.block_on(async { client.delete_from_playlist(playlist_id, rust_uris).await });
+
+    match result {
+        Ok(status) => {
+            let success = status.is_success();
+            if !success {
+                warn!("failed to delete from playlist with status: {}", status.as_str());
+            }
+
+            success as jboolean
+        }
+        Err(e) => {
+            error!("delete_from_playlist failed: {e}");
+            0
+        }
+    }
+}
+
 // Searches for tracks using context
 #[unsafe(no_mangle)]
 #[deprecated]

@@ -18,7 +18,7 @@ use tokio::sync::RwLock;
 use crate::{
     session::with_session,
     spotify::{
-        error::SpotifyApiError, requests::AddItemRequest, search::extract_all_uris, token::{TokenResponse, WebApiToken}
+        error::SpotifyApiError, requests::{AddItemRequest, RemoveItemRequest}, search::extract_all_uris, token::{TokenResponse, WebApiToken}
     },
 };
 
@@ -197,6 +197,37 @@ impl SpotifyClient {
             .timeout(REQUEST_TIMEOUT)
             .send()
             .await?;
+        Ok(res.status())
+    }
+
+    pub async fn delete_from_playlist(&self, playlist_id: String, uris: Vec<String>) -> Result<StatusCode, SpotifyApiError> {
+        let token = match self.load_token().await {
+            Ok(o) => match o {
+                Some(t) => t,
+                None => {
+                    return Err(SpotifyApiError::Generic(
+                        "No account token present!".to_string(),
+                    ));
+                }
+            },
+            Err(e) => {
+                return Err(e);
+            }
+        };
+
+        let body = RemoveItemRequest {
+            items: uris,
+        };
+
+        let res = self
+            .client
+            .delete(format!("{}/v1/playlists/{}/items", SPOTIFY_API_URL, playlist_id))
+            .bearer_auth(token.access_token)
+            .json(&body)
+            .timeout(REQUEST_TIMEOUT)
+            .send()
+            .await?;
+
         Ok(res.status())
     }
 
