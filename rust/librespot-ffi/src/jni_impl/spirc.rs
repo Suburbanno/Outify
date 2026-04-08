@@ -10,7 +10,7 @@ use serde::de::IntoDeserializer;
 use crate::{
     outifyuri::OutifyUri,
     session::with_session,
-    spirc::{SpircRuntime, with_spirc},
+    spirc::{with_spirc, SpircError, SpircRuntime},
 };
 
 pub static BUFFER_CALLBACK: Mutex<Option<GlobalRef>> = Mutex::new(None);
@@ -225,11 +225,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_addToQueue(
     match with_spirc(|runtime| runtime.add_to_queue(spotify_uri)) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to add to queue: {}", e);
+            warn!("Failed to add to queue: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to add to queue: {}", e);
+            warn!("Failed to add to queue: {:?}", e);
             0
         }
     }
@@ -286,11 +286,11 @@ pub extern "system" fn set_queue(mut env: JNIEnv, _this: JClass, tracks: jobject
     match with_spirc(|runtime| runtime.set_queue(uris, playing_track)) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to set queue: {}", e);
+            warn!("Failed to set queue: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to set queue: {}", e);
+            warn!("Failed to set queue: {:?}", e);
             0
         }
     }
@@ -305,11 +305,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_activate(
     match with_spirc(|runtime| runtime.activate()) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to activate spirc: {}", e);
+            warn!("Failed to activate spirc: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to activate spirc: {}", e);
+            warn!("Failed to activate spirc: {:?}", e);
             0
         }
     }
@@ -324,11 +324,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_transfer(
     match with_spirc(|runtime| runtime.transfer()) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to transfer spirc: {}", e);
+            warn!("Failed to transfer spirc: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to transfer spirc: {}", e);
+            warn!("Failed to transfer spirc: {:?}", e);
             0
         }
     }
@@ -343,11 +343,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_seekTo(
     match with_spirc(|runtime| runtime.seek_to(jposition as u32)) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to seek spirc: {}", e);
+            warn!("Failed to seek spirc: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to seek spirc: {}", e);
+            warn!("Failed to seek spirc: {:?}", e);
             0
         }
     }
@@ -363,11 +363,11 @@ pub extern "system" fn shuffle_spirc(
     match with_spirc(|runtime| runtime.shuffle(enabled)) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to shuffle spirc: {}", e);
+            warn!("Failed to shuffle spirc: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to shuffle spirc: {}", e);
+            warn!("Failed to shuffle spirc: {:?}", e);
             0
         }
     }
@@ -379,11 +379,11 @@ pub extern "system" fn repeat_spirc(mut env: JNIEnv, _this: JClass, enabled: jbo
     match with_spirc(|runtime| runtime.repeat(enabled)) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to repeat spirc: {}", e);
+            warn!("Failed to repeat spirc: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to repeat spirc: {}", e);
+            warn!("Failed to repeat spirc: {:?}", e);
             0
         }
     }
@@ -398,11 +398,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPlay(
     match with_spirc(|runtime| runtime.play()) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to play spirc: {}", e);
+            warn!("Failed to play spirc: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to play spirc: {}", e);
+            warn!("Failed to play spirc: {:?}", e);
             0
         }
     }
@@ -417,11 +417,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPause(
     match with_spirc(|runtime| runtime.pause()) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to pause spirc: {}", e);
+            warn!("Failed to pause spirc: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to pause spirc: {}", e);
+            warn!("Failed to pause spirc: {:?}", e);
             0
         }
     }
@@ -436,11 +436,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPlayPause(
     match with_spirc(|runtime| runtime.play_pause()) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to play_pause spirc: {}", e);
+            warn!("Failed to play_pause spirc: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to play_pause spirc: {}", e);
+            warn!("Failed to play_pause spirc: {:?}", e);
             0
         }
     }
@@ -455,11 +455,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerNext(
     match with_spirc(|runtime| runtime.next()) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to player next spirc: {}", e);
+            warn!("Failed to player next spirc: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to player next spirc: {}", e);
+            warn!("Failed to player next spirc: {:?}", e);
             0
         }
     }
@@ -474,11 +474,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_playerPrevious(
     match with_spirc(|runtime| runtime.prev()) {
         Ok(Ok(_)) => 1,
         Ok(Err(e)) => {
-            warn!("Failed to player prev spirc: {}", e);
+            warn!("Failed to player prev spirc: {:?}", e);
             0
         }
         Err(e) => {
-            warn!("Failed to player prev spirc: {}", e);
+            warn!("Failed to player prev spirc: {:?}", e);
             0
         }
     }
@@ -505,7 +505,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_previousTracks(
                 return std::ptr::null_mut();
             }
             Err(e) => {
-                error!("spirc not available: {}", e);
+                error!("spirc not available: {:?}", e);
                 return std::ptr::null_mut();
             }
         };
@@ -549,7 +549,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_nextTracks(
                 return std::ptr::null_mut();
             }
             Err(e) => {
-                error!("spirc not available: {}", e);
+                error!("spirc not available: {:?}", e);
                 return std::ptr::null_mut();
             }
         };
@@ -616,8 +616,28 @@ fn call_spirc_load(uri: String, options: LoadRequestOptions) -> jboolean {
             0 as jboolean
         }
         Err(e) => {
-            error!("Spirc not available: {}", e);
-            0 as jboolean
+            match e {
+                SpircError::NotInitialized | SpircError::NotCreated => {
+                    debug!("Trying to auto initialize Spirc..");
+                    let rt = match crate::TOKIO_RUNTIME.get() {
+                        Some(rt) => rt,
+                        None => {
+                            error!("Spirc not available: {}", e);
+                            return 0;
+                        }
+                    };
+                    rt.spawn(async move {
+                        if let Err(e) = crate::spirc::auto_initialize_spirc().await {
+                            error!("Failed to auto initialize Spirc: {}", e);
+                        }
+                    });
+                    0
+                }
+                _ => {
+                    error!("Spirc not available: {}", e);
+                    0
+                }
+            }
         }
     }
 }

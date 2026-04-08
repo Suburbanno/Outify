@@ -112,11 +112,13 @@ fn start_shutdown_listener(session: Session) {
         let normalise = crate::spirc::NORMALISE_AUDIO.load(std::sync::atomic::Ordering::Relaxed);
 
         initialize_session().await;
-        crate::spirc::initialize_spirc(gapless, normalise).await;
-        crate::spirc::with_spirc(|spirc| {
-            spirc.activate();
-            spirc.transfer();
-
+        if let Err(e) = crate::spirc::initialize_spirc(gapless, normalise).await {
+            error!("Failed to initialize spirc: {}", e);
+            return;
+        }
+        let _ = crate::spirc::with_spirc(|spirc| {
+            let _ = spirc.activate();
+            let _ = spirc.transfer();
             spirc.resume_playback();
         });
 
@@ -164,7 +166,7 @@ async fn cleanup() {
         guard.take();
     }
 
-    crate::spirc::with_spirc(|spirc| {
+    let _ = crate::spirc::with_spirc(|spirc| {
         spirc.cleanup();
     });
 }

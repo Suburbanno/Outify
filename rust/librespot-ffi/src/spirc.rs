@@ -3,6 +3,7 @@ use std::sync::{
     atomic::{AtomicBool, AtomicU32},
 };
 
+use thiserror::Error;
 use librespot_connect::{
     ConnectConfig, LoadContextOptions, LoadRequest, LoadRequestOptions, Options, PlayingTrack, Spirc
 };
@@ -20,6 +21,21 @@ use tokio::{
 };
 
 use crate::session::with_session;
+
+#[derive(Error, Debug)]
+pub enum SpircError {
+    #[error("Spirc not initialized")]
+    NotInitialized,
+
+    #[error("Spirc not created")]
+    NotCreated,
+
+    #[error("Librespot error: {0}")]
+    Librespot(#[from] librespot_core::Error),
+
+    #[error("{0}")]
+    Other(String),
+}
 
 static SPIRC_RUNTIME: OnceCell<RwLock<Option<SpircRuntime>>> = OnceCell::new();
 static CURRENT_TRACK: OnceCell<Mutex<Option<String>>> = OnceCell::new();
@@ -280,7 +296,9 @@ impl SpircRuntime {
         };
 
         let req = LoadRequest::from_context_uri(context.uri.to_string(), options);
-        self.spirc.load(req);
+        if let Err(e) = self.spirc.load(req) {
+            error!("Failed to resume playback: {}", e);
+        }
     }
 
     pub fn cleanup(&self) {
@@ -424,10 +442,17 @@ fn update_current_track(uri: SpotifyUri) {
     }
 }
 
+pub async fn auto_initialize_spirc() -> Result<(), SpircError> {
+    let gapless = GAPLESS.load(std::sync::atomic::Ordering::Relaxed);
+    let normalisation = NORMALISE_AUDIO.load(std::sync::atomic::Ordering::Relaxed);
+
+    initialize_spirc(gapless, normalisation).await
+}
+
 pub async fn initialize_spirc(
     gapless: bool,
     normalisation: bool,
-) -> Result<(), librespot_core::Error> {
+) -> Result<(), SpircError> {
     debug!("Initializing SpircRuntime");
 
     let lock = SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
@@ -436,46 +461,32 @@ pub async fn initialize_spirc(
         let read_guard = lock.read().unwrap();
         if read_guard.is_some() {
             warn!("Spirc already initialized!");
-            // return Err(librespot_core::Error::internal("Spirc already initialized"));
         }
     }
 
-    let session = match with_session(|s| s.clone()) {
-        Ok(s) => s,
-        Err(e) => {
-            error!("Failed to get session: {}", e);
-            return Err(librespot_core::Error::internal("Failed to get session"));
-        }
-    };
+    let session = with_session(|s| s.clone()).map_err(|e| {
+        error!("Failed to get session: {}", e);
+        SpircError::Other(format!("Failed to get session: {}", e))
+    })?;
 
     if session.cache().is_none() {
         error!("Cannot initialize SpircRuntime as session cache is none!");
-        return Err(librespot_core::Error::internal(
-            "Cannot initialize SpircRuntime as session cache is none",
+        return Err(SpircError::Other(
+            "Cannot initialize SpircRuntime as session cache is none".to_string(),
         ));
     }
 
     let cache = session.cache().unwrap();
-    let credentials = match cache.credentials() {
-        Some(c) => c,
-        None => {
-            error!("Cannot initialize SpircRuntime as cached credentials are None!");
-            return Err(librespot_core::Error::internal(
-                "Cannot initialize SpircRuntime as cached credentials are None!",
-            ));
-        }
-    };
+    let credentials = cache.credentials().ok_or_else(|| {
+        error!("Cannot initialize SpircRuntime as cached credentials are None!");
+        SpircError::Other(
+            "Cannot initialize SpircRuntime as cached credentials are None!".to_string(),
+        )
+    })?;
 
-    let runtime = match SpircRuntime::new(&session, credentials, gapless, normalisation).await {
-        Ok(r) => r,
-        Err(e) => {
-            error!("Failed to create SpircRuntime with err: {}", e);
-            return Err(librespot_core::Error::internal(format!(
-                "Failed to create SpircRuntime with err: {}",
-                e
-            )));
-        }
-    };
+    let runtime = SpircRuntime::new(&session, credentials, gapless, normalisation)
+        .await
+        .map_err(|e| SpircError::Other(e.to_string()))?;
 
     let mut guard = lock.write().unwrap();
     *guard = Some(runtime);
@@ -557,18 +568,18 @@ pub fn current_track() -> Option<String> {
     None
 }
 
-pub fn with_spirc<F, R>(f: F) -> Result<R, librespot_core::Error>
+pub fn with_spirc<F, R>(f: F) -> Result<R, SpircError>
 where
     F: FnOnce(&SpircRuntime) -> R,
 {
     let container = SPIRC_RUNTIME
         .get()
-        .expect("Spirc container not initialized");
+        .ok_or(SpircError::NotInitialized)?;
 
     let guard = container.read().unwrap();
     let runtime = guard
         .as_ref()
-        .ok_or_else(|| librespot_core::Error::internal("Spirc not created"))?;
+        .ok_or(SpircError::NotCreated)?;
 
     Ok(f(runtime))
 }
