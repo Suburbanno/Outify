@@ -77,7 +77,19 @@ impl SpotifyClient {
         limit: Option<i32>,
         offset: Option<i32>,
     ) -> Result<Vec<String>, SpotifyApiError> {
-        let token = self.get_token().await.ok_or(SpotifyApiError::NoToken)?;
+        let token = match self.load_token().await {
+            Ok(o) => match o {
+                Some(t) => t,
+                None => {
+                    return Err(SpotifyApiError::Generic(
+                        "No account token present!".to_string(),
+                    ));
+                }
+            },
+            Err(e) => {
+                return Err(e);
+            }
+        };
 
         let mut params = vec![("q", query.to_string()), ("type", types.to_string())];
 
@@ -93,7 +105,7 @@ impl SpotifyClient {
             .client
             .get(format!("{}/v1/search", SPOTIFY_API_URL))
             .query(&params)
-            .bearer_auth(token)
+            .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
             .send()
             .await?;
@@ -246,47 +258,6 @@ impl SpotifyClient {
             .await?;
 
         Ok(res.status())
-    }
-
-    pub async fn get_token(&self) -> Option<String> {
-        {
-            // Reading existing token
-            let read_guard = self.token.read().await;
-            if let Some(token) = &*read_guard {
-                if !token.is_expired() {
-                    return Some(token.access_token.clone());
-                }
-            }
-        }
-
-        let res = self
-            .client
-            .post("https://accounts.spotify.com/api/token")
-            .basic_auth(&self.client_id, Some(&self.client_secret))
-            .form(&[("grant_type", "client_credentials")])
-            .timeout(REQUEST_TIMEOUT)
-            .send()
-            .await
-            .ok()?
-            .json::<TokenResponse>()
-            .await
-            .ok()?;
-
-        let now = std::time::SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_secs();
-
-        let new_token = WebApiToken::new(
-            res.access_token.clone(),
-            res.refresh_token,
-            now + res.expires_in,
-        );
-
-        let mut write_guard = self.token.write().await;
-        *write_guard = Some(new_token);
-
-        Some(res.access_token)
     }
 
     pub async fn get_oauth_url(&self) -> String {
