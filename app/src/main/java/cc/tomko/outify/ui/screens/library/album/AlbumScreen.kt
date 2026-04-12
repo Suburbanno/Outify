@@ -166,7 +166,7 @@ fun SharedTransitionScope.AlbumDetailScreen(
                         )
 
                         Text(
-                            text = "Album • ${album.artists.joinToString { it.name }} • ${tracks.size} songs",
+                            text = "${album.artists.joinToString { it.name }} • ${tracks.size} songs",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     },
