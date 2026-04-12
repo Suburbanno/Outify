@@ -30,7 +30,6 @@ import cc.tomko.outify.ui.screens.auth.SetupOutifyScreen
 import cc.tomko.outify.ui.screens.library.LibraryScreen
 import cc.tomko.outify.ui.screens.library.LikedScreen
 import cc.tomko.outify.ui.screens.library.PlaylistScreen
-import cc.tomko.outify.ui.screens.library.TrackDetailScreen
 import cc.tomko.outify.ui.screens.library.album.AlbumDetailScreen
 import cc.tomko.outify.ui.screens.library.artist.ArtistDetailScreen
 import cc.tomko.outify.ui.screens.SearchScreen
@@ -48,7 +47,6 @@ import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
 import cc.tomko.outify.ui.viewmodel.library.LibraryViewModel
 import cc.tomko.outify.ui.viewmodel.library.LikedViewModel
 import cc.tomko.outify.ui.viewmodel.library.PlaylistViewModel
-import cc.tomko.outify.ui.viewmodel.library.TrackViewModel
 import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModel
 import cc.tomko.outify.ui.viewmodel.settings.AccountsViewModel
 import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
@@ -144,22 +142,19 @@ fun SharedTransitionScope.NavigationRoot(
             }
 
             entry<Route.TrackScreen> {
-                val viewModel: TrackViewModel = hiltViewModel()
+                val viewModel: AlbumViewModel = hiltViewModel()
 
                 LaunchedEffect(it.trackUri) {
-                    viewModel.loadTrack(it.trackUri)
+                    viewModel.loadAlbumFromTrackUri(it.trackUri)
                 }
 
-                TrackDetailScreen(
+                AlbumDetailScreen(
                     viewModel = viewModel,
                     onBack = {
                         backStack.removeAt(backStack.lastIndex)
                     },
                     artistClick = { uri ->
                         backStack.add(Route.ArtistScreen(uri))
-                    },
-                    albumClick = { album ->
-                        backStack.add(Route.AlbumScreen(album.uri))
                     }
                 )
             }
