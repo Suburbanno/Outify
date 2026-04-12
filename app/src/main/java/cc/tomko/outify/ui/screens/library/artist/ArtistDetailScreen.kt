@@ -291,7 +291,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
                         )
 
                         Text(
-                            text = "• $likedTrackCount liked songs",
+                            text = "Artist • $likedTrackCount liked songs",
                             style = MaterialTheme.typography.bodyMedium
                         )
                     },

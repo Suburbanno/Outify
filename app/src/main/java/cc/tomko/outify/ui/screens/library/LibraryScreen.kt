@@ -134,7 +134,7 @@ fun SharedTransitionScope.LibraryScreen(
                 )
 
                 Text(
-                    text = "• ${playlists.count()} playlists",
+                    text = "Account • ${playlists.count()} playlists",
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
