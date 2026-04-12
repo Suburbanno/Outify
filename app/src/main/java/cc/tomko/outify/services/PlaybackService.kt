@@ -22,6 +22,11 @@ import androidx.media3.session.SessionToken
 import cc.tomko.outify.MainActivity
 import cc.tomko.outify.MediaSessionConstants
 import cc.tomko.outify.R
+import cc.tomko.outify.core.SpClient
+import cc.tomko.outify.core.Spirc.SpircWrapper
+import cc.tomko.outify.core.model.OutifyUri
+import cc.tomko.outify.core.model.SpotifyUri
+import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.Player
@@ -90,6 +95,15 @@ class PlaybackService : MediaLibraryService(),
     @Inject
     lateinit var playbackStateHolder: PlaybackStateHolder
 
+    @Inject
+    lateinit var spirc: SpircWrapper
+
+    @Inject
+    lateinit var spClient: SpClient
+
+    @Inject
+    lateinit var likedDao: LikedDao
+
     private var mediaLibrarySession: MediaLibrarySession? = null
     private val binder = MusicBinder()
 
@@ -151,22 +165,37 @@ class PlaybackService : MediaLibraryService(),
     }
 
     fun toggleLike() {
-        Log.i(TAG,"toggle like")
+        val item = player.currentMediaItem ?: return
+        val id = item.mediaId
+        Log.i(TAG,"Toggling like for $id")
+
+        scope.launch {
+            if(likedDao.containsTrack(id)) {
+                spClient.deleteItems(arrayOf("spotify:track:$id"))
+            } else  {
+                spClient.saveItems(arrayOf("spotify:track:$id"))
+            }
+        }
     }
 
     fun toggleStartRadio(){
-        Log.i(TAG,"Starting radio")
         val item = player.currentMediaItem ?: return
         val id = item.mediaId
-        println(id)
+        Log.i(TAG,"Starting radio for $id")
+
+        scope.launch {
+            spirc.startRadio(SpotifyUri.Track(id), false)
+        }
     }
 
     fun updateNotification() {
         mediaLibrarySession ?: return
         val track = playbackStateHolder.state.value.currentTrack
+        val hasTrack = track != null
 
-        mediaLibrarySession!!.setCustomLayout(
-            listOf(
+        scope.launch {
+            val isLiked = if(hasTrack) likedDao.containsTrack(track.id) else false
+            val buttons = listOf(
                 CommandButton.Builder(when (player.repeatMode) {
                     REPEAT_MODE_OFF -> CommandButton.ICON_SHUFFLE_OFF
                     REPEAT_MODE_ONE -> CommandButton.ICON_SHUFFLE_ON
@@ -185,13 +214,23 @@ class PlaybackService : MediaLibraryService(),
                     )
                     .setSessionCommand(MediaSessionConstants.CommandToggleRepeatMode)
                     .build(),
+                CommandButton.Builder(when (isLiked) {
+                    true -> CommandButton.ICON_HEART_FILLED
+                    false -> CommandButton.ICON_HEART_UNFILLED
+                })
+                    .setDisplayName(getString(R.string.like))
+                    .setSessionCommand(MediaSessionConstants.CommandToggleLike)
+                    .setEnabled(hasTrack)
+                    .build(),
                 CommandButton.Builder(CommandButton.ICON_RADIO)
                     .setDisplayName(getString(R.string.start_radio))
                     .setSessionCommand(MediaSessionConstants.CommandToggleStartRadio)
-                    .setEnabled(track != null)
+                    .setEnabled(hasTrack)
                     .build()
             )
-        )
+            mediaLibrarySession!!.setCustomLayout(buttons)
+            Log.i(TAG, "Updated notification with ${buttons.size} buttons, isLiked=$isLiked")
+        }
     }
 
     override fun onPlayerError(error: PlaybackException) {

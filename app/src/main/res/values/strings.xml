@@ -18,4 +18,5 @@
     <string name="repeat_mode_all">Repeat all</string>
     <string name="repeat_mode_one">Repeat one</string>
     <string name="repeat_mode_off">No repeat</string>
+    <string name="like">Like</string>
 </resources>
