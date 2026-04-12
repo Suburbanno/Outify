@@ -323,3 +323,95 @@ fun PlaylistDetailSkeleton(
         }
     }
 }
+
+@Composable
+fun ProfileDetailSkeleton(
+    modifier: Modifier = Modifier,
+    playlistCount: Int = 4,
+    topPadding: Dp = 200.dp
+) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(top = topPadding),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                repeat(2) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        SkeletonBox(
+                            modifier = Modifier
+                                .size(24.dp),
+                            shape = CircleShape
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        SkeletonBox(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(14.dp),
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                    }
+                }
+            }
+
+            SkeletonBox(
+                modifier = Modifier
+                    .height(36.dp)
+                    .fillMaxWidth(0.4f)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                shape = RoundedCornerShape(18.dp)
+            )
+        }
+
+        item {
+            Box(
+                modifier = Modifier
+                    .padding(start = 16.dp, bottom = 8.dp, top = 16.dp)
+                    .fillMaxWidth(0.3f)
+                    .height(20.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .shimmerEffect()
+            )
+        }
+
+        items(playlistCount) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                SkeletonBox(
+                    modifier = Modifier.size(48.dp),
+                    shape = RoundedCornerShape(6.dp)
+                )
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    SkeletonBox(
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(16.dp),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+
+                    SkeletonBox(
+                        modifier = Modifier
+                            .fillMaxWidth(0.4f)
+                            .height(12.dp),
+                        shape = RoundedCornerShape(4.dp)
+                    )
+                }
+            }
+        }
+    }
+}

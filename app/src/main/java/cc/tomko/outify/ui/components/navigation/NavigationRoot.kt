@@ -34,6 +34,7 @@ import cc.tomko.outify.ui.screens.auth.SetupOutifyScreen
 import cc.tomko.outify.ui.screens.library.LibraryScreen
 import cc.tomko.outify.ui.screens.library.LikedScreen
 import cc.tomko.outify.ui.screens.library.PlaylistScreen
+import cc.tomko.outify.ui.screens.library.ProfileDetailScreen
 import cc.tomko.outify.ui.screens.library.album.AlbumDetailScreen
 import cc.tomko.outify.ui.screens.library.artist.ArtistDetailScreen
 import cc.tomko.outify.ui.screens.SearchScreen
@@ -56,6 +57,7 @@ import cc.tomko.outify.ui.viewmodel.detail.AlbumDetailViewModel
 import cc.tomko.outify.ui.viewmodel.detail.ArtistDetailViewModel
 import cc.tomko.outify.ui.viewmodel.detail.PlaylistDetailViewModel
 import cc.tomko.outify.ui.viewmodel.detail.DetailViewModelStore
+import cc.tomko.outify.ui.viewmodel.library.ProfileDetailViewModel
 import cc.tomko.outify.ui.viewmodel.detail.rememberDetailViewModel
 import cc.tomko.outify.ui.viewmodel.settings.AccountsViewModel
 import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
@@ -228,7 +230,32 @@ fun SharedTransitionScope.NavigationRoot(
                     onArtworkClick = { track ->
                         backStack.add(Route.TrackScreen(track.uri))
                     },
-                    onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) }
+                    onArtistClick = { backStack.add(Route.ArtistScreen(it.uri)) },
+                    onAuthorClick = {
+                        backStack.add(Route.ProfileScreen(it.uri))
+                    }
+                )
+            }
+
+            entry<Route.ProfileScreen> {
+                val viewModel: ProfileDetailViewModel = hiltViewModel()
+                LaunchedEffect(it.profileUri) {
+                    viewModel.loadProfile(it.profileUri)
+                }
+                ProfileDetailScreen(
+                    viewModel = viewModel,
+                    onBack = {
+                        backStack.removeAt(backStack.lastIndex)
+                    },
+                    onPlaylistClick = { uri ->
+                        backStack.add(Route.PlaylistScreen(uri))
+                    },
+                    onFollowersClick = {
+                        // TODO: Implement followers list
+                    },
+                    onFollowingClick = {
+                        // TODO: Implement following list
+                    }
                 )
             }
 

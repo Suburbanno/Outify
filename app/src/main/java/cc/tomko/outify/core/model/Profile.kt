@@ -10,6 +10,8 @@ import kotlinx.serialization.Serializable
 data class Profile(
     val uri: String,
     val name: String? = null,
+    @SerialName("is_following")
+    val isFollowing: Boolean = false,
     @SerialName("image_url")
     val imageUrl: String? = null,
     @SerialName("followers_count")
@@ -30,7 +32,7 @@ data class Profile(
 data class ProfilePlaylist(
     val uri: String,
     val name: String,
-    @SerialName("imageUrl")
+    @SerialName("image_url")
     val imageUrl: String? = null,
     @SerialName("followers_count")
     val followersCount: Int,

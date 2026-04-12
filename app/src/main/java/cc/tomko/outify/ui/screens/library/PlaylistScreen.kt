@@ -2,6 +2,7 @@ package cc.tomko.outify.ui.screens.library
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -59,6 +60,7 @@ fun SharedTransitionScope.PlaylistScreen(
     viewModel: PlaylistDetailViewModel,
     onArtworkClick: (track: Track) -> Unit,
     onArtistClick: (artist: Artist) -> Unit,
+    onAuthorClick: (profile: Profile) -> Unit,
     onBack: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
@@ -166,7 +168,13 @@ fun SharedTransitionScope.PlaylistScreen(
                                     val author = authorMap[playlistItem.attributes.addedBy]
 
                                     author?.let {
-                                        UserChipAvatar(it.imageUrl)
+                                        UserChipAvatar(
+                                            it.imageUrl,
+                                            modifier = Modifier
+                                                .clickable {
+                                                    onAuthorClick(it)
+                                                }
+                                        )
                                     }
                                 }
                             )
@@ -204,6 +212,9 @@ fun SharedTransitionScope.PlaylistScreen(
                                         modifier = Modifier
                                             .offset(x = (index * 12).dp)
                                             .zIndex((showAvatarCount - index).toFloat())
+                                            .clickable {
+                                                onAuthorClick(user)
+                                            }
                                     )
                                 }
                             }
