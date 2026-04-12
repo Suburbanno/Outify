@@ -16,7 +16,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material3.ContainedLoadingIndicator
+import cc.tomko.outify.ui.components.PlaylistDetailSkeleton
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeExtendedFloatingActionButton
@@ -68,13 +68,7 @@ fun SharedTransitionScope.PlaylistScreen(
 
     when (uiState) {
         is PlaylistUiState.Loading -> {
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                ContainedLoadingIndicator()
-            }
+            PlaylistDetailSkeleton()
         }
 
         is PlaylistUiState.Error -> {

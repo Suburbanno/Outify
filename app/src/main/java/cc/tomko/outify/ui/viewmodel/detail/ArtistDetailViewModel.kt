@@ -18,6 +18,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -35,7 +37,7 @@ private const val ALBUMS_KEY = "albums"
 
 sealed class ArtistUiState {
     object Loading : ArtistUiState()
-    data class Success(val artist: Artist) : ArtistUiState()
+    data class Success(val artist: Artist, val isContentLoading: Boolean = true) : ArtistUiState()
     data class Error(val message: String) : ArtistUiState()
 }
 
@@ -137,6 +139,17 @@ class ArtistDetailViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList()
         )
+
+    val isContentLoading: StateFlow<Boolean> = combine(
+        popularTracks,
+        albums
+    ) { tracks, albums ->
+        tracks.isEmpty() && albums.isEmpty()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = true
+    )
 
     private fun saveState() {
         savedStateHandle[POPULAR_TRACKS_KEY] = popularTrackUris.value

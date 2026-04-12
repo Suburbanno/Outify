@@ -25,7 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material3.ContainedLoadingIndicator
+import cc.tomko.outify.ui.components.ArtistDetailSkeleton
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -96,12 +96,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
 
     when (uiState) {
         ArtistUiState.Loading -> {
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-                contentAlignment = Alignment.Center) {
-                ContainedLoadingIndicator()
-            }
+            ArtistDetailSkeleton()
         }
 
         is ArtistUiState.Error -> {
@@ -121,6 +116,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
 
         is ArtistUiState.Success -> {
             val artist = (uiState as ArtistUiState.Success).artist
+            val isContentLoading by viewModel.isContentLoading.collectAsState()
             val artworkUrl = ALBUM_COVER_URL + artist.getCover(CoverSize.LARGE)?.uri
             val spirc = viewModel.spirc
 
@@ -159,6 +155,16 @@ fun SharedTransitionScope.ArtistDetailScreen(
                     with(density) { collapsingState.height.value.toDp() }
 
                 val topPadding = currentTopBarHeightDp + if(likedTrackCount > 0) 8.dp else 0.dp
+
+                if (isContentLoading) {
+                    ArtistDetailSkeleton(
+                        modifier = Modifier.fillMaxSize(),
+                        trackCount = 5,
+                        albumCount = 4,
+                        topPadding = topPadding
+                    )
+                }
+
                 LazyColumn(
                     state = lazyList,
                     contentPadding = PaddingValues(
