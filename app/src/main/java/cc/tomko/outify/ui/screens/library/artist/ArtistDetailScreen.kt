@@ -71,8 +71,8 @@ import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.bottomsheet.ArtistLikedTracksBottomSheet
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
-import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
-import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
+import cc.tomko.outify.ui.viewmodel.detail.ArtistDetailViewModel
+import cc.tomko.outify.ui.viewmodel.detail.ArtistUiState
 import coil3.compose.AsyncImage
 
 /**
@@ -81,7 +81,7 @@ import coil3.compose.AsyncImage
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedTransitionScope.ArtistDetailScreen(
-    viewModel: ArtistViewModel,
+    viewModel: ArtistDetailViewModel,
     onArtworkClick: (Track) -> Unit,
     onAlbumClick: (Album) -> Unit,
     onArtistClick: (Artist) -> Unit,

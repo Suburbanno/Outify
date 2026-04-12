@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.data.database.AppDatabase
+import cc.tomko.outify.ui.viewmodel.detail.DetailViewModelStore
+import cc.tomko.outify.ui.viewmodel.detail.setDetailViewModelStore
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -17,10 +19,15 @@ class OutifyApplication : Application() {
     @Inject
     lateinit var spircController: SpircController
 
+    @Inject
+    lateinit var detailViewModelStore: DetailViewModelStore
+
     @UnstableApi
     override fun onCreate() {
         super.onCreate()
         database = AppDatabase.getInstance(this)
+
+        setDetailViewModelStore(detailViewModelStore)
 
         System.loadLibrary("librespot_ffi")
         LibrespotFfi.libInit(applicationContext)

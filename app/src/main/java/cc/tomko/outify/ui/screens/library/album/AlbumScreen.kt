@@ -42,15 +42,12 @@ import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
-import cc.tomko.outify.ui.viewmodel.library.album.AlbumViewModel
+import cc.tomko.outify.ui.viewmodel.detail.AlbumDetailViewModel
 
-/**
- * Shout out to PixelPlay.
- */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedTransitionScope.AlbumDetailScreen(
-    viewModel: AlbumViewModel,
+    viewModel: AlbumDetailViewModel,
     onBack: () -> Unit,
     artistClick: (uri: String) -> Unit,
 ) {

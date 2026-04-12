@@ -45,14 +45,14 @@ import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
-import cc.tomko.outify.ui.viewmodel.library.ArtistUiState
-import cc.tomko.outify.ui.viewmodel.library.ArtistViewModel
+import cc.tomko.outify.ui.viewmodel.detail.ArtistDetailViewModel
+import cc.tomko.outify.ui.viewmodel.detail.ArtistUiState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SharedTransitionScope.ArtistLikedTracksBottomSheet(
-    viewModel: ArtistViewModel,
+    viewModel: ArtistDetailViewModel,
     onArtworkClick: (Track) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,

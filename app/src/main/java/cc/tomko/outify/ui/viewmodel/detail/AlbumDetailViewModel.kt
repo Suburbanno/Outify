@@ -1,7 +1,7 @@
-package cc.tomko.outify.ui.viewmodel.library.album
+package cc.tomko.outify.ui.viewmodel.detail
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
@@ -25,13 +25,8 @@ import javax.inject.Inject
 
 private const val ALBUM_STATE_KEY = "album_state"
 
-data class AlbumViewModelKey(val albumUri: String)
-
-/**
- * View model for album screen
- */
 @HiltViewModel
-class AlbumViewModel @Inject constructor(
+class AlbumDetailViewModel @Inject constructor(
     private val metadata: Metadata,
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
@@ -39,7 +34,7 @@ class AlbumViewModel @Inject constructor(
     val json: Json,
     val likedDao: LikedDao,
     private val savedStateHandle: SavedStateHandle,
-): ViewModel() {
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         savedStateHandle.get<String>(ALBUM_STATE_KEY)?.let {

@@ -50,13 +50,13 @@ import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.components.user.UserChipAvatar
-import cc.tomko.outify.ui.viewmodel.library.PlaylistUiState
-import cc.tomko.outify.ui.viewmodel.library.PlaylistViewModel
+import cc.tomko.outify.ui.viewmodel.detail.PlaylistDetailViewModel
+import cc.tomko.outify.ui.viewmodel.detail.PlaylistUiState
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SharedTransitionScope.PlaylistScreen(
-    viewModel: PlaylistViewModel,
+    viewModel: PlaylistDetailViewModel,
     onArtworkClick: (track: Track) -> Unit,
     onArtistClick: (artist: Artist) -> Unit,
     onBack: () -> Unit,
