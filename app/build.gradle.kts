@@ -1,4 +1,5 @@
 import com.android.build.api.dsl.ApplicationExtension
+import java.time.LocalDate
 
 plugins {
     id("eclipse")
@@ -14,6 +15,13 @@ plugins {
 ksp {
     arg("dagger.fastInit", "enabled")
     arg("dagger.formatGeneratedSource", "disabled")
+    arg("ksp.incremental", "true")
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+fun calculateVersionCode(): Int {
+    val date = LocalDate.now()
+    return (date.year - 2000) * 10000 + date.monthValue * 100 + date.dayOfMonth
 }
 
 extensions.configure<ApplicationExtension>("android") {
@@ -28,7 +36,7 @@ extensions.configure<ApplicationExtension>("android") {
         applicationId = "cc.tomko.outify"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
+        versionCode = calculateVersionCode()
         versionName = (project.findProperty("versionName") ?: "dev") as String?
     }
 
@@ -81,10 +89,7 @@ extensions.configure<ApplicationExtension>("android") {
 
     splits {
         abi {
-            isEnable = true
-            reset()
-            include("arm64-v8a", "armeabi-v7a")
-            isUniversalApk = true
+            isEnable = false
         }
     }
 
