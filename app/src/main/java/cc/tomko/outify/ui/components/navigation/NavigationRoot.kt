@@ -45,6 +45,7 @@ import cc.tomko.outify.ui.screens.settings.GestureSettingsScreen
 import cc.tomko.outify.ui.screens.settings.InterfaceSettingScreen
 import cc.tomko.outify.ui.screens.settings.PlaybackSettingScreen
 import cc.tomko.outify.ui.screens.settings.SettingsScreen
+import cc.tomko.outify.ui.viewmodel.HomeViewModel
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
 import cc.tomko.outify.ui.viewmodel.auth.AuthViewModel
 import cc.tomko.outify.ui.viewmodel.auth.SetupViewModel
@@ -116,8 +117,11 @@ fun SharedTransitionScope.NavigationRoot(
             }
 
             entry<Route.HomeScreen> {
+                val viewModel: HomeViewModel = hiltViewModel()
+
                 HomeScreen(
-                    backStack
+                    backStack = backStack,
+                    viewModel = viewModel,
                 )
             }
 

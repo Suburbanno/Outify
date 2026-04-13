@@ -32,6 +32,19 @@ class SpClient @Inject constructor() {
     external fun deleteItems(uris: Array<String>): Boolean
 
     /**
+     * Get the current user's top artists or tracks based on calculated affinity.
+     * Default type = artists
+     * Possible types: artists, tracks
+     */
+    external fun getUserTop(type: String? = null): String
+
+    /**
+     * Check if user has authenticated with Spotify via OAuth.
+     * Returns true if authenticated, false otherwise.
+     */
+    external fun isOAuthAuthenticated(): Boolean
+
+    /**
      * Adds tracks in array into the playlist by given id
      */
     external fun addToPlaylist(playlist_id: String, track_uris: Array<String>): Boolean

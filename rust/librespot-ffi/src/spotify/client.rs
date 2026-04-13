@@ -19,7 +19,7 @@ use crate::{
     session::with_session,
     spotify::{
         error::SpotifyApiError,
-        requests::{AddItemRequest, RemoveItem, RemoveItemRequest},
+        requests::{AddItemRequest, ArtistsOrTracksPage, RemoveItem, RemoveItemRequest, UserTopRequest},
         search::extract_all_uris,
         token::{TokenResponse, WebApiToken},
     },
@@ -32,6 +32,7 @@ const SPOTIFY_OAUTH_SCOPES: &[&str] = &[
     "streaming",
     "user-read-private",
     "user-read-email",
+    "user-top-read",
     "user-library-modify",
     "user-library-read",
     "user-follow-modify",
@@ -261,6 +262,44 @@ impl SpotifyClient {
         Ok(res.status())
     }
 
+    // Gets users top picks in given category.
+    // Accepted: artists, tracks
+    // Default: artists
+    pub async fn get_top(
+        &self,
+        request_type: Option<String>,
+    ) -> Result<ArtistsOrTracksPage, SpotifyApiError> {
+        let token = match self.load_token().await {
+            Ok(o) => match o {
+                Some(t) => t,
+                None => {
+                    return Err(SpotifyApiError::Generic(
+                        "No account token present!".to_string(),
+                    ));
+                }
+            },
+            Err(e) => {
+                return Err(e);
+            }
+        };
+
+        let request_type = request_type.unwrap_or_else(|| "artists".to_string());
+
+        let res = self
+            .client
+            .get(format!("{}/v1/me/top/{}", SPOTIFY_API_URL, request_type))
+            .bearer_auth(token.access_token)
+            .timeout(REQUEST_TIMEOUT)
+            .send()
+            .await?;
+
+        info!("responnse: {}", res.status().as_str());
+
+        let data = res.json::<ArtistsOrTracksPage>().await?;
+
+        Ok(data)
+    }
+
     pub async fn get_oauth_url(&self) -> String {
         format!("{}", SPOTIFY_OAUTH_CALLBACK_URI)
     }
@@ -378,6 +417,14 @@ impl SpotifyClient {
 
         std::io::Write::write_all(&mut file, json.as_bytes())?;
         Ok(())
+    }
+
+    /// Check if OAuth token exists (user is authenticated with Spotify)
+    pub async fn is_oauth_authenticated(&self) -> bool {
+        match self.load_token().await {
+            Ok(Some(_)) => true,
+            _ => false,
+        }
     }
 
     /// Loads the token from the session's cache if available

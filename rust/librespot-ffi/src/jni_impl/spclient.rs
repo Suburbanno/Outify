@@ -167,6 +167,72 @@ pub extern "system" fn delete_items(
     }
 }
 
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getUserTop")]
+pub extern "system" fn get_user_top(mut env: JNIEnv, _class: JClass, r#type: JString) -> jstring {
+    let client = get_client();
+
+    let request_type: Option<String> = if r#type.is_null() {
+        None
+    } else {
+        match env.get_string(&r#type) {
+            Ok(t) => Some(t.into()),
+            Err(e) => {
+                error!("failed to get request type: {e}");
+                return std::ptr::null_mut();
+            }
+        }
+    };
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let result = rt.block_on(async { client.get_top(request_type).await });
+
+    match result {
+        Ok(result) => {
+            match serde_json::to_string(&result) {
+                Ok(json) => match env.new_string(&json) {
+                    Ok(r) => r.into_raw(),
+                    Err(e) => {
+                        error!("failed to create new jstring: {e}");
+                        std::ptr::null_mut()
+                    },
+                },
+                Err(e) => {
+                    error!("failed to serialize result: {e}");
+                    std::ptr::null_mut()
+                }
+            }
+        }
+        Err(e) => {
+            error!("get_user_top failed: {e}");
+            std::ptr::null_mut()
+        }
+    }
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_isOAuthAuthenticated")]
+pub extern "system" fn is_oauth_authenticated(_env: JNIEnv, _class: JClass) -> jboolean {
+    let client = get_client();
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return 0 as jboolean;
+        }
+    };
+
+    let result = rt.block_on(async { client.is_oauth_authenticated().await });
+
+    result as jboolean
+}
+
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_addToPlaylist")]
 pub extern "system" fn add_to_playlist(
     mut env: JNIEnv,
@@ -181,7 +247,7 @@ pub extern "system" fn add_to_playlist(
         Err(e) => {
             error!("failed to get playlist_id: {e}");
             return 0 as jboolean;
-        },
+        }
     };
 
     let length = env.get_array_length(&uris).unwrap();
@@ -234,7 +300,7 @@ pub extern "system" fn delete_from_playlist(
         Err(e) => {
             error!("failed to get playlist_id: {e}");
             return 0 as jboolean;
-        },
+        }
     };
 
     let length = env.get_array_length(&uris).unwrap();
@@ -261,7 +327,10 @@ pub extern "system" fn delete_from_playlist(
         Ok(status) => {
             let success = status.is_success();
             if !success {
-                warn!("failed to delete from playlist with status: {}", status.as_str());
+                warn!(
+                    "failed to delete from playlist with status: {}",
+                    status.as_str()
+                );
             }
 
             success as jboolean

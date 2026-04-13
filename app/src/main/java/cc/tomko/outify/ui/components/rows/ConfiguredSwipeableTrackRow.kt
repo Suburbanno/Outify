@@ -43,6 +43,15 @@ fun SharedTransitionScope.SwipeableTrackRowConfigured(
 
     trailingContent: @Composable (() -> Unit)? = null,
 ) {
+    val artworkUrl = remember(track.uri) {
+        val albumUrl = track.album?.getCover(CoverSize.SMALL)?.uri ?: ""
+        if(albumUrl.startsWith("https://")) {
+            albumUrl
+        } else {
+            ALBUM_COVER_URL + albumUrl
+        }
+    }
+
     BoxWithConstraints(modifier = modifier) {
         val (start, end) = rememberTrackGestures(track, isLiked)
 
@@ -60,7 +69,7 @@ fun SharedTransitionScope.SwipeableTrackRowConfigured(
             TrackRow(
                 title = track.name,
                 artists = track.artists,
-                artworkUrl = (ALBUM_COVER_URL + track.album?.getCover(CoverSize.SMALL)?.uri),
+                artworkUrl = artworkUrl,
                 isExplicit = track.explicit,
                 isLoaded = currentTrack?.uri.equals(track.uri),
                 isPlaying = isPlaybackPlaying,
