@@ -364,6 +364,7 @@ class MainActivity : ComponentActivity() {
                     "artist" -> Route.ArtistScreen(uri.toString())
                     "track" -> Route.TrackScreen(uri.toString())
                     "playlist" -> Route.PlaylistScreen(uri.toString())
+                    "user" -> Route.ProfileScreen(uri.toString())
                     else -> null
                 }
             }
@@ -378,6 +379,7 @@ class MainActivity : ComponentActivity() {
                 "artist" -> Route.ArtistScreen(internalUri)
                 "track" -> Route.TrackScreen(internalUri)
                 "playlist" -> Route.PlaylistScreen(internalUri)
+                "user" -> Route.ProfileScreen(internalUri)
                 else -> null
             }
         }
@@ -395,6 +397,7 @@ class MainActivity : ComponentActivity() {
                     "artist" -> Route.ArtistScreen(internalUri)
                     "track" -> Route.TrackScreen(internalUri)
                     "playlist" -> Route.PlaylistScreen(internalUri)
+                    "user" -> Route.ProfileScreen(internalUri)
                     else -> null
                 }
             }
