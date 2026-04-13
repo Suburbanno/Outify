@@ -4,16 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
-import cc.tomko.outify.core.model.Cover
-import cc.tomko.outify.core.model.CoverSize
+import cc.tomko.outify.core.UserProfile
+import cc.tomko.outify.core.model.Profile
 import cc.tomko.outify.core.model.Track
-import cc.tomko.outify.core.model.asInt
-import cc.tomko.outify.core.model.asSize
 import cc.tomko.outify.core.model.toOutifyUri
 import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
+import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -49,13 +49,16 @@ class HomeViewModel @Inject constructor(
     private val trackMetadataHelper: TrackMetadataHelper,
     private val spirc: SpircWrapper,
     private val playbackStateHolder: PlaybackStateHolder,
+    private val userProfile: UserProfile,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState
 
-    private val _username = MutableStateFlow<String?>(null)
-    val username: StateFlow<String?> = _username
+    val userId: Flow<String?> = settingsRepository.userId
+    val username: Flow<String?> = settingsRepository.username
+    val userImageUrl: Flow<String?> = settingsRepository.userImageUrl
 
     init {
         loadData()
@@ -76,7 +79,7 @@ class HomeViewModel @Inject constructor(
                 val isAuthenticated = spClient.isOAuthAuthenticated()
                 if (!isAuthenticated) {
                     _uiState.value = HomeUiState.NotAuthenticated
-                    loadUsername()
+                    loadUserProfile()
                     return@launch
                 }
 
@@ -84,7 +87,7 @@ class HomeViewModel @Inject constructor(
                 val topArtistsError = NativeErrorHandler.handleErrorJson(topArtistsJson, "top artists")
                 if (topArtistsError != null) {
                     _uiState.value = HomeUiState.NotAuthenticated
-                    loadUsername()
+                    loadUserProfile()
                     return@launch
                 }
 
@@ -92,7 +95,7 @@ class HomeViewModel @Inject constructor(
                 val topTracksError = NativeErrorHandler.handleErrorJson(topTracksJson, "top tracks")
                 if (topTracksError != null) {
                     _uiState.value = HomeUiState.NotAuthenticated
-                    loadUsername()
+                    loadUserProfile()
                     return@launch
                 }
 
@@ -100,18 +103,36 @@ class HomeViewModel @Inject constructor(
                 val topTracks = fetchTrackMetadata(topTracksJson)
 
                 _uiState.value = HomeUiState.Success(topArtists, topTracks)
-                loadUsername()
+                loadUserProfile()
             } catch (e: Exception) {
                 _uiState.value = HomeUiState.Error(e.message ?: "Unknown error")
             }
         }
     }
 
-    private fun loadUsername() {
-        try {
-            _username.value = spClient.username()
-        } catch (e: Exception) {
-            // Ignore username errors
+    private fun loadUserProfile() {
+        viewModelScope.launch {
+            try {
+                val userId = spClient.username()
+
+                val profileJson = userProfile.getUserProfile(userId)
+                var profileName: String? = null
+                var profileImageUrl: String? = null
+
+                if (profileJson != null) {
+                    try {
+                        val profile = json.decodeFromString<Profile>(profileJson)
+                        profileName = profile.name
+                        profileImageUrl = profile.imageUrl
+                    } catch (e: Exception) {
+                        // Ignore parse errors
+                    }
+                }
+
+                settingsRepository.saveUserProfile(userId, profileName, profileImageUrl)
+            } catch (e: Exception) {
+                // Ignore errors
+            }
         }
     }
 

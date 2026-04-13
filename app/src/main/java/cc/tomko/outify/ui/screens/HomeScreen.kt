@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.NoAccounts
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -63,7 +64,8 @@ fun SharedTransitionScope.HomeScreen(
     viewModel: HomeViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val username by viewModel.username.collectAsState()
+    val username by viewModel.username.collectAsState(initial = "User")
+    val userAvatarUrl by viewModel.userImageUrl.collectAsState(initial = null)
 
     Scaffold(
         modifier = modifier,
@@ -84,10 +86,14 @@ fun SharedTransitionScope.HomeScreen(
                 }
 
                 is HomeUiState.NotAuthenticated -> {
+                    println(userAvatarUrl)
                     NotAuthenticatedContent(
                         username = username,
                         onSettingsClick = {
                             backStack.add(Route.SettingsScreen)
+                        },
+                        onAccountClick = {
+                            backStack.add(Route.AccountsScreen)
                         }
                     )
                 }
@@ -98,10 +104,14 @@ fun SharedTransitionScope.HomeScreen(
 
                     HomeContent(
                         username = username,
+                        userAvatarUrl = userAvatarUrl,
                         topArtists = state.topArtists,
                         topTracks = state.topTracks,
                         onSettingsClick = {
                             backStack.add(Route.SettingsScreen)
+                        },
+                        onAccountClick = {
+                            backStack.add(Route.AccountsScreen)
                         },
                         onArtistClick = {
                             backStack.add(Route.ArtistScreen(it))
@@ -135,6 +145,7 @@ fun SharedTransitionScope.HomeScreen(
 private fun NotAuthenticatedContent(
     username: String?,
     onSettingsClick: () -> Unit,
+    onAccountClick: () -> Unit,
 ) {
     Column(
         modifier = Modifier
@@ -151,6 +162,10 @@ private fun NotAuthenticatedContent(
                 style = MaterialTheme.typography.headlineLargeEmphasized,
                 fontWeight = FontWeight.Bold
             )
+
+            IconButton(onClick = onAccountClick) {
+                Icon(Icons.Default.NoAccounts, contentDescription = null)
+            }
 
             IconButton(onClick = onSettingsClick) {
                 Icon(
@@ -202,11 +217,13 @@ private fun NotAuthenticatedContent(
 @Composable
 private fun SharedTransitionScope.HomeContent(
     username: String?,
+    userAvatarUrl: String?,
     currentTrack: Track?,
     isPlaybackPlaying: Boolean,
     topArtists: List<TopArtist>,
     topTracks: List<Track>,
     onSettingsClick: () -> Unit,
+    onAccountClick: () -> Unit,
     onArtistClick: (uri: String) -> Unit,
     onArtworkClick: (album: Album) -> Unit,
     onTrackClick: (track: Track) -> Unit,
@@ -229,6 +246,12 @@ private fun SharedTransitionScope.HomeContent(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
+
+                IconButton(onClick = onAccountClick) {
+                    SmartImage(
+                        url = userAvatarUrl
+                    )
+                }
 
                 IconButton(onClick = onSettingsClick) {
                     Icon(

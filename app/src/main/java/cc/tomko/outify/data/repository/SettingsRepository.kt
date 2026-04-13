@@ -28,6 +28,10 @@ class SettingsRepository @Inject constructor(
         val GAPLESS = booleanPreferencesKey("gapless")
         val NORMALIZE_AUDIO = booleanPreferencesKey("normalized_audio")
 
+        val USER_ID = stringPreferencesKey("user_id")
+        val USERNAME = stringPreferencesKey("username")
+        val USER_IMAGE_URL = stringPreferencesKey("user_image_url")
+
         object Gesture {
             val ENABLED = booleanPreferencesKey("gestures_enabled")
             val GESTURES = stringPreferencesKey("gestures_json")
@@ -150,6 +154,10 @@ class SettingsRepository @Inject constructor(
         it[Keys.Lyrics.SHOW_LYRICS_ALWAYS] ?: true
     }
 
+    val userId = dataStore.data.map { it[Keys.USER_ID] }
+    val username = dataStore.data.map { it[Keys.USERNAME] }
+    val userImageUrl = dataStore.data.map { it[Keys.USER_IMAGE_URL] }
+
     suspend fun setShuffle(enabled: Boolean) {
         dataStore.edit { it[Keys.SHUFFLE] = enabled }
     }
@@ -208,6 +216,14 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setMonochromeHeaders(enabled: Boolean) {
         dataStore.edit { it[Keys.Interface.MONOCHROME_HEADERS] = enabled }
+    }
+
+    suspend fun saveUserProfile(userId: String, username: String?, userImageUrl: String?) {
+        dataStore.edit { prefs ->
+            prefs[Keys.USER_ID] = userId
+            username?.let { prefs[Keys.USERNAME] = it }
+            userImageUrl?.let { prefs[Keys.USER_IMAGE_URL] = it }
+        }
     }
 
     suspend fun saveGestures(gestures: List<GestureSetting>) {
