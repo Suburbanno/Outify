@@ -34,6 +34,7 @@ const SPOTIFY_OAUTH_SCOPES: &[&str] = &[
     "user-read-email",
     "user-library-modify",
     "user-library-read",
+    "user-follow-modify",
     "playlist-modify-private",
     "playlist-modify-public",
 ];

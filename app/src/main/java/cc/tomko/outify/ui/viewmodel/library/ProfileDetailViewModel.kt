@@ -52,7 +52,18 @@ class ProfileDetailViewModel @Inject constructor(
     fun toggleFollow() {
         val currentState = _uiState.value
         if (currentState is ProfileUiState.Success) {
+            val uri = currentState.profile?.uri ?: return
             _uiState.value = currentState.copy(isFollowing = !currentState.isFollowing)
+
+            if(currentState.isFollowing) {
+                if(!spClient.saveItems(arrayOf(uri))) {
+                    _uiState.value = currentState.copy(isFollowing = false)
+                }
+            } else {
+                if(!spClient.deleteItems(arrayOf(uri))) {
+                    _uiState.value = currentState.copy(isFollowing = true)
+                }
+            }
         }
     }
 
