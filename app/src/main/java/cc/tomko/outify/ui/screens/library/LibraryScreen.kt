@@ -2,6 +2,7 @@ package cc.tomko.outify.ui.screens.library
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,11 +33,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import cc.tomko.outify.core.model.Profile
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.PlaylistRow
+import cc.tomko.outify.ui.components.user.UserChipAvatar
 import cc.tomko.outify.ui.viewmodel.library.LibraryViewModel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -46,7 +50,9 @@ fun SharedTransitionScope.LibraryScreen(
     modifier: Modifier = Modifier,
 ) {
     val playlists by viewModel.playlists.collectAsState()
-    LaunchedEffect(Unit) { viewModel.loadPlaylistUris() }
+    LaunchedEffect(Unit) {
+        viewModel.loadPlaylistUris()
+    }
 
     val density = LocalDensity.current
     val sharedTransitionScope = this
@@ -93,11 +99,28 @@ fun SharedTransitionScope.LibraryScreen(
                     value = viewModel.getArtworkUrl(playlist)
                 }
 
+                val authors by produceState(
+                    initialValue = emptyList(),
+                    key1 = playlist.uri
+                ) {
+                    value = viewModel.getAuthors(playlist).take(3)
+                }
+
                 PlaylistRow(
                     playlist = playlist,
                     artworkUrl = artworkUrl,
                     onRowClick = {
                         backStack.add(Route.PlaylistScreen(playlist.uri))
+                    },
+                    trailingContent = {
+                        authors.forEach {
+                            UserChipAvatar(
+                                artworkUrl = it.imageUrl,
+                                modifier = Modifier
+                                    .clickable {
+                                        backStack.add(Route.ProfileScreen(it.uri))
+                                    })
+                        }
                     },
                     sharedTransitionScope = this@LibraryScreen
                 )
