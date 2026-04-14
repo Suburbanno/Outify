@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.NoAccounts
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -33,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -66,6 +68,10 @@ fun SharedTransitionScope.HomeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val username by viewModel.username.collectAsState(initial = "User")
     val userAvatarUrl by viewModel.userImageUrl.collectAsState(initial = null)
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshPlaybackLoginState()
+    }
 
     Scaffold(
         modifier = modifier,
@@ -101,12 +107,14 @@ fun SharedTransitionScope.HomeScreen(
                 is HomeUiState.Success -> {
                     val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
                     val isPlaybackPlaying by viewModel.isPlaying.collectAsState(initial = false)
+                    val isPlaybackLoggedIn by viewModel.isPlaybackLoggedIn.collectAsState(initial = false)
 
                     HomeContent(
                         username = username,
                         userAvatarUrl = userAvatarUrl,
                         topArtists = state.topArtists,
                         topTracks = state.topTracks,
+                        isPlaybackLoggedIn = isPlaybackLoggedIn,
                         onSettingsClick = {
                             backStack.add(Route.SettingsScreen)
                         },
@@ -222,6 +230,7 @@ private fun SharedTransitionScope.HomeContent(
     userAvatarUrl: String?,
     currentTrack: Track?,
     isPlaybackPlaying: Boolean,
+    isPlaybackLoggedIn: Boolean,
     topArtists: List<TopArtist>,
     topTracks: List<Track>,
     onSettingsClick: () -> Unit,
@@ -249,10 +258,28 @@ private fun SharedTransitionScope.HomeContent(
                     modifier = Modifier.weight(1f)
                 )
 
-                IconButton(onClick = onAccountClick) {
-                    SmartImage(
-                        url = userAvatarUrl
-                    )
+                Box {
+                    IconButton(onClick = onAccountClick) {
+                        SmartImage(
+                            url = userAvatarUrl
+                        )
+                    }
+
+                    if (!isPlaybackLoggedIn) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = "Not logged in",
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .size(16.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = CircleShape
+                                )
+                                .padding(2.dp)
+                        )
+                    }
                 }
 
                 IconButton(onClick = onSettingsClick) {

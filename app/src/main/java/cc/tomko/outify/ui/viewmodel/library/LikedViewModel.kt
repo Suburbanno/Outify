@@ -118,7 +118,9 @@ class LikedViewModel @Inject constructor(
         if(spirc.isUsable) {
             viewModelScope.launch {
                 isRefreshing.value = true
-                likedRepository.syncLikedTracks()
+                launch {
+                    likedRepository.syncLikedTracks()
+                }
                 isRefreshing.value = false
             }
             // Kick off the first page

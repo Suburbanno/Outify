@@ -32,7 +32,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun navigateToImport(){
-        navigateCallback(Route.SetupScreen)
+        navigateCallback(Route.HomeScreen)
     }
 
     fun restartAuth(){

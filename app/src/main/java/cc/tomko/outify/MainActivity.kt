@@ -66,7 +66,6 @@ import cc.tomko.outify.ui.screens.PlayerScreen
 import cc.tomko.outify.ui.OutifyTheme
 import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.viewmodel.MainViewModel
-import cc.tomko.outify.ui.viewmodel.auth.LibrespotAuthProgress
 import cc.tomko.outify.ui.viewmodel.bottomsheet.AddToPlaylistViewModel
 import cc.tomko.outify.ui.viewmodel.bottomsheet.PlaybackDevicesViewModel
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
@@ -133,9 +132,7 @@ class MainActivity : ComponentActivity() {
     fun App(
         viewModel: MainViewModel,
     ) {
-        val startRoute = if (authManager.hasCachedCredentials()) {
-            Route.HomeScreen
-        } else Route.LibrespotAuthScreen(LibrespotAuthProgress.START)
+        val startRoute = Route.HomeScreen
 
         val backStack = rememberNavBackStack(startRoute)
 
@@ -172,13 +169,8 @@ class MainActivity : ComponentActivity() {
                 Route.LibraryScreen
             ) { Icon(Icons.Default.LibraryMusic, contentDescription = null) },
         )
-        val hideNavbar = listOf<Class<*>>(
-            Route.LibrespotAuthScreen::class.java,
-            Route.SetupScreen::class.java,
-        )
 
         val currentRoute = backStack.last()
-        val visibleNavbar = hideNavbar.none { it.isInstance(currentRoute) }
 
         val selectedId = when (currentRoute) {
             Route.HomeScreen -> "home"
@@ -224,7 +216,7 @@ class MainActivity : ComponentActivity() {
                         Scaffold(
                             bottomBar = {
                                 AnimatedVisibility(
-                                    visible = visibleNavbar,
+                                    visible = true,
                                     enter = slideInVertically(
                                         initialOffsetY = { fullHeight -> fullHeight }
                                     ) + fadeIn(),
@@ -342,19 +334,6 @@ class MainActivity : ComponentActivity() {
     }
 
     fun parseDeepLinkUriToNavKey(uri: Uri): NavKey? {
-        // Outify links
-        if(uri.scheme == "outify"){
-            return when (uri.host) {
-                "auth_complete" -> {
-                    Route.LibrespotAuthScreen(LibrespotAuthProgress.SUCCESS)
-                }
-                "auth_failed" -> {
-                    Route.LibrespotAuthScreen(LibrespotAuthProgress.FAILED)
-                }
-                else -> null
-            }
-        }
-
         // spotify:x:y (opaque)
         if (uri.scheme == "spotify" && uri.host == null) {
             val ssp = uri.schemeSpecificPart ?: return null

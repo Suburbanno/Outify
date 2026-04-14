@@ -2,6 +2,7 @@ package cc.tomko.outify.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.UserProfile
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -51,6 +53,7 @@ class HomeViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     private val userProfile: UserProfile,
     private val settingsRepository: SettingsRepository,
+    private val authManager: AuthManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -60,8 +63,16 @@ class HomeViewModel @Inject constructor(
     val username: Flow<String?> = settingsRepository.username
     val userImageUrl: Flow<String?> = settingsRepository.userImageUrl
 
+    private val _isPlaybackLoggedIn = MutableStateFlow(false)
+    val isPlaybackLoggedIn: StateFlow<Boolean> = _isPlaybackLoggedIn.asStateFlow()
+
     init {
+        _isPlaybackLoggedIn.value = authManager.hasCachedCredentials()
         loadData()
+    }
+
+    fun refreshPlaybackLoginState() {
+        _isPlaybackLoggedIn.value = authManager.hasCachedCredentials()
     }
 
     fun loadTrack(track: Track) {
