@@ -20,4 +20,9 @@ class AuthManager @Inject constructor() {
      * Returns URL of Spotify authorization page
      */
     external fun getAuthorizationURL(): String
+
+    /**
+     * Deletes the credentials cache file for Spirc
+     */
+    external fun logout(): Boolean
 }

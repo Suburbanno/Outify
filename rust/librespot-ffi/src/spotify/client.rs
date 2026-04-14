@@ -479,6 +479,23 @@ impl SpotifyClient {
         Ok(())
     }
 
+    pub fn remove_token(&self) -> Result<(), SpotifyApiError> {
+        let mut path = crate::FILES_DIR
+            .get()
+            .ok_or_else(|| SpotifyApiError::Generic("Android file path is not set!".to_string()))?
+            .clone();
+
+        path.push("account.json");
+
+        match std::fs::remove_file(path) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                error!("failed to remove token: {e}");
+                Err(SpotifyApiError::IO(e))
+            },
+        }
+    }
+
     /// Check if OAuth token exists (user is authenticated with Spotify)
     pub async fn is_oauth_authenticated(&self) -> bool {
         match self.load_token().await {

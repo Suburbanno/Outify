@@ -2,6 +2,7 @@ package cc.tomko.outify.ui.screens
 
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,8 +22,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.filled.NoAccounts
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.ContainedLoadingIndicator
@@ -81,6 +85,7 @@ fun SharedTransitionScope.SearchScreen(
 ) {
     val results by viewModel.results.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     val spirc = viewModel.spirc
 
     val listState = rememberLazyListState()
@@ -135,7 +140,43 @@ fun SharedTransitionScope.SearchScreen(
                 )
             }
 
-            if (filteredResults.isEmpty()) {
+            if(!isLoggedIn) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.NoAccounts,
+                                contentDescription = "Logged out",
+                                modifier = Modifier.size(64.dp)
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = "This feature is only available to logged in users",
+                                overflow = TextOverflow.Ellipsis,
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+
+                            Icon(
+                                Icons.AutoMirrored.Filled.Login,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .clickable {
+                                        backStack.add(Route.AccountsScreen)
+                                    }
+                            )
+                        }
+                    }
+                }
+            }
+
+            else if (filteredResults.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier.fillMaxSize(),

@@ -218,6 +218,14 @@ class SettingsRepository @Inject constructor(
         dataStore.edit { it[Keys.Interface.MONOCHROME_HEADERS] = enabled }
     }
 
+    suspend fun removeUserProfile() {
+        dataStore.edit { prefs ->
+            prefs.remove(Keys.USER_ID)
+            prefs.remove(Keys.USERNAME)
+            prefs.remove(Keys.USER_IMAGE_URL)
+        }
+    }
+
     suspend fun saveUserProfile(userId: String, username: String?, userImageUrl: String?) {
         dataStore.edit { prefs ->
             prefs[Keys.USER_ID] = userId

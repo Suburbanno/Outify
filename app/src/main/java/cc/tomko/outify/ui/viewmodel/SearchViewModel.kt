@@ -49,6 +49,9 @@ class SearchViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
+    private val _isLoggedIn = MutableStateFlow(false)
+    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
+
     val currentTrack: StateFlow<Track?> = playbackStateHolder.state
         .map { it.currentTrack }
         .distinctUntilChanged()
@@ -68,6 +71,8 @@ class SearchViewModel @Inject constructor(
         )
 
     init {
+        _isLoggedIn.value = spClient.isOAuthAuthenticated()
+
         viewModelScope.launch {
             queryFlow
                 .debounce(500)

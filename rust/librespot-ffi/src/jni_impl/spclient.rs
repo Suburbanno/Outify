@@ -194,21 +194,19 @@ pub extern "system" fn get_user_top(mut env: JNIEnv, _class: JClass, r#type: JSt
     let result = rt.block_on(async { client.get_top(request_type).await });
 
     match result {
-        Ok(result) => {
-            match serde_json::to_string(&result) {
-                Ok(json) => match env.new_string(&json) {
-                    Ok(r) => r.into_raw(),
-                    Err(e) => {
-                        error!("failed to create new jstring: {e}");
-                        std::ptr::null_mut()
-                    },
-                },
+        Ok(result) => match serde_json::to_string(&result) {
+            Ok(json) => match env.new_string(&json) {
+                Ok(r) => r.into_raw(),
                 Err(e) => {
-                    error!("failed to serialize result: {e}");
+                    error!("failed to create new jstring: {e}");
                     std::ptr::null_mut()
                 }
+            },
+            Err(e) => {
+                error!("failed to serialize result: {e}");
+                std::ptr::null_mut()
             }
-        }
+        },
         Err(e) => {
             error!("get_user_top failed: {e}");
             std::ptr::null_mut()
@@ -217,7 +215,11 @@ pub extern "system" fn get_user_top(mut env: JNIEnv, _class: JClass, r#type: JSt
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_transferPlaybackDevice")]
-pub extern "system" fn transfer_playback_device(mut env: JNIEnv, _class: JClass, device_id: JString) -> jboolean {
+pub extern "system" fn transfer_playback_device(
+    mut env: JNIEnv,
+    _class: JClass,
+    device_id: JString,
+) -> jboolean {
     let client = get_client();
 
     let device_id: String = match env.get_string(&device_id) {
@@ -239,9 +241,7 @@ pub extern "system" fn transfer_playback_device(mut env: JNIEnv, _class: JClass,
     let result = rt.block_on(async { client.transfer_playback(device_id).await });
 
     match result {
-        Ok(result) => {
-            result.is_success() as jboolean
-        }
+        Ok(result) => result.is_success() as jboolean,
         Err(e) => {
             error!("get_user_top failed: {e}");
             0
@@ -263,25 +263,23 @@ pub extern "system" fn get_devices(mut env: JNIEnv, _class: JClass) -> jstring {
 
     let result = rt.block_on(async { client.get_devices().await });
     match result {
-        Ok(devices) => {
-            match serde_json::to_string(&devices) {
-                Ok(json) => match env.new_string(&json) {
-                    Ok(r) => r.into_raw(),
-                    Err(e) => {
-                        error!("failed to create new jstring: {e}");
-                        std::ptr::null_mut()
-                    },
-                },
+        Ok(devices) => match serde_json::to_string(&devices) {
+            Ok(json) => match env.new_string(&json) {
+                Ok(r) => r.into_raw(),
                 Err(e) => {
-                    error!("failed to serialize result: {e}");
+                    error!("failed to create new jstring: {e}");
                     std::ptr::null_mut()
                 }
+            },
+            Err(e) => {
+                error!("failed to serialize result: {e}");
+                std::ptr::null_mut()
             }
         },
         Err(e) => {
             error!("failed to get devices: {e}");
             return std::ptr::null_mut();
-        },
+        }
     }
 }
 
@@ -800,5 +798,19 @@ pub extern "system" fn complete_oauth_flow(
             error!("OAuth flow completion failed: {e}");
             0
         }
+    }
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_logout")]
+pub extern "system" fn logout(_env: JNIEnv, _class: JClass) -> jboolean {
+    let client = get_client();
+    match client.remove_token() {
+        Ok(_) => {
+            info!("Spotify Client credentials deleted!");
+            1
+        },
+        Err(_) => {
+            0
+        },
     }
 }

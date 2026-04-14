@@ -1,9 +1,11 @@
+use std::path::PathBuf;
+
 use jni::{
     JNIEnv,
     objects::{JClass, JObject, JString},
     sys::{jboolean, jstring},
 };
-use librespot_core::authentication::Credentials;
+use librespot_core::{authentication::Credentials, cache::Cache, FileId};
 use oauth2::url::Url;
 
 use crate::session::with_session;
@@ -53,7 +55,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_AuthManager_getAuthorizationURL
         Ok(val) => val,
         Err(e) => {
             error!("Failed to get session: {}", e);
-            None 
+            None
         }
     };
 
@@ -136,4 +138,24 @@ pub extern "system" fn Java_cc_tomko_outify_core_AuthManager_handleOAuthCode(
     }
 
     1 as jboolean
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_AuthManager_logout")]
+pub extern "system" fn logout(_env: JNIEnv, _class: JClass) -> jboolean {
+    let mut os_files_dir: PathBuf = crate::FILES_DIR
+        .get()
+        .expect("Failed to get Files Dir!")
+        .to_path_buf();
+    os_files_dir.push("credentials.json");
+
+    match std::fs::remove_file(os_files_dir) {
+        Ok(_) => {
+            info!("Spirc login removed!");
+            1
+        },
+        Err(e) => {
+            error!("Failed to remove spirc login: {e}");
+            0
+        },
+    }
 }

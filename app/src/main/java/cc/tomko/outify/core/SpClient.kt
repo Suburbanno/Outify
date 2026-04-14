@@ -95,6 +95,11 @@ class SpClient @Inject constructor() {
      */
     external fun completeOAuthFlow(code: String): Boolean
 
+    /**
+     * Deletes the credentials file for Spotify Client
+     */
+    external fun logout(): Boolean
+
     fun checkAndHandleError(result: String, context: String = ""): String {
         if (result.startsWith("{")) {
             NativeErrorHandler.handleErrorJson(result, context)?.let {

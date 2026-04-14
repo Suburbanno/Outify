@@ -203,7 +203,9 @@ private fun NotAuthenticatedContent(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(
-                    onClick = { /* TODO: Navigate to Spotify connection */ },
+                    onClick = {
+                        onAccountClick()
+                    },
                     shape = RoundedCornerShape(50),
                 ) {
                     Text("Connect Spotify")
