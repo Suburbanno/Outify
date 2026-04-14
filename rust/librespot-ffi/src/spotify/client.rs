@@ -19,7 +19,9 @@ use crate::{
     session::with_session,
     spotify::{
         error::SpotifyApiError,
-        requests::{AddItemRequest, ArtistsOrTracksPage, RemoveItem, RemoveItemRequest, UserTopRequest},
+        requests::{
+            AddItemRequest, ArtistsOrTracksPage, DevicesResponse, RemoveItem, RemoveItemRequest, TransferPlaybackRequest, UserTopRequest
+        },
         search::extract_all_uris,
         token::{TokenResponse, WebApiToken},
     },
@@ -36,6 +38,7 @@ const SPOTIFY_OAUTH_SCOPES: &[&str] = &[
     "user-library-modify",
     "user-library-read",
     "user-follow-modify",
+    "user-read-playback-state",
     "playlist-modify-private",
     "playlist-modify-public",
 ];
@@ -262,6 +265,65 @@ impl SpotifyClient {
         Ok(res.status())
     }
 
+    pub async fn get_devices(&self) -> Result<DevicesResponse, SpotifyApiError> {
+        let token = match self.load_token().await {
+            Ok(o) => match o {
+                Some(t) => t,
+                None => {
+                    return Err(SpotifyApiError::Generic(
+                        "No account token present!".to_string(),
+                    ));
+                }
+            },
+            Err(e) => {
+                return Err(e);
+            }
+        };
+
+        let res = self
+            .client
+            .get(format!("{}/v1/me/player/devices", SPOTIFY_API_URL))
+            .bearer_auth(token.access_token)
+            .timeout(REQUEST_TIMEOUT)
+            .send()
+            .await?;
+
+        let data = res.json::<DevicesResponse>().await?;
+
+        Ok(data)
+    }
+
+    pub async fn transfer_playback(&self, device_id: String) -> Result<StatusCode, SpotifyApiError> {
+        let token = match self.load_token().await {
+            Ok(o) => match o {
+                Some(t) => t,
+                None => {
+                    return Err(SpotifyApiError::Generic(
+                        "No account token present!".to_string(),
+                    ));
+                }
+            },
+            Err(e) => {
+                return Err(e);
+            }
+        };
+
+        let body = TransferPlaybackRequest {
+            device_ids: vec![device_id]
+        };
+
+        let res = self
+            .client
+            .put(format!("{}/v1/me/player", SPOTIFY_API_URL))
+            .bearer_auth(token.access_token)
+            .timeout(REQUEST_TIMEOUT)
+            .json(&body)
+            .send()
+            .await?;
+
+        Ok(res.status())
+    }
+
     // Gets users top picks in given category.
     // Accepted: artists, tracks
     // Default: artists
@@ -292,8 +354,6 @@ impl SpotifyClient {
             .timeout(REQUEST_TIMEOUT)
             .send()
             .await?;
-
-        info!("responnse: {}", res.status().as_str());
 
         let data = res.json::<ArtistsOrTracksPage>().await?;
 

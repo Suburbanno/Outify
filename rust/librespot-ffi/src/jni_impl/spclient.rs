@@ -216,6 +216,75 @@ pub extern "system" fn get_user_top(mut env: JNIEnv, _class: JClass, r#type: JSt
     }
 }
 
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_transferPlaybackDevice")]
+pub extern "system" fn transfer_playback_device(mut env: JNIEnv, _class: JClass, device_id: JString) -> jboolean {
+    let client = get_client();
+
+    let device_id: String = match env.get_string(&device_id) {
+        Ok(t) => t.into(),
+        Err(e) => {
+            error!("failed to get device id: {e}");
+            return 0;
+        }
+    };
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return 0;
+        }
+    };
+
+    let result = rt.block_on(async { client.transfer_playback(device_id).await });
+
+    match result {
+        Ok(result) => {
+            result.is_success() as jboolean
+        }
+        Err(e) => {
+            error!("get_user_top failed: {e}");
+            0
+        }
+    }
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getDevices")]
+pub extern "system" fn get_devices(mut env: JNIEnv, _class: JClass) -> jstring {
+    let client = get_client();
+
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let result = rt.block_on(async { client.get_devices().await });
+    match result {
+        Ok(devices) => {
+            match serde_json::to_string(&devices) {
+                Ok(json) => match env.new_string(&json) {
+                    Ok(r) => r.into_raw(),
+                    Err(e) => {
+                        error!("failed to create new jstring: {e}");
+                        std::ptr::null_mut()
+                    },
+                },
+                Err(e) => {
+                    error!("failed to serialize result: {e}");
+                    std::ptr::null_mut()
+                }
+            }
+        },
+        Err(e) => {
+            error!("failed to get devices: {e}");
+            return std::ptr::null_mut();
+        },
+    }
+}
+
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_isOAuthAuthenticated")]
 pub extern "system" fn is_oauth_authenticated(_env: JNIEnv, _class: JClass) -> jboolean {
     let client = get_client();

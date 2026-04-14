@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.core.model.Track
@@ -11,9 +12,11 @@ import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.components.bottomsheet.AddToPlaylistBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.AuthResultBottomSheet
+import cc.tomko.outify.ui.components.bottomsheet.PlaybackDevicesBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.TrackInfoBottomSheet
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.viewmodel.bottomsheet.AddToPlaylistViewModel
+import cc.tomko.outify.ui.viewmodel.bottomsheet.PlaybackDevicesViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -24,6 +27,7 @@ fun GlobalPopupHost(
     toggleLike: (Track) -> Unit,
 
     addToPlaylistViewModel: AddToPlaylistViewModel,
+    playbackDevicesViewModel:  PlaybackDevicesViewModel,
 ) {
     val popups by GlobalPopupController.popups.collectAsState()
     val scope = rememberCoroutineScope()
@@ -80,6 +84,15 @@ fun GlobalPopupHost(
                 AddToPlaylistBottomSheet(
                     viewModel = addToPlaylistViewModel,
                     tracks = popup.tracks,
+                    onDismiss = {
+                        GlobalPopupController.dismiss(popup.id)
+                    }
+                )
+            }
+
+            is PopupSpec.PlaybackDevices -> {
+                PlaybackDevicesBottomSheet(
+                    viewModel = playbackDevicesViewModel,
                     onDismiss = {
                         GlobalPopupController.dismiss(popup.id)
                     }

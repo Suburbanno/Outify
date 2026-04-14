@@ -83,7 +83,7 @@ class HomeViewModel @Inject constructor(
                     return@launch
                 }
 
-                val topArtistsJson = spClient.getUserTop("artists")
+                val topArtistsJson = spClient.getUserTop("artists") ?: ""
                 val topArtistsError = NativeErrorHandler.handleErrorJson(topArtistsJson, "top artists")
                 if (topArtistsError != null) {
                     _uiState.value = HomeUiState.NotAuthenticated
@@ -91,7 +91,7 @@ class HomeViewModel @Inject constructor(
                     return@launch
                 }
 
-                val topTracksJson = spClient.getUserTop("tracks")
+                val topTracksJson = spClient.getUserTop("tracks") ?: ""
                 val topTracksError = NativeErrorHandler.handleErrorJson(topTracksJson, "top tracks")
                 if (topTracksError != null) {
                     _uiState.value = HomeUiState.NotAuthenticated

@@ -36,7 +36,18 @@ class SpClient @Inject constructor() {
      * Default type = artists
      * Possible types: artists, tracks
      */
-    external fun getUserTop(type: String? = null): String
+    external fun getUserTop(type: String? = null): String?
+
+    /**
+     * Gets the available devices to stream playback from.
+     * In format of [cc.tomko.outify.core.model.DevicesResponse]
+     */
+    external fun getDevices(): String?
+
+    /**
+     * Transfers current playback device to the one with given ID
+     */
+    external fun transferPlaybackDevice(deviceId: String): Boolean
 
     /**
      * Check if user has authenticated with Spotify via OAuth.

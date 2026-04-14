@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.ui.GlobalPopupController
+import cc.tomko.outify.ui.PopupSpec
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -54,6 +56,10 @@ class MiniPlayerViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = false
         )
+
+    fun openDevices() {
+        GlobalPopupController.show(PopupSpec.PlaybackDevices())
+    }
 
     fun isBuffering(): Flow<Boolean> =
         playbackStateHolder.state

@@ -35,6 +35,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -220,8 +221,11 @@ fun SharedTransitionScope.MiniPlayer(
                     }
 
                     if (isBuffering) {
-                        CircularWavyProgressIndicator(
-                            modifier = Modifier.align(Alignment.Center)
+                        LoadingIndicator(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .align(Alignment.Center),
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
@@ -265,18 +269,14 @@ fun SharedTransitionScope.MiniPlayer(
                     }
                 }
 
-                if(!isActiveDevice) {
-                    Icon(
-                        Icons.Default.Speaker,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .clickable {
-                                if(Spirc.activate()) {
-                                    Spirc.transfer()
-                                }
-                            }
-                    )
-                }
+                Icon(
+                    Icons.Default.Speaker,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .clickable {
+                            viewModel.openDevices()
+                        }
+                )
 
                 IconButton(onClick = showQueue) {
                     Icon(Icons.Default.Menu, contentDescription = "See queue")

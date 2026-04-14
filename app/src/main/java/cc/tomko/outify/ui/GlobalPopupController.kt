@@ -48,4 +48,8 @@ sealed class PopupSpec(
         val tracks: List<Track>,
         override val id: String = UUID.randomUUID().toString(),
     ) : PopupSpec(id)
+
+    data class PlaybackDevices(
+        override val id: String = UUID.randomUUID().toString(),
+    ) : PopupSpec(id)
 }
