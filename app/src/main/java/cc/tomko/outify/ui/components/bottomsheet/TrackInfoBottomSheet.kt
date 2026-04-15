@@ -1,8 +1,10 @@
 package cc.tomko.outify.ui.components.bottomsheet
 
 import android.content.Intent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,32 +14,42 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.model.Artist
@@ -48,7 +60,7 @@ import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TrackInfoBottomSheet(
     track: Track,
@@ -60,9 +72,11 @@ fun TrackInfoBottomSheet(
     onOpenAlbum: (() -> Unit)? = null,
     onOpenArtist: (() -> Unit)? = null,
     onAddToQueue: (() -> Unit)? = null,
-    onSaveToPlaylist: (() -> Unit)? = null,
+    onPlayNext: (() -> Unit)? = null,
+    onAddToPlaylist: (() -> Unit)? = null,
     onToggleLike: (() -> Unit)? = null,
     onStartRadio: (() -> Unit)? = null,
+    onOpenRadio: (() -> Unit)? = null,
     onShare: (() -> Unit)? = null,
     onCopyUri: (() -> Unit)? = null,
     onScrollToLiked: (() -> Unit)? = null,
@@ -95,8 +109,9 @@ fun TrackInfoBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Header: artwork + title + artists + share/copy icons
             Row(
@@ -128,7 +143,8 @@ fun TrackInfoBottomSheet(
                         text = track.name,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        maxLines = 2
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
 
                     val artists = track.artists
@@ -137,12 +153,13 @@ fun TrackInfoBottomSheet(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         artists.forEachIndexed { index, artist ->
-
                             Text(
                                 text = artist.name,
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     color = MaterialTheme.colorScheme.primary
                                 ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.clickable {
                                     onArtistClick?.invoke(artist)
                                     onDismiss()
@@ -176,114 +193,209 @@ fun TrackInfoBottomSheet(
                 }
             }
 
-            // album / artist / queue
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            // Open section
+            Text(
+                text = "Open",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+
+            ActionCard(
+                icon = Icons.Default.Album,
+                title = "Album",
+                subtitle = track.album?.name ?: "",
+                onClick = {
+                    onOpenAlbum?.invoke()
+                    onDismiss()
+                }
+            )
+
+            ActionCard(
+                icon = Icons.Default.Person,
+                title = "Artist",
+                subtitle = track.artists.joinToString { it.name },
+                onClick = {
+                    onOpenArtist?.invoke()
+                    onDismiss()
+                }
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            // Queue section
+            Text(
+                text = "Queue",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Open album
-                FilledTonalButton(
-                    onClick = {
-                        onOpenAlbum?.invoke()
-                        onDismiss()
-                    },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Icon(Icons.Default.Queue, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Open album")
-                }
-
-                OutlinedButton(
-                    onClick = {
-                        onOpenArtist?.invoke()
-                        onDismiss()
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text("Open artist")
-                }
-            }
-
-            // add/save/like/radio
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                FilledTonalButton(
+                ActionCard(
+                    icon = Icons.Default.Queue,
+                    title = "Add to Queue",
+                    subtitle = "End of queue",
                     onClick = {
                         onAddToQueue?.invoke()
                         onDismiss()
                     },
                     modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Queue, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Add to queue")
-                }
+                )
 
-                FilledTonalButton(
+                ActionCard(
+                    icon = Icons.AutoMirrored.Filled.PlaylistAdd,
+                    title = "Play Next",
+                    subtitle = "Up next",
                     onClick = {
-                        onSaveToPlaylist?.invoke()
+                        onPlayNext?.invoke()
                         onDismiss()
                     },
                     modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.PlaylistAdd, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Save")
-                }
+                )
             }
 
-            // like / radio
+            ActionCard(
+                icon = Icons.AutoMirrored.Filled.PlaylistAdd,
+                title = "Add to Playlist",
+                subtitle = "Save to a playlist",
+                onClick = {
+                    onAddToPlaylist?.invoke()
+                    onDismiss()
+                }
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            // Playback section
+            Text(
+                text = "Playback",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                ElevatedButton(
+                ActionCard(
+                    icon = Icons.Default.Favorite,
+                    title = "Like",
+                    subtitle = if (likedTrackIndex != null && likedTrackIndex >= 0) "In liked songs" else "Add to liked",
                     onClick = {
                         onToggleLike?.invoke()
                         onDismiss()
                     },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Favorite, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Like")
-                }
+                    modifier = Modifier.weight(1f),
+                    isHighlighted = true,
+                    highlightColor = MaterialTheme.colorScheme.tertiaryContainer
+                )
 
-                OutlinedButton(
+                ActionCard(
+                    icon = Icons.Default.Radio,
+                    title = "Start Radio",
+                    subtitle = "Play similar tracks",
                     onClick = {
                         onStartRadio?.invoke()
                         onDismiss()
                     },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Radio, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Start radio")
-                }
+                    modifier = Modifier.weight(1f),
+                    isHighlighted = true,
+                    highlightColor = MaterialTheme.colorScheme.primaryContainer
+                )
             }
+
+            ActionCard(
+                icon = Icons.Default.Radio,
+                title = "Open Radio",
+                subtitle = "View radio playlist",
+                onClick = {
+                    onOpenRadio?.invoke()
+                    onDismiss()
+                }
+            )
 
             // Show liked track index if available
             if (likedTrackIndex != null && likedTrackIndex >= 0) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = {
-                            onScrollToLiked?.invoke()
-                            onDismiss()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("In liked: #${likedTrackIndex + 1}")
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                ActionCard(
+                    icon = Icons.Default.Favorite,
+                    title = "In Liked Songs",
+                    subtitle = "Position #${likedTrackIndex + 1}",
+                    onClick = {
+                        onScrollToLiked?.invoke()
+                        onDismiss()
                     }
-                }
+                )
             }
 
             Spacer(modifier = Modifier.height(6.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun ActionCard(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isHighlighted: Boolean = false,
+    highlightColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.surfaceVariant
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = highlightColor.copy(alpha = 0.5f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .clip(MaterialShapes.Cookie9Sided.toShape())
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .padding(10.dp)
+                    .size(20.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }

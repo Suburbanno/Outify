@@ -251,7 +251,13 @@ class MainActivity : ComponentActivity() {
                                 GlobalPopupHost(
                                     backStack = backStack,
                                     addToQueue = { viewModel.addToQueue(it.uri) },
+                                    playNext = { viewModel.playNext(it.uri) },
                                     startRadio = { viewModel.startRadio(it) },
+                                    openRadio = {
+                                        val uri = viewModel.getRadioUri(it) ?: return@GlobalPopupHost
+                                        backStack.add(Route.PlaylistScreen(uri))
+                                    },
+                                    addToPlaylist = { viewModel.addToPlaylist(it) },
                                     toggleLike = { viewModel.favorite(it.uri) },
 
                                     addToPlaylistViewModel = addToPlaylistViewModel,

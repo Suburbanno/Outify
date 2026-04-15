@@ -23,7 +23,10 @@ import kotlinx.coroutines.launch
 fun GlobalPopupHost(
     backStack: NavBackStack<NavKey>,
     addToQueue: (Track) -> Unit,
+    playNext: (Track) -> Unit,
     startRadio: (Track) -> Unit,
+    openRadio: (Track) -> Unit,
+    addToPlaylist: (Track) -> Unit,
     toggleLike: (Track) -> Unit,
 
     addToPlaylistViewModel: AddToPlaylistViewModel,
@@ -56,9 +59,11 @@ fun GlobalPopupHost(
                         popup.action?.invoke()
                     },
                     onAddToQueue = { addToQueue(popup.track) },
-                    onSaveToPlaylist = {},
+                    onPlayNext = { playNext(popup.track) },
+                    onAddToPlaylist = { addToPlaylist(popup.track) },
                     onToggleLike = { toggleLike(popup.track) },
                     onStartRadio = { startRadio(popup.track) },
+                    onOpenRadio = { openRadio(popup.track) },
                     onScrollToLiked = {
                         scope.launch {
                             backStack.add(Route.LikedScreen(scrollToIndex = popup.likedTrackIndex ?: -1))

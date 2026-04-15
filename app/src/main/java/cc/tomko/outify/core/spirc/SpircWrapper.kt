@@ -43,7 +43,7 @@ class SpircWrapper @Inject constructor(
     var isUsable = false
 
     override fun startRadio(trackUri: OutifyUri, shuffle: Boolean): Boolean {
-        val jsonResult = spClient.getRadioForTrack(trackUri.toUriString())
+        val jsonResult = spClient.getRadioForTrack(trackUri.toUriString()) ?: return false
         val result: RadioResult = json.decodeFromString(jsonResult)
 
         if(result.total == 0 || result.mediaItems.isEmpty()){

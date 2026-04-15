@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material3.Icon
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.core.RadioResult
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.model.Track
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
 @HiltViewModel
@@ -36,6 +38,7 @@ class MainViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val spClient: SpClient,
     private val likedRepository: LikedRepository,
+    private val json: Json,
 ): ViewModel() {
     val swipeSettings: Flow<List<GestureSetting>> =
         settingsRepository.interfaceSettings.map { it.gestureSettings }
@@ -86,6 +89,17 @@ class MainViewModel @Inject constructor(
         spirc.startRadio(track.toSpotifyUri(), false)
         playbackStateHolder.setTrack(track)
         InAppNotificationController.show("Radio started", { Icon(Icons.Default.Radio, contentDescription = "Radio started") }, 1000L)
+    }
+
+    fun getRadioUri(track: Track): String? {
+        val jsonResult = spClient.getRadioForTrack(track.uri) ?: return null
+        val result: RadioResult = json.decodeFromString(jsonResult)
+
+        if(result.total == 0 || result.mediaItems.isEmpty()){
+            return null
+        }
+
+        return result.mediaItems.first().uri
     }
 
     fun addToPlaylist(track: Track) {
