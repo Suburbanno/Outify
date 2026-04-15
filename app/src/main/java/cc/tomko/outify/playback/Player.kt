@@ -143,22 +143,32 @@ class Player @Inject constructor(
 
     override fun getState(): State {
         val ps = stateHolder.state.value
-        val track = ps.currentTrack
+        val track = ps.currentTrack ?: return State.Builder()
+            .setPlaybackState(STATE_IDLE)
+            .setAvailableCommands(determineCommands(false))
+            .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
+            .setPlaylist(emptyList())
+            .build()
 
+        val mediaMetadata = MediaMetadata.Builder()
+            .setTitle(track.name)
+            .setDisplayTitle(track.name)
+            .setArtist(track.artists.joinToString { it.name })
+            .setAlbumTitle(track.album?.name)
+            .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+            .apply {
+                currentArtworkUri?.let { setArtworkUri(it.toUri()) }
+                currentArtworkBytes?.let { bytes ->
+                    setArtworkData(bytes, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
+                }
+            }
+            .build()
 
-        if (track == null) {
-            return State.Builder()
-                .setPlaybackState(STATE_IDLE)
-                .setAvailableCommands(determineCommands(false))
-                .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
-                .setPlaylist(emptyList())
-                .build()
-        }
-
-        val mediaItem = track.toMediaItem(
-            artworkBytes = currentArtworkBytes,
-            artworkUri = currentArtworkUri
-        )
+        val mediaItem = MediaItem.Builder()
+            .setMediaId(track.id)
+            .setUri(track.uri)
+            .setMediaMetadata(mediaMetadata)
+            .build()
 
         val playlist = listOf(
             MediaItemData.Builder(track.id)
@@ -189,7 +199,6 @@ class Player @Inject constructor(
             .build()
     }
 
-    // Instead of overriding play() you implement the handler:
     override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
         // TODO: More robust handling?
         if (playWhenReady) {
@@ -197,7 +206,6 @@ class Player @Inject constructor(
         } else {
             spirc.playerPause()
         }
-        // return a completed future - if your controller needs async work, return a future that completes later
         return com.google.common.util.concurrent.Futures.immediateVoidFuture()
     }
 
@@ -253,6 +261,7 @@ class Player @Inject constructor(
         val builder = Player.Commands.Builder()
             .add(COMMAND_PLAY_PAUSE)
             .add(COMMAND_GET_CURRENT_MEDIA_ITEM)
+            .add(COMMAND_GET_METADATA)
 
         if (hasMedia) {
             builder.addAll(
@@ -267,28 +276,4 @@ class Player @Inject constructor(
 
         return builder.build()
     }
-}
-fun Track.toMediaItem(
-    artworkBytes: ByteArray? = null,
-    artworkUri: String? = null
-): MediaItem {
-    val metadataBuilder = MediaMetadata.Builder()
-        .setTitle(name)
-        .setDisplayTitle(name)
-        .setArtist(artists.joinToString { it.name })
-        .setAlbumTitle(album?.name)
-        .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
-        .setTotalTrackCount(album?.tracks?.size ?: 0)
-
-    artworkUri?.let { metadataBuilder.setArtworkUri(it.toUri()) }
-
-    artworkBytes?.let {
-        metadataBuilder.setArtworkData(it, MediaMetadata.PICTURE_TYPE_FRONT_COVER)
-    }
-
-    return MediaItem.Builder()
-        .setMediaId(id)
-        .setUri(uri)
-        .setMediaMetadata(metadataBuilder.build())
-        .build()
 }
