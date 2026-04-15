@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material.icons.filled.Radio
@@ -67,6 +68,7 @@ fun TrackInfoBottomSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     likedTrackIndex: Int? = null,
+    isLiked: Boolean = false,
     onArtworkClick: (() -> Unit)? = null,
     onArtistClick: ((Artist) -> Unit)? = null,
     onOpenAlbum: (() -> Unit)? = null,
@@ -176,20 +178,35 @@ fun TrackInfoBottomSheet(
                     }
                 }
 
-                // Share icon
-                IconButton(
-                    onClick = { onShare?.invoke() ?: defaultShare() },
-                    modifier = Modifier.size(44.dp)
-                ) {
-                    Icon(Icons.Default.Share, contentDescription = "Share")
-                }
+                // Header icons: like, share, copy
+                Row {
+                    IconButton(
+                        onClick = {
+                            onToggleLike?.invoke()
+                            onDismiss()
+                        },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                            contentDescription = "Like",
+                            tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
 
-                // Copy icon
-                IconButton(
-                    onClick = { onCopyUri?.invoke() ?: defaultCopy() },
-                    modifier = Modifier.size(44.dp)
-                ) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = "Copy link")
+                    IconButton(
+                        onClick = { onShare?.invoke() ?: defaultShare() },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = "Share")
+                    }
+
+                    IconButton(
+                        onClick = { onCopyUri?.invoke() ?: defaultCopy() },
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy link")
+                    }
                 }
             }
 

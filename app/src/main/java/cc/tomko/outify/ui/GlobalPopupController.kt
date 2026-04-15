@@ -33,6 +33,7 @@ sealed class PopupSpec(
         val track: Track,
         val action: (() -> Unit)? = null,
         val likedTrackIndex: Int? = null,
+        val isLiked: Boolean = false,
         override val id: String = UUID.randomUUID().toString(),
     ) : PopupSpec(id)
 

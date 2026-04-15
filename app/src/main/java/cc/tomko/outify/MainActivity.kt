@@ -305,11 +305,12 @@ class MainActivity : ComponentActivity() {
                                                     backStack.add(Route.ArtistScreen(it.uri))
                                                 },
                                                 onMoreOptions = {
+                                                    val isLiked = playerViewModel.isLiked.value
                                                     GlobalPopupController.show(PopupSpec.TrackInfo(currentTrack!!, action = {
                                                         scope.launch {
                                                             playerSheetState.collapse()
                                                         }
-                                                    }))
+                                                    }, isLiked = isLiked))
                                                 }
                                             )
                                         }

@@ -153,7 +153,9 @@ class MainViewModel @Inject constructor(
                 -1
             }
 
-            GlobalPopupController.show(PopupSpec.TrackInfo(track, likedTrackIndex =  if (likedIndex >= 0) likedIndex else null ))
+            val isLiked = likedRepository.isLiked(track.id)
+
+            GlobalPopupController.show(PopupSpec.TrackInfo(track, likedTrackIndex = if (likedIndex >= 0) likedIndex else null, isLiked = isLiked))
         }
     }
 }

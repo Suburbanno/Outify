@@ -41,6 +41,7 @@ fun GlobalPopupHost(
                 TrackInfoBottomSheet(
                     track = popup.track,
                     likedTrackIndex = popup.likedTrackIndex,
+                    isLiked = popup.isLiked,
                     onDismiss = { GlobalPopupController.dismiss(popup.id) },
                     onArtworkClick = {
                         backStack.add(Route.TrackScreen(popup.track.uri))
