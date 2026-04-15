@@ -34,9 +34,9 @@ Contact us through Github:
 - [x] starting radio
 - [x] playlist support
     - [x] playing and viewing playlist
-    - [ ] modifying playlist
-- [ ] interacting with spotify account
-    - [ ] login to Spotify Web API
+    - [x] modifying playlist
+- [x] interacting with spotify account
+    - [x] login to Spotify Web API
 - [ ] jams
 - [ ] offline support
 - [x] media notification
