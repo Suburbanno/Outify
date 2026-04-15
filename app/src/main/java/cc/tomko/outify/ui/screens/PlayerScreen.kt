@@ -287,7 +287,7 @@ fun PlayerScreen(
             modifier = Modifier.align(Alignment.BottomCenter),
             isFavorite = isFavorite,
             onFavoriteToggle = {
-                // TODO: Favorite
+                viewModel.toggleFavorite()
             },
             onMoreOptions = onMoreOptions
         )

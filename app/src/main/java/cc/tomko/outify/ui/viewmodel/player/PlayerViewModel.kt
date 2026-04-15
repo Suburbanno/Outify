@@ -2,12 +2,14 @@ package cc.tomko.outify.ui.viewmodel.player
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.SyncedLyric
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.dao.LikedDao
+import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.ui.model.player.PlayerAction
@@ -43,6 +45,8 @@ class PlayerViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     private val settingsRepository: SettingsRepository,
     private val likedDao: LikedDao,
+    private val likedRepository: LikedRepository,
+    private val spClient: SpClient,
 ): ViewModel() {
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
@@ -146,6 +150,33 @@ class PlayerViewModel @Inject constructor(
                 viewModelScope.launch {
                     settingsRepository.setShuffle(newValue)
                     spirc.shuffle(newValue)
+                }
+            }
+        }
+    }
+
+    fun toggleFavorite() {
+        val trackId = currentTrack.value?.id ?: return
+        viewModelScope.launch {
+            val wasLiked = likedRepository.isLiked(trackId)
+
+            if (wasLiked) {
+                likedRepository.removeLiked(trackId)
+            } else {
+                likedRepository.addLiked(trackId)
+            }
+
+            val success = if (wasLiked) {
+                spClient.deleteItems(arrayOf("spotify:track:$trackId"))
+            } else {
+                spClient.saveItems(arrayOf("spotify:track:$trackId"))
+            }
+
+            if (!success) {
+                if (wasLiked) {
+                    likedRepository.addLiked(trackId)
+                } else {
+                    likedRepository.removeLiked(trackId)
                 }
             }
         }
