@@ -56,6 +56,8 @@ class PlaybackService : MediaLibraryService(),
         const val ALBUM = "album"
         const val PLAYLIST = "playlist"
         const val SEARCH = "search"
+        const val LIKED = "liked"
+        const val RECENT = "recent"
 
         const val NOTIFICATION_ID = 4894
         const val CHANNEL_ID = "outify_channel_01"
