@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.filled.Healing
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
@@ -65,6 +66,19 @@ fun PlaybackSettingScreen(
                         },
                         onCheckedChange = { viewModel.setNormalizeAudio(it) },
                         isChecked = settings.normalizeAudio
+                    )
+
+                    SwitchPreferenceEntry(
+                        title = { Text("Keepalive") },
+                        description = "Allow resurrection from notification",
+                        icon = {
+                            Icon(
+                                Icons.Default.Healing,
+                                contentDescription = null
+                            )
+                        },
+                        onCheckedChange = { viewModel.setKeepAlive(it) },
+                        isChecked = settings.keepalive
                     )
                 }
             }

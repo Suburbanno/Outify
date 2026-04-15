@@ -28,4 +28,10 @@ class PlaybackSettingViewModel @Inject constructor(
             settingsRepository.setNormalizePlayback(enabled)
         }
     }
+
+    fun setKeepAlive(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setKeepalive(enabled)
+        }
+    }
 }

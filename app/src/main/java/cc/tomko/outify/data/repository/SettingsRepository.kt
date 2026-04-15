@@ -28,6 +28,10 @@ class SettingsRepository @Inject constructor(
         val GAPLESS = booleanPreferencesKey("gapless")
         val NORMALIZE_AUDIO = booleanPreferencesKey("normalized_audio")
 
+        /**
+         * aka session resurrection
+         */
+        val KEEPALIVE = booleanPreferencesKey("keepalive")
         val USER_ID = stringPreferencesKey("user_id")
         val USERNAME = stringPreferencesKey("username")
         val USER_IMAGE_URL = stringPreferencesKey("user_image_url")
@@ -96,7 +100,8 @@ class SettingsRepository @Inject constructor(
     val playbackSettings: Flow<PlaybackSettings> =  dataStore.data.map { prefs ->
         PlaybackSettings(
             gapless = prefs[Keys.GAPLESS] ?: false,
-            normalizeAudio = prefs[Keys.NORMALIZE_AUDIO] ?: false
+            normalizeAudio = prefs[Keys.NORMALIZE_AUDIO] ?: false,
+            keepalive = prefs[Keys.KEEPALIVE] ?: true,
         )
     }
 
@@ -150,6 +155,10 @@ class SettingsRepository @Inject constructor(
         it[Keys.NORMALIZE_AUDIO] ?: false
     }
 
+    val keepalive = dataStore.data.map {
+        it[Keys.KEEPALIVE] ?: false
+    }
+
     val showLyricsByDefault = dataStore.data.map {
         it[Keys.Lyrics.SHOW_LYRICS_ALWAYS] ?: true
     }
@@ -172,6 +181,10 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setNormalizePlayback(enabled: Boolean) {
         dataStore.edit { it[Keys.NORMALIZE_AUDIO] = enabled }
+    }
+
+    suspend fun setKeepalive(enabled: Boolean) {
+        dataStore.edit { it[Keys.KEEPALIVE] = enabled }
     }
 
     suspend fun setGesturesEnabled(enabled: Boolean) {
@@ -292,5 +305,6 @@ data class InterfaceSettings(
 
 data class PlaybackSettings(
     val gapless: Boolean = false,
-    val normalizeAudio: Boolean = false
+    val normalizeAudio: Boolean = false,
+    val keepalive: Boolean = true,
 )

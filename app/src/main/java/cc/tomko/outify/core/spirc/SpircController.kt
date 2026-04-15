@@ -38,8 +38,8 @@ class SpircController @Inject constructor(
     }
 
     private suspend fun initializeSpirc(){
-        val gapless = settingsRepository.dataStore.data.map { it[SettingsRepository.Keys.GAPLESS] ?: false }.first()
-        val normalise = settingsRepository.dataStore.data.map { it[SettingsRepository.Keys.NORMALIZE_AUDIO] ?: false }.first()
+        val gapless = settingsRepository.gaplessPlayback.first()
+        val normalise = settingsRepository.normalizePlayback.first()
 
         Spirc.initializeSpirc(object : SpircInitializationCallback {
             override fun initialized() {

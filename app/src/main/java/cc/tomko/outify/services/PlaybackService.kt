@@ -38,6 +38,7 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import javax.inject.Singleton
@@ -107,6 +108,7 @@ class PlaybackService : MediaLibraryService(),
     lateinit var likedDao: LikedDao
 
     private var mediaLibrarySession: MediaLibrarySession? = null
+    private var keepAlive: Boolean = true
     private val binder = MusicBinder()
 
     override fun onGetSession(controller: MediaSession.ControllerInfo): MediaLibrarySession? {
@@ -152,6 +154,10 @@ class PlaybackService : MediaLibraryService(),
                     println("new track: ${track?.uri}")
                     updateNotification()
                 }
+
+            settings.keepalive.collect {
+                keepAlive = it
+            }
         }
 
         setMediaNotificationProvider(
@@ -263,7 +269,9 @@ class PlaybackService : MediaLibraryService(),
     }
 
     override fun onUpdateNotification(session: MediaSession, startInForegroundRequired: Boolean) {
-        // TODO: Add keepalive preference
+        if(!keepAlive)
+            return
+
         if(player.isPlaying) {
             super.onUpdateNotification(session, startInForegroundRequired)
         }
