@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.components.bottomsheet
 
+import android.content.ClipData
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,16 +43,20 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.core.model.Artist
 import cc.tomko.outify.core.model.CoverSize
@@ -60,6 +65,7 @@ import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.notifications.InAppNotificationController
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -83,8 +89,9 @@ fun TrackInfoBottomSheet(
     onCopyUri: (() -> Unit)? = null,
     onScrollToLiked: (() -> Unit)? = null,
 ) {
+    val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
+    val clipboardManager = LocalClipboard.current
 
     val imageSize = 96.dp
 
@@ -99,8 +106,11 @@ fun TrackInfoBottomSheet(
     }
 
     val defaultCopy: () -> Unit = {
-        clipboardManager.setText(AnnotatedString("https://open.spotify.com/track/${track.id}"))
-        InAppNotificationController.show("Copied to clipboard")
+        scope.launch {
+            val clipData = ClipData.newPlainText("${track.name} - Outify", "https://open.spotify.com/track/${track.id}")
+            clipboardManager.setClipEntry(ClipEntry(clipData))
+            InAppNotificationController.show("Copied to clipboard")
+        }
     }
 
     ModalBottomSheet(
