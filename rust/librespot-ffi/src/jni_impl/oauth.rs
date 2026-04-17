@@ -76,21 +76,18 @@ pub extern "system" fn Java_cc_tomko_outify_core_AuthManager_getAuthorizationURL
     }
 }
 
-// Called after OAuth flow.
-// Caches the credentials.
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_AuthManager_handleOAuthCode(
     mut env: JNIEnv,
     _this: JObject,
     code: JString,
     _state: JString,
-) -> jboolean {
-    // Carefully extract the code string once so we don't hold JNI references across await points.
+) -> jstring {
     let code: String = match env.get_string(&code) {
         Ok(js) => js.into(),
         Err(e) => {
             error!("JNI failed to read code: {}", e);
-            return false as jboolean;
+            return make_error_json(&env, "authentication", "Failed to read OAuth code");
         }
     };
 
@@ -98,15 +95,15 @@ pub extern "system" fn Java_cc_tomko_outify_core_AuthManager_handleOAuthCode(
         Some(rt) => rt,
         None => {
             error!("JNI: Tokio runtime is not initialized!");
-            return false as jboolean;
+            return make_error_json(&env, "unknown", "Tokio runtime not initialized");
         }
     };
 
     let session_mutex = match crate::oauth::OAUTH_SESSION.get() {
         Some(m) => m,
         None => {
-            error!("OAuth Sessio is not initialized!");
-            return false as jboolean;
+            error!("OAuth Session is not initialized!");
+            return make_error_json(&env, "authentication", "OAuth session not initialized");
         }
     };
 
@@ -117,27 +114,53 @@ pub extern "system" fn Java_cc_tomko_outify_core_AuthManager_handleOAuthCode(
         Ok(tok) => tok,
         Err(e) => {
             error!("OAuth error: {}", e);
-            return false as jboolean;
+            let err_type = classify_oauth_error(&e);
+            return make_error_json(&env, err_type, &e.to_string());
         }
     };
 
-    // Saving credentials if session cache exists
     if let Err(e) = rt.block_on(async {
         let guard = session_mutex.lock().await;
-
         if let Some(cache) = guard.session.cache() {
             let cred = Credentials::with_access_token(&token.access_token);
             cache.save_credentials(&cred);
         } else {
             warn!("Session has no cache, cannot persist credentials");
         }
-
         Ok::<(), ()>(())
     }) {
         warn!("Could not save credentials to cache: {:?}", e);
     }
 
-    1 as jboolean
+    make_success_json(&env)
+}
+
+fn make_error_json(env: &JNIEnv, error_type: &str, message: &str) -> jstring {
+    let json = format!(r#"{{"error":{{"type":"{}","message":"{}"}}}}"#, error_type, message);
+    match env.new_string(json) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+fn make_success_json(env: &JNIEnv) -> jstring {
+    match env.new_string(r#"{"success":true}"#) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+fn classify_oauth_error(err: &librespot_core::Error) -> &'static str {
+    let msg = err.to_string().to_lowercase();
+    if msg.contains("unavailable") || msg.contains("service") {
+        "service_unavailable"
+    } else if msg.contains("auth") || msg.contains("token") || msg.contains("credential") || msg.contains("unauthorized") {
+        "authentication_error"
+    } else if msg.contains("rate") {
+        "rate_limit"
+    } else {
+        "unknown"
+    }
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_AuthManager_logout")]

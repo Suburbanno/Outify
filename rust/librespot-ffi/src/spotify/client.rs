@@ -16,15 +16,14 @@ use std::{
 use tokio::sync::RwLock;
 
 use crate::{
-    session::with_session,
-    spotify::{
+    metadata::user::UserJson, session::with_session, spotify::{
         error::SpotifyApiError,
         requests::{
-            AddItemRequest, ArtistsOrTracksPage, DevicesResponse, RemoveItem, RemoveItemRequest, TransferPlaybackRequest, UserTopRequest
+            AddItemRequest, ArtistsOrTracksPage, CurrentUserResponse, DevicesResponse, RemoveItem, RemoveItemRequest, TransferPlaybackRequest, UserTopRequest
         },
         search::extract_all_uris,
         token::{TokenResponse, WebApiToken},
-    },
+    }
 };
 
 const SPOTIFY_API_URL: &str = "https://api.spotify.com";
@@ -115,16 +114,46 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        info!("STATUS: {}", &res.status().as_str());
-
         let text = res.text().await?;
-        info!("BODY SIZE: {}", text.len());
 
         let parsed: crate::spotify::search::SearchResponse = serde_json::from_str(&text)?;
 
         let uris = extract_all_uris(parsed);
 
         Ok(uris)
+    }
+
+    // Gets current users profile
+    pub async fn get_current_user(&self) -> Result<CurrentUserResponse, SpotifyApiError> {
+        let token = match self.load_token().await {
+            Ok(o) => match o {
+                Some(t) => t,
+                None => {
+                    return Err(SpotifyApiError::Generic(
+                        "No account token present!".to_string(),
+                    ));
+                }
+            },
+            Err(e) => {
+                return Err(e);
+            }
+        };
+
+        let res = self
+            .client
+            .get(format!("{}/v1/me", SPOTIFY_API_URL))
+            .bearer_auth(token.access_token)
+            .timeout(REQUEST_TIMEOUT)
+            .send()
+            .await?;
+
+        if(!res.status().is_success()) {
+            return Err(SpotifyApiError::Generic(format!("Request failed with status code: {}", res.status().as_str())));
+        }
+
+        let data = res.json::<CurrentUserResponse>().await?;
+
+        Ok(data)
     }
 
     // Saves tracks/episodes/albums/..

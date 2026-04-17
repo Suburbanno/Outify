@@ -6,6 +6,6 @@ use once_cell::sync::Lazy;
 pub mod client;
 pub mod token;
 pub mod error;
+pub mod requests;
 
 mod search;
-mod requests;
