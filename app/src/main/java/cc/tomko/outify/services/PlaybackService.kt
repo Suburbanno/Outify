@@ -236,7 +236,7 @@ class PlaybackService : MediaLibraryService(),
                     .setEnabled(hasTrack)
                     .build()
             )
-            mediaLibrarySession!!.setCustomLayout(buttons)
+            mediaLibrarySession!!.setMediaButtonPreferences(buttons)
             Log.i(TAG, "Updated notification with ${buttons.size} buttons, isLiked=$isLiked")
         }
     }
