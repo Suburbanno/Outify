@@ -32,6 +32,44 @@ pub extern "system" fn username(mut env: JNIEnv, _class: JClass) -> jstring {
     }
 }
 
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getCurrentUserProfile")]
+pub extern "system" fn get_current_user(mut env: JNIEnv, _class: JClass) -> jstring {
+    let client = get_client();
+    
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("failed to get Tokio runtime!");
+            return std::ptr::null_mut();
+        }
+    };
+
+    let result = match rt.block_on(async { client.get_current_user().await }) {
+        Ok(r) => {
+            match serde_json::to_string(&r) {
+                Ok(j) => j,
+                Err(e) => {
+                    error!("failed to convert struct to json: {e}");
+                    return std::ptr::null_mut();
+                },
+            }
+        },
+        Err(e) => {
+            error!("failed to get current user: {e}");
+            return std::ptr::null_mut();
+        },
+    };
+
+    match env.new_string(&result) {
+        Ok(s) => s.into_raw(),
+        Err(e) => {
+            error!("failed to convert JString: {e}");
+            return std::ptr::null_mut();
+        },
+    }
+}
+
+
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_search")]
 pub extern "system" fn spotify_search(
     mut env: JNIEnv,
@@ -758,21 +796,19 @@ pub extern "system" fn start_oauth_flow(mut env: JNIEnv, _class: JClass) -> jstr
     }
 }
 
-/// Completes the OAuth flow by exchanging the authorization code for tokens
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_completeOAuthFlow")]
 pub extern "system" fn complete_oauth_flow(
     mut env: JNIEnv,
     _class: JClass,
     code: JString,
-) -> jboolean {
+) -> jstring {
     let client = get_client();
 
-    // Extract the code string before async operations
     let code: String = match env.get_string(&code) {
         Ok(js) => js.into(),
         Err(e) => {
             error!("JNI failed to read code: {}", e);
-            return 0;
+            return spclient_make_error_json(&env, "authentication", "Failed to read OAuth code");
         }
     };
 
@@ -780,7 +816,7 @@ pub extern "system" fn complete_oauth_flow(
         Some(r) => r,
         None => {
             error!("failed to get Tokio runtime!");
-            return 0;
+            return spclient_make_error_json(&env, "unknown", "Tokio runtime not initialized");
         }
     };
 
@@ -788,16 +824,42 @@ pub extern "system" fn complete_oauth_flow(
 
     match result {
         Ok(token) => {
-            debug!(
-                "OAuth flow completed successfully, token: {}",
-                token.access_token
-            );
-            1
+            debug!("OAuth flow completed successfully, token: {}", token.access_token);
+            spclient_make_success_json(&env)
         }
         Err(e) => {
             error!("OAuth flow completion failed: {e}");
-            0
+            let err_type = classify_spclient_error(&e);
+            spclient_make_error_json(&env, err_type, &e.to_string())
         }
+    }
+}
+
+fn spclient_make_error_json(env: &JNIEnv, error_type: &str, message: &str) -> jstring {
+    let json = format!(r#"{{"error":{{"type":"{}","message":"{}"}}}}"#, error_type, message);
+    match env.new_string(json) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+fn spclient_make_success_json(env: &JNIEnv) -> jstring {
+    match env.new_string(r#"{"success":true}"#) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+fn classify_spclient_error(err: &crate::spotify::error::SpotifyApiError) -> &'static str {
+    let msg = err.to_string().to_lowercase();
+    if msg.contains("unavailable") || msg.contains("service") {
+        "service_unavailable"
+    } else if msg.contains("auth") || msg.contains("token") || msg.contains("credential") || msg.contains("unauthorized") {
+        "authentication_error"
+    } else if msg.contains("rate") {
+        "rate_limit"
+    } else {
+        "unknown"
     }
 }
 
