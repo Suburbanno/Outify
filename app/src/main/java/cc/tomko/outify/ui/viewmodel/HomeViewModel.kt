@@ -124,7 +124,7 @@ class HomeViewModel @Inject constructor(
     private fun loadUserProfile() {
         viewModelScope.launch {
             try {
-                val userId = spClient.username()
+                val userId = spClient.username() ?: return@launch
 
                 val profileJson = userProfile.getUserProfile(userId)
                 var profileName: String? = null

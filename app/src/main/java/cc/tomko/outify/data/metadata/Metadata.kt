@@ -97,7 +97,7 @@ class Metadata @Inject constructor(
 
     suspend fun getLikedUris(): List<String> {
         try {
-            val jsonUris = spClient.getUserCollection()
+            val jsonUris = spClient.getUserCollection() ?: return emptyList()
             val checked = spClient.checkAndHandleError(jsonUris, "getLikedUris")
             val parsed = json.decodeFromString<List<String>>(checked)
             return parsed

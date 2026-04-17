@@ -233,7 +233,7 @@ class MediaLibrarySessionCallback @Inject constructor(
             val trackIds = extractTrackIds(json)
             trackIds.mapNotNull { trackId ->
                 try {
-                    val trackJson = spClient.getTrackData(trackId)
+                    val trackJson = spClient.getTrackData(trackId) ?: return emptyList()
                     val track = kotlinx.serialization.json.Json.decodeFromString<Track>(trackJson)
                     track.toMediaItem()
                 } catch (e: Exception) {

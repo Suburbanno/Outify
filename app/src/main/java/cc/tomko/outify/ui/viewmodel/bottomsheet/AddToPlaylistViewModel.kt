@@ -31,7 +31,7 @@ class AddToPlaylistViewModel @Inject constructor(
     private val metadata: Metadata,
 ) : ViewModel() {
     private val usernameFlow = flow {
-        emit(spClient.username())
+        emit(spClient.username() ?: "no-username")
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),
@@ -67,7 +67,7 @@ class AddToPlaylistViewModel @Inject constructor(
                     playlistId = playlist.id,
                     position = maxPosition + 1 + index,
                     trackUri = track.uri,
-                    addedBy = spClient.username(),
+                    addedBy = spClient.username() ?: "no-username",
                     timestamp = System.currentTimeMillis(),
                     seenAt = 0L,
                     isPublic = false,
@@ -94,7 +94,7 @@ class AddToPlaylistViewModel @Inject constructor(
                 playlistId = playlist.id,
                 position = maxPosition + 1,
                 trackUri = track.uri,
-                addedBy = spClient.username(),
+                addedBy = spClient.username() ?: "no-username",
                 timestamp = System.currentTimeMillis(),
                 seenAt = 0L,
                 isPublic = false,

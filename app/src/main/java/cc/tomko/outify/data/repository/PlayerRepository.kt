@@ -20,7 +20,7 @@ class PlayerRepository @Inject constructor(
 
             val raw: String = try {
                 withTimeout(timeoutMs) {
-                    spClient.getLyrics(id)
+                    spClient.getLyrics(id) ?: ""
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

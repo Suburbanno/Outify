@@ -128,7 +128,7 @@ class AccountsViewModel @Inject constructor(
     fun fetchProfile() {
         viewModelScope.launch {
             try {
-                val userId = spClient.username()
+                val userId = spClient.username() ?: return@launch
                 val profileJson = userProfile.getUserProfile(userId)
                 var profileName: String? = null
                 var profileImageUrl: String? = null
@@ -146,7 +146,7 @@ class AccountsViewModel @Inject constructor(
                 _username.value = profileName ?: userId
                 _userImageUrl.value = profileImageUrl
 
-settingsRepository.saveUserProfile(userId, profileName, profileImageUrl)
+                settingsRepository.saveUserProfile(userId, profileName, profileImageUrl)
             } catch (e: Exception) {
             // Ignore errors
             }
