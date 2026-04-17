@@ -1,10 +1,9 @@
 use jni::{
-    objects::{GlobalRef, JObject, JValue},
+    objects::{GlobalRef, JValue},
     sys::jboolean,
 };
 use librespot_core::SpotifyUri;
 use librespot_metadata::Metadata;
-use librespot_playback::player::PlayerEvent;
 
 use crate::session::with_session;
 
@@ -227,7 +226,7 @@ pub fn on_player_status(playing: bool) {
     };
 
     let session = match crate::session::SESSION.get() {
-        Some(s) => s.clone(),
+        Some(s) => s,
         None => {
             error!("failed to retrieve session: not initialized");
             return;

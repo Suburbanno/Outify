@@ -16,7 +16,6 @@ mod profile;
 mod spirc;
 
 use std::path::PathBuf;
-use std::sync::atomic::AtomicBool;
 
 // Exposing required librespot structs
 pub use librespot_core::authentication::Credentials;
@@ -27,7 +26,7 @@ use once_cell::sync::OnceCell;
 
 use jni::JNIEnv;
 use jni::JavaVM;
-use jni::objects::{GlobalRef, JClass, JObject, JString};
+use jni::objects::{JClass, JObject, JString};
 use jni::sys::jint;
 
 use tokio::runtime::Runtime;

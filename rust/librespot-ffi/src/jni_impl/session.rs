@@ -1,11 +1,9 @@
-use std::sync::RwLock;
 
 use jni::{
     JNIEnv,
-    objects::{GlobalRef, JClass, JObject},
+    objects::{JClass, JObject},
     sys::jboolean,
 };
-use once_cell::sync::OnceCell;
 
 use crate::session::with_session;
 

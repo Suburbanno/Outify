@@ -2,9 +2,8 @@ use std::sync::Mutex;
 
 use jni::{
     JNIEnv,
-    objects::{GlobalRef, JClass, JObject, JValue},
+    objects::{GlobalRef, JClass, JObject},
 };
-use librespot_metadata::Track;
 use once_cell::sync::OnceCell;
 
 pub static PLAYER_EVENT_LISTENER: OnceCell<Mutex<GlobalRef>> = OnceCell::new();

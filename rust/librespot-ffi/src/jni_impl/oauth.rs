@@ -5,7 +5,7 @@ use jni::{
     objects::{JClass, JObject, JString},
     sys::{jboolean, jstring},
 };
-use librespot_core::{authentication::Credentials, cache::Cache, FileId};
+use librespot_core::authentication::Credentials;
 use oauth2::url::Url;
 
 use crate::session::with_session;

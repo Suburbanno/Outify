@@ -1,7 +1,7 @@
 use crate::{
     TOKIO_RUNTIME,
     metadata::user::UserJson,
-    session::{SESSION, with_session},
+    session::with_session,
 };
 use jni::{
     objects::{JClass, JString},

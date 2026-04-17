@@ -3,9 +3,8 @@ use jni::{
     objects::{JClass, JObject, JObjectArray, JString},
     sys::{jboolean, jint, jobjectArray, jstring},
 };
-use librespot_core::{SpotifyId, SpotifyUri, spclient::SpClient};
-use librespot_metadata::{Metadata, Track};
-use oauth2::reqwest;
+use librespot_core::{SpotifyId, SpotifyUri};
+use librespot_metadata::Metadata;
 use regex::Regex;
 
 use crate::{
@@ -14,7 +13,7 @@ use crate::{
 };
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_username")]
-pub extern "system" fn username(mut env: JNIEnv, _class: JClass) -> jstring {
+pub extern "system" fn username(env: JNIEnv, _class: JClass) -> jstring {
     let username = match crate::spclient::get_username() {
         Ok(u) => u,
         Err(e) => {
@@ -33,7 +32,7 @@ pub extern "system" fn username(mut env: JNIEnv, _class: JClass) -> jstring {
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getCurrentUserProfile")]
-pub extern "system" fn get_current_user(mut env: JNIEnv, _class: JClass) -> jstring {
+pub extern "system" fn get_current_user(env: JNIEnv, _class: JClass) -> jstring {
     let client = get_client();
     
     let rt = match crate::TOKIO_RUNTIME.get() {
@@ -288,7 +287,7 @@ pub extern "system" fn transfer_playback_device(
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getDevices")]
-pub extern "system" fn get_devices(mut env: JNIEnv, _class: JClass) -> jstring {
+pub extern "system" fn get_devices(env: JNIEnv, _class: JClass) -> jstring {
     let client = get_client();
 
     let rt = match crate::TOKIO_RUNTIME.get() {
@@ -766,7 +765,7 @@ pub extern "system" fn get_lyrics_for_track(
 
 /// Starts the OAuth flow for SpotifyClient and returns the authorization URL
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_startOAuthFlow")]
-pub extern "system" fn start_oauth_flow(mut env: JNIEnv, _class: JClass) -> jstring {
+pub extern "system" fn start_oauth_flow(env: JNIEnv, _class: JClass) -> jstring {
     let client = get_client();
 
     let rt = match crate::TOKIO_RUNTIME.get() {

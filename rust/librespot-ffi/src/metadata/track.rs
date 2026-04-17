@@ -1,19 +1,8 @@
-use std::collections::HashMap;
 
-use base64::{Engine, engine::general_purpose};
-use jni::{
-    JNIEnv,
-    objects::{GlobalRef, JClass, JMethodID, JObject, JValue},
-    sys::jboolean,
-};
 use librespot_core::SpotifyUri;
 use librespot_metadata::{
-    Album, Artist, Playlist, Track,
+    Album, Artist, Track,
     image::Image,
-    playlist::{
-        attribute::{PlaylistAttributes, PlaylistItemAttributes},
-        item::PlaylistItem,
-    },
 };
 use serde::{Deserialize, Serialize};
 

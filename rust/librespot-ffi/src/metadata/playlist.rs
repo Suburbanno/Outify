@@ -1,8 +1,3 @@
-use jni::{
-    JNIEnv,
-    objects::{GlobalRef, JClass, JMethodID, JObject, JValue},
-    sys::jboolean,
-};
 use librespot_metadata::playlist::{
     attribute::{PlaylistAttributes, PlaylistItemAttributes},
     diff::PlaylistDiff,
@@ -10,7 +5,6 @@ use librespot_metadata::playlist::{
     operation::PlaylistOperation,
 };
 use librespot_metadata::{Playlist, playlist::operation::PlaylistOperationKind};
-use librespot_protocol::playlist4_external::op::Kind;
 use serde::Serialize;
 
 use serde_json::Value as JsonValue;

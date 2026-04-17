@@ -1,30 +1,24 @@
-use librespot_core::{authentication::Credentials, token::Token};
 use librespot_oauth::{OAuthClient, OAuthClientBuilder, OAuthToken};
-use oauth2::{AuthorizationCode, PkceCodeVerifier, url::Url};
-use once_cell::sync::{Lazy, OnceCell};
+use oauth2::{AuthorizationCode, PkceCodeVerifier};
+use once_cell::sync::OnceCell;
 use reqwest::{Client, StatusCode, header};
-use serde::{Deserialize, Serialize};
-use serde_json::{Value, json};
 use std::{
     collections::HashMap,
     fs::OpenOptions,
     os::unix::fs::OpenOptionsExt,
-    path::Path,
     sync::Arc,
-    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant},
 };
 use tokio::sync::RwLock;
 
-use crate::{
-    metadata::user::UserJson, session::with_session, spotify::{
+use crate::spotify::{
         error::SpotifyApiError,
         requests::{
-            AddItemRequest, ArtistsOrTracksPage, CurrentUserResponse, DevicesResponse, RemoveItem, RemoveItemRequest, TransferPlaybackRequest, UserTopRequest
+            AddItemRequest, ArtistsOrTracksPage, CurrentUserResponse, DevicesResponse, RemoveItem, RemoveItemRequest, TransferPlaybackRequest
         },
         search::extract_all_uris,
         token::{TokenResponse, WebApiToken},
-    }
-};
+    };
 
 const SPOTIFY_API_URL: &str = "https://api.spotify.com";
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
@@ -147,7 +141,7 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        if(!res.status().is_success()) {
+        if !res.status().is_success() {
             return Err(SpotifyApiError::Generic(format!("Request failed with status code: {}", res.status().as_str())));
         }
 

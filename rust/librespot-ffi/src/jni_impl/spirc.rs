@@ -1,16 +1,14 @@
-use std::{str::FromStr, sync::Mutex, time::Duration};
+use std::{sync::Mutex, time::Duration};
 
 use jni::{
     objects::{GlobalRef, JClass, JObject, JObjectArray, JString}, sys::{jboolean, jlong, jobjectArray, jstring}, JNIEnv
 };
-use librespot_connect::{LoadContextOptions, LoadRequest, LoadRequestOptions, PlayingTrack};
+use librespot_connect::{LoadContextOptions, LoadRequestOptions, PlayingTrack};
 use librespot_core::SpotifyUri;
-use serde::de::IntoDeserializer;
 
 use crate::{
     outifyuri::OutifyUri,
-    session::with_session,
-    spirc::{with_spirc, SpircError, SpircRuntime},
+    spirc::{with_spirc, SpircError},
 };
 
 pub static BUFFER_CALLBACK: Mutex<Option<GlobalRef>> = Mutex::new(None);
@@ -18,7 +16,7 @@ pub static DEVICE_CALLBACK: Mutex<Option<GlobalRef>> = Mutex::new(None);
 
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _this: JClass,
     callback: JObject,
     gapless: jboolean,
@@ -43,7 +41,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
             return 0;
         }
     };
-    let jvm = crate::JVM.get().unwrap().clone();
+    let jvm = crate::JVM.get().unwrap();
 
     handle.spawn(async move {
         let result = crate::spirc::initialize_spirc(gapless != 0, normalisation != 0).await;
@@ -74,7 +72,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
 // Sets the buffer callback, so we can notify UI of spirc buferring
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_bufferCallback")]
 pub extern "system" fn set_buffer_callback(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _this: JClass,
     callback: JObject,
 ) -> jboolean {
@@ -106,7 +104,7 @@ pub extern "system" fn set_buffer_callback(
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_deviceCallback")]
 pub extern "system" fn set_device_callback(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _this: JClass,
     callback: JObject,
 ) -> jboolean {
@@ -174,7 +172,7 @@ pub extern "system" fn shuffle_load(mut env: JNIEnv, _this: JClass, juri: JStrin
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_localLoad")]
-pub extern "system" fn local_load(mut env: JNIEnv, _this: JClass, juri: JString) -> jboolean {
+pub extern "system" fn local_load(env: JNIEnv, _this: JClass, juri: JString) -> jboolean {
     let uri = SpotifyUri::Local {
         artist: "Linkin+Park".to_string(),
         album_title: "From+Zero".to_string(),
@@ -267,7 +265,7 @@ pub extern "system" fn set_queue(mut env: JNIEnv, _this: JClass, tracks: jobject
         }
     }
 
-    let playing_track = if(playing_track.is_null()) {
+    let playing_track = if playing_track.is_null() {
         None
     } else {
         match env.get_string(&playing_track) {
@@ -355,7 +353,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_seekTo(
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_shuffle")]
 pub extern "system" fn shuffle_spirc(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _this: JClass,
     enabled: jboolean,
 ) -> jboolean {
@@ -374,7 +372,7 @@ pub extern "system" fn shuffle_spirc(
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_repeat")]
-pub extern "system" fn repeat_spirc(mut env: JNIEnv, _this: JClass, enabled: jboolean) -> jboolean {
+pub extern "system" fn repeat_spirc(env: JNIEnv, _this: JClass, enabled: jboolean) -> jboolean {
     let enabled = enabled != 0;
     match with_spirc(|runtime| runtime.repeat(enabled)) {
         Ok(Ok(_)) => 1,

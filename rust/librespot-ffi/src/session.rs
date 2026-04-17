@@ -1,10 +1,7 @@
 use std::{path::PathBuf, pin::Pin, sync::RwLock};
 
 use crate::{CACHE_DIR, FILES_DIR, TOKIO_RUNTIME};
-use jni::{
-    objects::{GlobalRef, JClass, JObject},
-    sys::JNIEnv,
-};
+use jni::objects::GlobalRef;
 use librespot_core::{Session, SessionConfig, cache::Cache, config::KEYMASTER_CLIENT_ID};
 use once_cell::sync::OnceCell;
 

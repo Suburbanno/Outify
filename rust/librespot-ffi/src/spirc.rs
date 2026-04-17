@@ -13,10 +13,9 @@ use librespot_playback::{
     mixer::{self, MixerConfig},
     player::{Player, PlayerEvent},
 };
-use librespot_protocol::player::ProvidedTrack;
 use once_cell::sync::OnceCell;
 use tokio::{
-    sync::{broadcast, mpsc, watch},
+    sync::mpsc,
     task::JoinHandle,
 };
 

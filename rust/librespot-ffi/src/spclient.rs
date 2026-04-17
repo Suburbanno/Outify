@@ -1,5 +1,4 @@
-use bytes::Bytes;
-use librespot_core::{spclient::{SpClient, SpClientResult}, SpotifyId, SpotifyUri};
+use librespot_core::{spclient::SpClientResult, SpotifyId, SpotifyUri};
 use librespot_protocol::context::Context;
 
 use crate::session::with_session;

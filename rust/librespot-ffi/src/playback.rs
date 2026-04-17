@@ -4,7 +4,6 @@ use jni::{JNIEnv, JavaVM};
 use librespot_playback::{audio_backend::AndroidSink, config::AudioFormat, player::Player};
 use log::{error, warn};
 use once_cell::sync::OnceCell;
-use std::ptr::NonNull;
 use std::sync::{Arc, Mutex};
 
 static JAVA_VM: OnceCell<JavaVM> = OnceCell::new();
