@@ -4,6 +4,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,7 +17,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.rounded.CloudSync
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -115,7 +119,9 @@ fun SharedTransitionScope.LikedScreen(
 
     val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
     val isPlaybackPlaying by viewModel.isPlaying.collectAsState(initial = false)
-    val totalCount by viewModel.totalCount.collectAsState()
+    val isFetchingTracks by viewModel.isFetchingTracks.collectAsState(initial = false)
+    val fetchedCount by viewModel.fetchedCount.collectAsState(initial = 0)
+    val totalCount by viewModel.totalCount.collectAsState(initial = 0)
 
     var transitioningTrackUri by remember { mutableStateOf<String?>(null) }
     val isRefreshing by viewModel.isRefreshing.collectAsState()
@@ -187,6 +193,18 @@ fun SharedTransitionScope.LikedScreen(
                     ) {
                         Icon(Icons.Default.FilterAlt, contentDescription = "Filter and Sort")
                     }
+                }
+            }
+
+            if (isFetchingTracks) {
+                item {
+                    SyncProgressBanner(
+                        fetchedCount = fetchedCount,
+                        totalCount = totalCount,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
                 }
             }
 
@@ -275,5 +293,49 @@ fun SharedTransitionScope.LikedScreen(
             sortAscending = sortAscending,
             onSortAscendingChange = viewModel::setSortAscending
         )
+    }
+}
+
+@Composable
+private fun SyncProgressBanner(
+    fetchedCount: Int,
+    totalCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.CloudSync,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Syncing tracks...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    text = if (totalCount > 50) {
+                        "Syncing $fetchedCount of $totalCount. Larger libraries take longer."
+                    } else {
+                        "Syncing $fetchedCount of $totalCount"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
+            }
+        }
     }
 }

@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 enum class SortBy {
@@ -59,6 +61,12 @@ class LikedViewModel @Inject constructor(
     val filterTrackName = MutableStateFlow("")
     val sortBy = MutableStateFlow(SortBy.POSITION)
     val sortAscending = MutableStateFlow(true)
+
+    private val _isFetchingTracks = MutableStateFlow(false)
+    val isFetchingTracks: StateFlow<Boolean> = _isFetchingTracks
+
+    private val _fetchedCount = MutableStateFlow(0)
+    val fetchedCount: StateFlow<Int> = _fetchedCount
 
     companion object {
         private const val PAGE_SIZE = 30
@@ -118,10 +126,12 @@ class LikedViewModel @Inject constructor(
         if(spirc.isUsable) {
             viewModelScope.launch {
                 isRefreshing.value = true
-                launch {
+                _isFetchingTracks.value = true
+                runCatching {
                     likedRepository.syncLikedTracks()
                 }
                 isRefreshing.value = false
+                _isFetchingTracks.value = false
             }
             // Kick off the first page
             triggerLoad(offset = 0)
@@ -141,13 +151,25 @@ class LikedViewModel @Inject constructor(
     private fun triggerLoad(offset: Int) {
         if (offset == lastFetchedOffset) return
         viewModelScope.launch {
-            fetchLock.withLock {
-                if (offset == lastFetchedOffset) return@withLock
-                lastFetchedOffset = offset
-                runCatching {
-                    likedRepository.ensureWindowLoaded(offset, PAGE_SIZE)
-                }.onFailure {
-                    Log.w("LikedViewModel", "Failed to load window at $offset", it)
+            var acquired = false
+            try {
+                fetchLock.withLock {
+                    if (offset == lastFetchedOffset) return@withLock
+                    lastFetchedOffset = offset
+                    _isFetchingTracks.value = true
+                    acquired = true
+                }
+                withContext(Dispatchers.IO) {
+                    runCatching {
+                        likedRepository.ensureWindowLoaded(offset, PAGE_SIZE)
+                    }.onFailure {
+                        Log.w("LikedViewModel", "Failed to load window at $offset", it)
+                    }
+                    _fetchedCount.value = offset + PAGE_SIZE
+                }
+            } finally {
+                if (acquired) {
+                    _isFetchingTracks.value = false
                 }
             }
         }
