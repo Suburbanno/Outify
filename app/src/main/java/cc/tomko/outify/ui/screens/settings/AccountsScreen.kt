@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.Login
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -100,7 +101,13 @@ fun AccountsScreen(
             ) {
                 PreferenceEntry(
                     title = { Text("Playback login") },
-                    icon = { Icon(Icons.Default.Done, contentDescription = null) },
+                    icon = {
+                        if(isPlaybackLoggedIn) {
+                            Icon(Icons.Default.Done, contentDescription = null)
+                        } else {
+                            Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
+                        }
+                    },
                     onClick = {
                         if(isPlaybackLoggedIn) {
                             showPlaybackSheet = true

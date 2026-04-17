@@ -3,6 +3,7 @@ package cc.tomko.outify.ui.viewmodel.auth
 import androidx.lifecycle.ViewModel
 import cc.tomko.outify.core.AuthCallbackServer
 import cc.tomko.outify.core.AuthManager
+import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.ui.components.navigation.Route
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +26,11 @@ class AuthViewModel @Inject constructor(
     }
 
     fun verifyCode(code: String, state: String?) {
-        val success = authManager.handleOAuthCode(code, state)
+        val result = authManager.handleOAuthCode(code, state)
+        val success = result.contains("\"success\":true")
+        if (!success) {
+            NativeErrorHandler.handleErrorJson(result, "librespot oauth")
+        }
         _progress.value = if (success) LibrespotAuthProgress.SUCCESS else LibrespotAuthProgress.FAILED
         server?.stop()
         server = null

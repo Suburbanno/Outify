@@ -12,9 +12,10 @@ class AuthManager @Inject constructor() {
     external fun hasCachedCredentials(): Boolean
 
     /**
-     * Processes the OAuth Code and caches the credentials into storage if success
+     * Processes the OAuth Code and caches the credentials into storage if success.
+     * Returns JSON: {"success":true} on success, {"error":{"type":"...","message":"..."}} on failure.
      */
-    external fun handleOAuthCode(code: String, state: String? = ""): Boolean
+    external fun handleOAuthCode(code: String, state: String? = ""): String
 
     /**
      * Returns URL of Spotify authorization page

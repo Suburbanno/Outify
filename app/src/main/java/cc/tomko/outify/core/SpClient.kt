@@ -16,10 +16,12 @@ class SpClient @Inject constructor() {
      * Returns currently logged-in user's username
      * Requires playback login
      */
-    external fun username(): String
+    external fun username(): String?
+
+    external fun getCurrentUserProfile(): String?
     external fun search(query: String, type: String, offset: Int = -1, pages: Int = -1): Array<String>
 
-    external fun getUserCollection(query: String? = null): String
+    external fun getUserCollection(query: String? = null): String?
 
     /**
      * Adds given uris to users library
@@ -68,7 +70,7 @@ class SpClient @Inject constructor() {
     /**
      * Retrieves the metadata for singular track by its ID
      */
-    external fun getTrackData(id: String): String
+    external fun getTrackData(id: String): String?
 
     external fun getRootlist(): Array<String>
 
@@ -80,7 +82,7 @@ class SpClient @Inject constructor() {
     /**
      * Returns lyrics for track id
      */
-    external fun getLyrics(trackId: String): String
+    external fun getLyrics(trackId: String): String?
 
     /**
      * Starts the OAuth flow for SpotifyClient user authentication.
@@ -91,9 +93,9 @@ class SpClient @Inject constructor() {
     /**
      * Completes the OAuth flow by exchanging the authorization code for tokens.
      * Call this after the user completes authorization.
-     * Returns true on success, false on failure.
+     * Returns JSON: {"success":true} on success, {"error":{"type":"...","message":"..."}} on failure.
      */
-    external fun completeOAuthFlow(code: String): Boolean
+    external fun completeOAuthFlow(code: String): String
 
     /**
      * Deletes the credentials file for Spotify Client

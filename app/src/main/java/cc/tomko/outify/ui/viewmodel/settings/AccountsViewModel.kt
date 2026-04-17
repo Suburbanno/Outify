@@ -10,6 +10,7 @@ import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.UserProfile
 import cc.tomko.outify.core.model.Profile
+import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
@@ -32,7 +33,7 @@ class AccountsViewModel @Inject constructor(
     private var server: AuthCallbackServer? = null
     private val json = Json { ignoreUnknownKeys = true }
 
-    private val _isPlaybackLoggedIn = MutableStateFlow(true)
+    private val _isPlaybackLoggedIn = MutableStateFlow(false)
     val isPlaybackLoggedIn: StateFlow<Boolean> = _isPlaybackLoggedIn.asStateFlow()
 
     private val _isAccountLoggedIn = MutableStateFlow(false)
@@ -46,6 +47,7 @@ class AccountsViewModel @Inject constructor(
 
     init {
         _isAccountLoggedIn.value = spClient.isOAuthAuthenticated()
+        _isPlaybackLoggedIn.value = authManager.hasCachedCredentials()
         loadSavedUserProfile()
     }
 
@@ -57,10 +59,17 @@ class AccountsViewModel @Inject constructor(
     }
 
     fun startSpircAuth(context: Context) {
+        server?.stop()
+
         server = AuthCallbackServer(onCodeReceived = { code, state ->
-            val success = authManager.handleOAuthCode(code, state)
-            GlobalPopupController.show(PopupSpec.AuthResult(success))
-            if (success) {
+            val result = authManager.handleOAuthCode(code, state)
+            val isSuccess = result.contains("\"success\":true")
+            val errorDetails = if (!isSuccess) parseErrorMessage(result) else null
+            if (!isSuccess) {
+                NativeErrorHandler.handleErrorJson(result, "spirc oauth")
+            }
+            GlobalPopupController.show(PopupSpec.AuthResult(isSuccess, errorDetails = errorDetails))
+            if (isSuccess) {
                 _isPlaybackLoggedIn.value = true
             }
         })
@@ -74,10 +83,17 @@ class AccountsViewModel @Inject constructor(
     }
 
     fun startAccountAuth(context: Context) {
+        server?.stop()
+
         server = AuthCallbackServer(onCodeReceived = { code, state ->
-            val success = spClient.completeOAuthFlow(code)
-            GlobalPopupController.show(PopupSpec.AuthResult(success))
-            if (success) {
+            val result = spClient.completeOAuthFlow(code)
+            val isSuccess = result.contains("\"success\":true")
+            val errorDetails = if (!isSuccess) parseErrorMessage(result) else null
+            if (!isSuccess) {
+                NativeErrorHandler.handleErrorJson(result, "account oauth")
+            }
+            GlobalPopupController.show(PopupSpec.AuthResult(isSuccess, errorDetails = errorDetails))
+            if (isSuccess) {
                 _isAccountLoggedIn.value = true
                 fetchProfile()
             }
@@ -130,10 +146,22 @@ class AccountsViewModel @Inject constructor(
                 _username.value = profileName ?: userId
                 _userImageUrl.value = profileImageUrl
 
-                settingsRepository.saveUserProfile(userId, profileName, profileImageUrl)
+settingsRepository.saveUserProfile(userId, profileName, profileImageUrl)
             } catch (e: Exception) {
-                // Ignore errors
+            // Ignore errors
             }
+        }
+    }
+
+    private fun parseErrorMessage(json: String): String? {
+        return try {
+            val obj = org.json.JSONObject(json)
+            if (obj.has("error")) {
+                val err = obj.getJSONObject("error")
+                err.optString("message", null)
+            } else null
+        } catch (e: Exception) {
+            null
         }
     }
 }
