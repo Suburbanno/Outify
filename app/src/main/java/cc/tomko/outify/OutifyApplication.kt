@@ -2,6 +2,7 @@ package cc.tomko.outify
 
 import android.app.Application
 import androidx.media3.common.util.UnstableApi
+import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.ui.viewmodel.detail.DetailViewModelStore
@@ -20,6 +21,9 @@ class OutifyApplication : Application() {
     lateinit var spircController: SpircController
 
     @Inject
+    lateinit var spircWrapper: SpircWrapper
+
+    @Inject
     lateinit var detailViewModelStore: DetailViewModelStore
 
     @UnstableApi
@@ -33,6 +37,7 @@ class OutifyApplication : Application() {
         LibrespotFfi.libInit(applicationContext)
 
         spircController.start()
+        spircWrapper.setRestartCallback { spircController.restart() }
 
 //        AeadConfig.register()
     }

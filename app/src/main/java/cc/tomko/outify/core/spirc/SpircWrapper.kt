@@ -37,9 +37,20 @@ class SpircWrapper @Inject constructor(
         Dispatchers.Main.immediate
     )
 
-    /**
-     * Whether Spirc is in usable state, so we can query it
-     */
+    private var restartCallback: (() -> Unit)? = null
+
+    fun setRestartCallback(callback: () -> Unit) {
+        this.restartCallback = callback
+    }
+
+    fun ensureUsable() {
+        if (!isUsable) {
+            scope.launch {
+                restartCallback?.invoke()
+            }
+        }
+    }
+
     var isUsable = false
 
     override fun startRadio(trackUri: OutifyUri, shuffle: Boolean): Boolean {

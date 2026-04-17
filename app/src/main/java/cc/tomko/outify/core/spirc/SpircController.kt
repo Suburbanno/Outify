@@ -37,6 +37,12 @@ class SpircController @Inject constructor(
         })
     }
 
+    fun restart() {
+        Log.w("SpircController", "Restarting session...")
+        session.shutdown()
+        start()
+    }
+
     private suspend fun initializeSpirc(){
         val gapless = settingsRepository.gaplessPlayback.first()
         val normalise = settingsRepository.normalizePlayback.first()
