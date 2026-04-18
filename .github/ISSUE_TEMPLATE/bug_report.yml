@@ -16,7 +16,7 @@ body:
       validations:
           required: true
 
-    - type: textarea
+    - type: input
       attributes:
           label: Android OS version
           description: Please tell us what's your Android OS Version.
