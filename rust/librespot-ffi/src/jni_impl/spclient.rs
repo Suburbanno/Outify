@@ -333,6 +333,7 @@ pub extern "system" fn is_oauth_authenticated(_env: JNIEnv, _class: JClass) -> j
     };
 
     let result = rt.block_on(async { client.is_oauth_authenticated().await });
+    info!("is authenticated: {result}");
 
     result as jboolean
 }

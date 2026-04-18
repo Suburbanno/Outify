@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +54,11 @@ fun AccountsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        viewModel.checkAuthState()
+    }
+
     val isPlaybackLoggedIn by viewModel.isPlaybackLoggedIn.collectAsStateWithLifecycle()
     val isAccountLoggedIn by viewModel.isAccountLoggedIn.collectAsStateWithLifecycle()
     val username by viewModel.username.collectAsStateWithLifecycle()
@@ -151,7 +157,7 @@ fun AccountsScreen(
                         }
                     }
             ) {
-                if (isAccountLoggedIn && (username != null || userImageUrl != null)) {
+                if (isAccountLoggedIn) {
                     Row(
                         modifier = Modifier
                             .padding(16.dp)

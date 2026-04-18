@@ -12,13 +12,14 @@ use std::{
 use tokio::sync::RwLock;
 
 use crate::spotify::{
-        error::SpotifyApiError,
-        requests::{
-            AddItemRequest, ArtistsOrTracksPage, CurrentUserResponse, DevicesResponse, RemoveItem, RemoveItemRequest, TransferPlaybackRequest
-        },
-        search::extract_all_uris,
-        token::{TokenResponse, WebApiToken},
-    };
+    error::SpotifyApiError,
+    requests::{
+        AddItemRequest, ArtistsOrTracksPage, CurrentUserResponse, DevicesResponse, RemoveItem,
+        RemoveItemRequest, TransferPlaybackRequest,
+    },
+    search::extract_all_uris,
+    token::{TokenResponse, WebApiToken},
+};
 
 const SPOTIFY_API_URL: &str = "https://api.spotify.com";
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(5);
@@ -142,10 +143,17 @@ impl SpotifyClient {
             .await?;
 
         if !res.status().is_success() {
-            return Err(SpotifyApiError::Generic(format!("Request failed with status code: {}", res.status().as_str())));
+            return Err(SpotifyApiError::Generic(format!(
+                "Request failed with status code: {}",
+                res.status().as_str()
+            )));
         }
 
-        let data = res.json::<CurrentUserResponse>().await?;
+        let text = res.text().await?;
+
+        info!("{}", text);
+
+        let data: CurrentUserResponse = serde_json::from_str(&text)?;
 
         Ok(data)
     }
@@ -316,7 +324,10 @@ impl SpotifyClient {
         Ok(data)
     }
 
-    pub async fn transfer_playback(&self, device_id: String) -> Result<StatusCode, SpotifyApiError> {
+    pub async fn transfer_playback(
+        &self,
+        device_id: String,
+    ) -> Result<StatusCode, SpotifyApiError> {
         let token = match self.load_token().await {
             Ok(o) => match o {
                 Some(t) => t,
@@ -332,7 +343,7 @@ impl SpotifyClient {
         };
 
         let body = TransferPlaybackRequest {
-            device_ids: vec![device_id]
+            device_ids: vec![device_id],
         };
 
         let res = self
@@ -515,7 +526,7 @@ impl SpotifyClient {
             Err(e) => {
                 error!("failed to remove token: {e}");
                 Err(SpotifyApiError::IO(e))
-            },
+            }
         }
     }
 

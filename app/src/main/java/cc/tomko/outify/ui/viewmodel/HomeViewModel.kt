@@ -3,6 +3,8 @@ package cc.tomko.outify.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.AuthManager
+import cc.tomko.outify.core.AuthStateEvent
+import cc.tomko.outify.core.AuthStateEventBus
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.UserProfile
@@ -22,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -69,6 +72,27 @@ class HomeViewModel @Inject constructor(
     init {
         _isPlaybackLoggedIn.value = authManager.hasCachedCredentials()
         loadData()
+        viewModelScope.launch {
+            AuthStateEventBus.events.collect { event ->
+                when (event) {
+                    is AuthStateEvent.AccountLoggedIn -> {
+                        delay(200)
+                        loadData()
+                    }
+                    is AuthStateEvent.AccountLoggedOut -> {
+                        _uiState.value = HomeUiState.NotAuthenticated
+                        loadUserProfile()
+                    }
+                    is AuthStateEvent.PlaybackLoggedIn -> {
+                        delay(200)
+                        _isPlaybackLoggedIn.value = authManager.hasCachedCredentials()
+                    }
+                    is AuthStateEvent.PlaybackLoggedOut -> {
+                        _isPlaybackLoggedIn.value = authManager.hasCachedCredentials()
+                    }
+                }
+            }
+        }
     }
 
     fun refreshPlaybackLoginState() {
@@ -85,6 +109,7 @@ class HomeViewModel @Inject constructor(
     fun loadData() {
         viewModelScope.launch {
             _uiState.value = HomeUiState.Loading
+            delay(150)
 
             try {
                 val isAuthenticated = spClient.isOAuthAuthenticated()

@@ -7,8 +7,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.AuthCallbackServer
 import cc.tomko.outify.core.AuthManager
+import cc.tomko.outify.core.AuthStateEventBus
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.UserProfile
+import cc.tomko.outify.core.model.CurrentUserProfile
 import cc.tomko.outify.core.model.Profile
 import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.data.repository.SettingsRepository
@@ -17,6 +19,7 @@ import cc.tomko.outify.services.PendingAuthHelper
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,9 +51,14 @@ class AccountsViewModel @Inject constructor(
     val userImageUrl: StateFlow<String?> = _userImageUrl.asStateFlow()
 
     init {
-        _isAccountLoggedIn.value = spClient.isOAuthAuthenticated()
-        _isPlaybackLoggedIn.value = authManager.hasCachedCredentials()
+        checkAuthState()
         loadSavedUserProfile()
+    }
+
+    fun checkAuthState() {
+        _isAccountLoggedIn.value = spClient.isOAuthAuthenticated()
+        println(_isAccountLoggedIn.value)
+        _isPlaybackLoggedIn.value = authManager.hasCachedCredentials()
     }
 
     private fun loadSavedUserProfile() {
@@ -74,7 +82,8 @@ class AccountsViewModel @Inject constructor(
             }
             GlobalPopupController.show(PopupSpec.AuthResult(isSuccess, errorDetails = errorDetails))
             if (isSuccess) {
-                _isPlaybackLoggedIn.value = true
+                _isPlaybackLoggedIn.value = authManager.hasCachedCredentials()
+                AuthStateEventBus.tryEmitPlaybackLoggedIn()
             }
         })
         server?.start()
@@ -100,8 +109,19 @@ class AccountsViewModel @Inject constructor(
             }
             GlobalPopupController.show(PopupSpec.AuthResult(isSuccess, errorDetails = errorDetails))
             if (isSuccess) {
-                _isAccountLoggedIn.value = true
-                fetchProfile()
+                viewModelScope.launch {
+                    delay(100)
+                    var authenticated = spClient.isOAuthAuthenticated()
+                    if (!authenticated) {
+                        delay(300)
+                        authenticated = spClient.isOAuthAuthenticated()
+                    }
+                    _isAccountLoggedIn.value = authenticated
+                    AuthStateEventBus.tryEmitAccountLoggedIn()
+                    if (authenticated) {
+                        fetchProfile()
+                    }
+                }
             }
         })
 
@@ -134,27 +154,23 @@ class AccountsViewModel @Inject constructor(
     fun fetchProfile() {
         viewModelScope.launch {
             try {
-                val userId = spClient.username() ?: return@launch
-                val profileJson = userProfile.getUserProfile(userId)
-                var profileName: String? = null
-                var profileImageUrl: String? = null
-
-                if (profileJson != null) {
-                    try {
-                        val profile = json.decodeFromString<Profile>(profileJson)
-                        profileName = profile.name
-                        profileImageUrl = profile.imageUrl
-                    } catch (e: Exception) {
-                        // Ignore parse errors
-                    }
+                val profile = spClient.getCurrentUserProfile()
+                if (profile == null) {
+                    println("profile is null!")
+                    return@launch
                 }
+                val jsonObject = json.decodeFromString<CurrentUserProfile>(profile)
 
-                _username.value = profileName ?: userId
-                _userImageUrl.value = profileImageUrl
+                val id = jsonObject.id
+                val username = jsonObject.displayName
+                val imageUrl = jsonObject.images.first().url
 
-                settingsRepository.saveUserProfile(userId, profileName, profileImageUrl)
-            } catch (e: Exception) {
-            // Ignore errors
+                _username.value = username
+                _userImageUrl.value = imageUrl
+
+                settingsRepository.saveUserProfile(id, username, imageUrl)
+            }catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
