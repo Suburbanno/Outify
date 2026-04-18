@@ -823,7 +823,7 @@ pub extern "system" fn complete_oauth_flow(
 
     match result {
         Ok(token) => {
-            debug!("OAuth flow completed successfully, token: {}", token.access_token);
+            debug!("OAuth flow completed successfully");
             spclient_make_success_json(&env)
         }
         Err(e) => {
