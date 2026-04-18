@@ -34,14 +34,20 @@ pub async fn initialize_session() {
     };
 
     // Geting session cache dir
-    let os_cache_dir: PathBuf = CACHE_DIR
-        .get()
-        .expect("Failed to get Cache Dir!")
-        .to_path_buf();
-    let os_files_dir: PathBuf = FILES_DIR
-        .get()
-        .expect("Failed to get Files Dir!")
-        .to_path_buf();
+    let os_cache_dir = match CACHE_DIR.get() {
+        Some(dir) => dir.to_path_buf(),
+        None => {
+            error!("Cache Dir not initialized - make sure to call libInit first");
+            return;
+        },
+    };
+    let os_files_dir = match FILES_DIR.get() {
+        Some(dir) => dir.to_path_buf(),
+        None => {
+            error!("Files Dir not initialized - make sure to call libInit first");
+            return;
+        },
+    };
     let cache: Cache = Cache::new(Some(&os_files_dir), None, Some(&os_cache_dir), None).unwrap();
     trace!("Initialized new cache!");
 
