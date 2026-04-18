@@ -10,8 +10,11 @@ import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.database.track.LikedTrackEntity
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.yield
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.min
@@ -29,26 +32,30 @@ class LikedRepository @Inject constructor(
         private const val SUBSTRING_OFFSET = "spotify:track:".length
     }
 
-    suspend fun syncLikedTracks(): Boolean {
-        val pageSize = 50
-        val perPageDelayMs = 200L
+    suspend fun syncLikedTracks(forceSync: Boolean = false): Boolean {
+        val pageSize = 20
+        val perPageDelayMs = 100L
         val maxRetries = 3
         val initialBackoffMs = 500L
+        val scope = CoroutineScope(Dispatchers.IO)
 
         try {
             try {
-                if(!syncLikedUris()) return false
+                if(!syncLikedUris() && !forceSync) return false
             } catch (t: Throwable) {
                 Log.w(TAG, "syncLikedUris failed (continuing): ${t.message}", t)
             }
 
+            yield()
             var offset = 0
             var anyFetched = false
+            var batchNum = 0
 
             while (true) {
                 val ids = likedDao.getIdsWindow(limit = pageSize, offset = offset)
                 if (ids.isEmpty()) break
 
+                batchNum++
                 val uris = ids.map { "spotify:track:$it" }
 
                 var attempt = 0
@@ -77,6 +84,8 @@ class LikedRepository @Inject constructor(
                         }
                     }
                 }
+
+                yield()
 
                 // polite pause between pages
                 delay(perPageDelayMs)

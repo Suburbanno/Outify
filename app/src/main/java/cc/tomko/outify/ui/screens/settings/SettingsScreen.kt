@@ -29,7 +29,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     openInterfaceSettings: (() -> Unit),
     openPlaybackSettings: (() -> Unit),
-    openDebugSettings: (() -> Unit),
+    openMiscSettings: (() -> Unit),
     openAboutSettings: (() -> Unit),
     openAccountSettings: (() -> Unit),
 ) {
@@ -74,7 +74,7 @@ fun SettingsScreen(
                 PreferenceEntry(
                     title = { Text("Misc") },
                     icon = { Icon(Icons.Default.DeveloperMode, contentDescription = null) },
-                    onClick = openDebugSettings,
+                    onClick = openMiscSettings,
                 )
 
                 PreferenceEntry(

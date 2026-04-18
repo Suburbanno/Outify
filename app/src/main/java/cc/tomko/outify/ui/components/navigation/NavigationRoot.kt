@@ -38,6 +38,7 @@ import cc.tomko.outify.ui.screens.library.artist.ArtistDetailScreen
 import cc.tomko.outify.ui.screens.SearchScreen
 import cc.tomko.outify.ui.screens.settings.AboutScreen
 import cc.tomko.outify.ui.screens.settings.AccountsScreen
+import cc.tomko.outify.ui.screens.settings.MiscSettingsScreen
 import cc.tomko.outify.ui.screens.settings.AppearanceSettingScreen
 import cc.tomko.outify.ui.screens.settings.GestureSettingsScreen
 import cc.tomko.outify.ui.screens.settings.InterfaceSettingScreen
@@ -61,6 +62,7 @@ import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
 import cc.tomko.outify.ui.viewmodel.settings.GestureSettingViewModel
 import cc.tomko.outify.ui.viewmodel.settings.InterfaceViewModel
 import cc.tomko.outify.ui.viewmodel.settings.PlaybackSettingViewModel
+import cc.tomko.outify.ui.viewmodel.settings.MiscSettingsViewModel
 import cc.tomko.outify.ui.viewmodel.settings.SettingsViewModel
 
 @Composable
@@ -248,8 +250,8 @@ fun SharedTransitionScope.NavigationRoot(
                     openPlaybackSettings = {
                         backStack.add(Route.PlaybackSettings)
                     },
-                    openDebugSettings = {
-                        backStack.add(Route.AboutScreen)
+                    openMiscSettings = {
+                        backStack.add(Route.MiscSettings)
                     },
                     openAboutSettings = {
                         backStack.add(Route.AboutScreen)
@@ -312,6 +314,14 @@ fun SharedTransitionScope.NavigationRoot(
                         Intent(Intent.ACTION_VIEW, it.toUri())
                     )
                 }
+            }
+
+            entry<Route.MiscSettings> {
+                val viewModel: MiscSettingsViewModel = hiltViewModel()
+                MiscSettingsScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { backStack.removeAt(backStack.lastIndex) }
+                )
             }
         }
     )
