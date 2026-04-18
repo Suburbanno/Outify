@@ -12,6 +12,8 @@ import cc.tomko.outify.core.UserProfile
 import cc.tomko.outify.core.model.Profile
 import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.data.repository.SettingsRepository
+import cc.tomko.outify.services.OAuthService
+import cc.tomko.outify.services.PendingAuthHelper
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -59,9 +61,11 @@ class AccountsViewModel @Inject constructor(
     }
 
     fun startSpircAuth(context: Context) {
+        OAuthService.start(context)
         server?.stop()
 
         server = AuthCallbackServer(onCodeReceived = { code, state ->
+            OAuthService.stop(context)
             val result = authManager.handleOAuthCode(code, state)
             val isSuccess = result.contains("\"success\":true")
             val errorDetails = if (!isSuccess) parseErrorMessage(result) else null
@@ -83,9 +87,11 @@ class AccountsViewModel @Inject constructor(
     }
 
     fun startAccountAuth(context: Context) {
+        OAuthService.start(context)
         server?.stop()
 
         server = AuthCallbackServer(onCodeReceived = { code, state ->
+            OAuthService.stop(context)
             val result = spClient.completeOAuthFlow(code)
             val isSuccess = result.contains("\"success\":true")
             val errorDetails = if (!isSuccess) parseErrorMessage(result) else null

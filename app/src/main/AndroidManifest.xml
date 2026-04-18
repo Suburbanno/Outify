@@ -26,6 +26,13 @@
         android:usesCleartextTraffic="true">
 
         <service
+            android:name=".services.OAuthService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback">
+        </service>
+
+        <service
             android:name=".services.PlaybackService"
             android:enabled="true"
             android:exported="false"
