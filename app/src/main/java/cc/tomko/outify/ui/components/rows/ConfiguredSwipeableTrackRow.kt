@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -97,6 +98,11 @@ fun SharedTransitionScope.SwipeableTrackRowConfigured(
                     }
 
                     trailingContent?.invoke()
+
+                    Text(
+                        text = formatDuration(track.duration.toInt()),
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 },
 
                 sharedTransitionScope = this@SwipeableTrackRowConfigured,
@@ -119,4 +125,11 @@ fun rememberTrackGestures(track: Track, isLiked: Boolean = false): Pair<List<Swi
     }
 
     return start to end
+}
+
+private fun formatDuration(ms: Int): String {
+    val totalSeconds = ms / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "$minutes:${seconds.toString().padStart(2, '0')}"
 }

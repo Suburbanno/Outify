@@ -345,12 +345,7 @@ private fun SharedTransitionScope.HomeContent(
                     onArtistClick = { artist ->
                         onArtistClick(artist.uri)
                     },
-                    trailingContent = {
-                        Text(
-                            text = formatDuration(track.duration.toInt()),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    },
+                    trailingContent = {},
                     modifier = Modifier.animateItem()
                 )
             }
@@ -440,11 +435,4 @@ private fun ErrorContent(
             color = MaterialTheme.colorScheme.error,
         )
     }
-}
-
-private fun formatDuration(ms: Int): String {
-    val totalSeconds = ms / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return "$minutes:${seconds.toString().padStart(2, '0')}"
 }
