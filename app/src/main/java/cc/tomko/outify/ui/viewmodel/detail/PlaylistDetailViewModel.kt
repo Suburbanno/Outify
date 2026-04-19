@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import cc.tomko.outify.core.SpClient
 import kotlinx.serialization.json.Json
 
 @HiltViewModel
@@ -38,6 +39,7 @@ class PlaylistDetailViewModel @Inject constructor(
     val spirc: SpircWrapper,
     val userProfile: UserProfile,
     val likedDao: LikedDao,
+    val spClient: SpClient,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -63,6 +65,33 @@ class PlaylistDetailViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = false
         )
+
+    private val _isSaved = MutableStateFlow(false)
+    val isSaved: StateFlow<Boolean> = _isSaved
+
+    fun toggleSave() {
+        viewModelScope.launch {
+            val playlistUri = when (val state = _uiState.value) {
+                is PlaylistUiState.Success -> state.playlist?.uri
+                else -> null
+            } ?: return@launch
+
+            if (_isSaved.value) {
+                spClient.deleteItems(arrayOf(playlistUri))
+                metadata.removeLikedPlaylist(playlistUri)
+            } else {
+                spClient.saveItems(arrayOf(playlistUri))
+                metadata.addLikedPlaylist(playlistUri)
+            }
+            _isSaved.value = !_isSaved.value
+        }
+    }
+
+    private fun checkIsSaved(playlistUri: String) {
+        viewModelScope.launch {
+            _isSaved.value = metadata.isLikedPlaylist(playlistUri)
+        }
+    }
 
     private val _authors = MutableStateFlow<Map<String, Profile>>(emptyMap())
     val authors: StateFlow<Map<String, Profile>> = _authors
@@ -92,16 +121,20 @@ class PlaylistDetailViewModel @Inject constructor(
     }
 
     fun loadPlaylist(playlistUri: String, cleanFetch: Boolean) {
+        val uri = playlistUri.substringAfterLast(":").let { "spotify:playlist:$it" }
+
         viewModelScope.launch {
-            savedStateHandle[PLAYLIST_URI_KEY] = playlistUri
+            savedStateHandle[PLAYLIST_URI_KEY] = uri
             isRefreshing.value = true
             _uiState.value = PlaylistUiState.Loading
 
             runCatching {
-                metadata.getPlaylistMetadata(playlistUri, !cleanFetch)
+                metadata.getPlaylistMetadata(uri, !cleanFetch)
             }.onSuccess { playlist ->
                 isRefreshing.value = false
                 _uiState.value = PlaylistUiState.Success(playlist)
+                _isSaved.value = false
+                checkIsSaved(uri)
             }.onFailure { e ->
                 isRefreshing.value = false
                 _uiState.value = PlaylistUiState.Error(e.message ?: "Unknown error")

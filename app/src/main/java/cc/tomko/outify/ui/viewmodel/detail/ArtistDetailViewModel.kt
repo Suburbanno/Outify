@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -98,6 +99,25 @@ class ArtistDetailViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = false
         )
+
+    private val _isSaved = MutableStateFlow(false)
+    val isSaved: StateFlow<Boolean> = _isSaved
+
+    fun toggleSave() {
+        viewModelScope.launch {
+            val artistUri = when (val state = _uiState.value) {
+                is ArtistUiState.Success -> state.artist.uri
+                else -> null
+            } ?: return@launch
+
+            if (_isSaved.value) {
+                spClient.deleteItems(arrayOf(artistUri))
+            } else {
+                spClient.saveItems(arrayOf(artistUri))
+            }
+            _isSaved.value = !_isSaved.value
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     val likedTracks: StateFlow<List<Track>> = likedTrackIds
@@ -172,6 +192,7 @@ class ArtistDetailViewModel @Inject constructor(
             popularTrackUris.value = artist.tracks
             albumUris.value = artist.albums
             _uiState.value = ArtistUiState.Success(artist)
+            _isSaved.value = false
             saveState()
         }
     }

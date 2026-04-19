@@ -8,8 +8,11 @@ import cc.tomko.outify.core.model.Cover
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.Playlist
 import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.data.dao.LikedItemsDao
+import cc.tomko.outify.data.database.LikedItemsEntity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,6 +24,7 @@ class Metadata @Inject constructor(
     private val playlistMetadataHelper: PlaylistMetadataHelper,
     private val nativeMetadata: NativeMetadata,
     private val spClient: SpClient,
+    private val likedItemsDao: LikedItemsDao,
     private val json: Json,
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -118,4 +122,63 @@ class Metadata @Inject constructor(
         playlistMetadataHelper.observePlaylist(uri)
     fun observePlaylists(uris: List<String>) =
         playlistMetadataHelper.observePlaylists(uris)
+
+    companion object {
+        const val TYPE_PLAYLIST = "playlist"
+        const val TYPE_ALBUM = "album"
+        const val TYPE_ARTIST = "artist"
+    }
+
+    suspend fun isLikedPlaylist(uri: String): Boolean = likedItemsDao.contains(uri)
+
+    suspend fun isLikedAlbum(uri: String): Boolean = likedItemsDao.contains(uri)
+
+    suspend fun isLikedArtist(uri: String): Boolean = likedItemsDao.contains(uri)
+
+    fun observeLikedPlaylistUris(): Flow<List<String>> =
+        likedItemsDao.observeUrisByType(TYPE_PLAYLIST)
+
+    fun observeLikedAlbumUris(): Flow<List<String>> =
+        likedItemsDao.observeUrisByType(TYPE_ALBUM)
+
+    fun observeIsPlaylistLiked(uri: String): Flow<Boolean> =
+        likedItemsDao.observeContains(uri)
+
+    fun observeIsAlbumLiked(uri: String): Flow<Boolean> =
+        likedItemsDao.observeContains(uri)
+
+    suspend fun syncLikedPlaylists(): List<String> {
+        return try {
+            val uris = spClient.getRootlist().toList()
+
+            likedItemsDao.clearAll()
+            uris.forEach { uri ->
+                val uri = uri.substringAfterLast(":").let { "spotify:playlist:$it" }
+                likedItemsDao.insert(LikedItemsEntity(uri, TYPE_PLAYLIST))
+            }
+            uris
+        } catch (e: Exception) {
+            NativeErrorHandler.handleError(
+                NativeError.fromJson("unknown", e.message ?: "Failed to sync liked playlists"),
+                "syncLikedPlaylists"
+            )
+            likedItemsDao.getUrisByType(TYPE_PLAYLIST)
+        }
+    }
+
+    suspend fun addLikedPlaylist(uri: String) {
+        likedItemsDao.insert(LikedItemsEntity(uri, TYPE_PLAYLIST))
+    }
+
+    suspend fun removeLikedPlaylist(uri: String) {
+        likedItemsDao.delete(uri)
+    }
+
+    suspend fun addLikedAlbum(uri: String) {
+        likedItemsDao.insert(LikedItemsEntity(uri, TYPE_ALBUM))
+    }
+
+    suspend fun removeLikedAlbum(uri: String) {
+        likedItemsDao.delete(uri)
+    }
 }

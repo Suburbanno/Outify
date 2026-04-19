@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -75,6 +76,30 @@ class AlbumDetailViewModel @Inject constructor(
             initialValue = false
         )
 
+    private val _isSaved = MutableStateFlow(false)
+    val isSaved: StateFlow<Boolean> = _isSaved
+
+    fun toggleSave() {
+        viewModelScope.launch {
+            val album = _uiState.value.album ?: return@launch
+            val uri = album.uri
+            if (_isSaved.value) {
+                spClient.deleteItems(arrayOf(uri))
+                metadata.removeLikedAlbum(uri)
+            } else {
+                spClient.saveItems(arrayOf(uri))
+                metadata.addLikedAlbum(uri)
+            }
+            _isSaved.value = !_isSaved.value
+        }
+    }
+
+    private fun checkIsSaved(albumUri: String) {
+        viewModelScope.launch {
+            _isSaved.value = metadata.isLikedAlbum(albumUri)
+        }
+    }
+
     private fun saveState(state: AlbumUiState) {
         savedStateHandle[ALBUM_STATE_KEY] = json.encodeToString(AlbumUiState.serializer(), state)
     }
@@ -109,6 +134,8 @@ class AlbumDetailViewModel @Inject constructor(
                 tracks = tracks,
             )
             _uiState.value = newState
+            _isSaved.value = false
+            checkIsSaved(albumUri)
             saveState(newState)
         } catch (e: Exception) {
             val newState = AlbumUiState(

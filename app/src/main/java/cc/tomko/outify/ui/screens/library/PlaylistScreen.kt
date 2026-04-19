@@ -16,9 +16,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Shuffle
 import cc.tomko.outify.ui.components.PlaylistDetailSkeleton
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeExtendedFloatingActionButton
 import androidx.compose.material3.MaterialShapes
@@ -92,6 +95,7 @@ fun SharedTransitionScope.PlaylistScreen(
             val tracks = playlist.contents
             val likedIds by viewModel.likedTrackIds.collectAsState(initial = emptySet())
             val isRefreshing by viewModel.isRefreshing.collectAsState()
+            val isSaved by viewModel.isSaved.collectAsState()
 
             val lazyList = rememberLazyListState()
             val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
@@ -235,6 +239,14 @@ fun SharedTransitionScope.PlaylistScreen(
                             shape = MaterialShapes.Cookie9Sided.toShape()
                         ) {
                             Icon(Icons.Rounded.Shuffle, null)
+                        }
+                    },
+                    actionButtonContent = {
+                        FilledIconButton(onClick = { viewModel.toggleSave() }) {
+                            Icon(
+                                imageVector = if (isSaved) Icons.Rounded.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = if (isSaved) "Unfavorite" else "Favorite"
+                            )
                         }
                     }
                 )

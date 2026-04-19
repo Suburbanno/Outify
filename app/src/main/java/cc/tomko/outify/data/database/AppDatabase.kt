@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import cc.tomko.outify.data.database.album.AlbumArtistEntity
 import cc.tomko.outify.data.database.album.AlbumTrackCrossRef
 import cc.tomko.outify.data.dao.AlbumArtistDao
@@ -19,6 +21,7 @@ import cc.tomko.outify.data.database.track.LikedTrackEntity
 import cc.tomko.outify.data.database.track.PlaylistTrackEntity
 import cc.tomko.outify.data.database.playlist.PlaylistDiffEntity
 import cc.tomko.outify.data.database.playlist.PlaylistItemEntity
+import cc.tomko.outify.data.dao.LikedItemsDao
 
 @Database(
     entities = [
@@ -34,8 +37,9 @@ import cc.tomko.outify.data.database.playlist.PlaylistItemEntity
         PlaylistDiffEntity::class,
         PlaylistTrackEntity::class,
         LikedTrackEntity::class,
+        LikedItemsEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = false
 )
 abstract class AppDatabase: RoomDatabase() {
@@ -48,10 +52,23 @@ abstract class AppDatabase: RoomDatabase() {
     abstract fun albumTrackDao(): AlbumTrackDao
     abstract fun playlistDao(): PlaylistDao
     abstract fun likedDao(): LikedDao
+    abstract fun likedItemsDao(): LikedItemsDao
 
     companion object {
         @Volatile
         private var INSTANCE: AppDatabase? = null
+
+        private val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS liked_items (
+                        uri TEXT NOT NULL PRIMARY KEY,
+                        type TEXT NOT NULL,
+                        addedAt INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent())
+            }
+        }
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -60,7 +77,7 @@ abstract class AppDatabase: RoomDatabase() {
                     AppDatabase::class.java,
                     "outify_database"
                 )
-//                    .fallbackToDestructiveMigration(true) // IMPORTANT TODO: REMOVE IN PROD
+                    .addMigrations(MIGRATION_15_16)
                     .build()
                 INSTANCE = instance
                 instance

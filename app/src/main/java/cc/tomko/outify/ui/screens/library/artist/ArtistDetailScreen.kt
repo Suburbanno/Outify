@@ -23,10 +23,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Shuffle
 import cc.tomko.outify.ui.components.ArtistDetailSkeleton
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeExtendedFloatingActionButton
@@ -123,6 +126,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
             val likedTracks by viewModel.likedTracks.collectAsState()
             val likedTrackCount = likedTracks.size
             val likedTrackIds by viewModel.likedTrackIds.collectAsState(initial = emptySet())
+            val isSaved by viewModel.isSaved.collectAsState()
 
             val albums by viewModel.albums.collectAsState()
 
@@ -303,6 +307,14 @@ fun SharedTransitionScope.ArtistDetailScreen(
                             shape = MaterialShapes.Cookie9Sided.toShape()
                         ) {
                             Icon(Icons.Rounded.Shuffle, null)
+                        }
+                    },
+                    actionButtonContent = {
+                        FilledIconButton(onClick = { viewModel.toggleSave() }) {
+                            Icon(
+                                imageVector = if (isSaved) Icons.Rounded.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = if (isSaved) "Unfollow" else "Follow"
+                            )
                         }
                     }
                 )

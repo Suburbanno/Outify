@@ -35,6 +35,12 @@ class LibraryViewModel @Inject constructor(
     private val json: Json,
     private val userProfile: UserProfile,
 ): ViewModel() {
+
+    init {
+        viewModelScope.launch {
+            metadata.syncLikedPlaylists()
+        }
+    }
     private val _headerArtwork = mutableStateOf<String?>(null)
     val headerArtwork = _headerArtwork
 

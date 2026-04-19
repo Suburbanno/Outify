@@ -50,6 +50,7 @@ fun CollapsingHeader(
     backgroundContent: @Composable BoxScope.() -> Unit = {},
     titleContent: @Composable ColumnScope.() -> Unit,
     fabContent: @Composable (() -> Unit)? = null,
+    actionButtonContent: @Composable (() -> Unit)? = null,
 ) {
     val surfaceColor = MaterialTheme.colorScheme.surface
     val backgroundAlpha = collapseFraction
@@ -95,6 +96,16 @@ fun CollapsingHeader(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back"
                 )
+            }
+
+            actionButtonContent?.let {
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 12.dp, top = 4.dp)
+                ) {
+                    it()
+                }
             }
 
             Box(
