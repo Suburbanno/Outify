@@ -2,6 +2,7 @@ package cc.tomko.outify.ui.viewmodel.settings
 
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -49,6 +50,9 @@ class AccountsViewModel @Inject constructor(
 
     private val _userImageUrl = MutableStateFlow<String?>(null)
     val userImageUrl: StateFlow<String?> = _userImageUrl.asStateFlow()
+
+    private val _isPremium = MutableStateFlow(true)
+    val isPremium: StateFlow<Boolean> = _isPremium.asStateFlow()
 
     init {
         checkAuthState()
@@ -156,7 +160,6 @@ class AccountsViewModel @Inject constructor(
             try {
                 val profile = spClient.getCurrentUserProfile()
                 if (profile == null) {
-                    println("profile is null!")
                     return@launch
                 }
                 val jsonObject = json.decodeFromString<CurrentUserProfile>(profile)
@@ -164,6 +167,8 @@ class AccountsViewModel @Inject constructor(
                 val id = jsonObject.id
                 val username = jsonObject.displayName
                 val imageUrl = jsonObject.images.first().url
+
+                _isPremium.value = jsonObject.product == "premium"
 
                 _username.value = username
                 _userImageUrl.value = imageUrl

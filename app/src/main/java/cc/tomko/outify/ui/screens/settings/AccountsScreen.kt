@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Login
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +62,7 @@ fun AccountsScreen(
 
     val isPlaybackLoggedIn by viewModel.isPlaybackLoggedIn.collectAsStateWithLifecycle()
     val isAccountLoggedIn by viewModel.isAccountLoggedIn.collectAsStateWithLifecycle()
+    val isPremium by viewModel.isPremium.collectAsStateWithLifecycle()
     val username by viewModel.username.collectAsStateWithLifecycle()
     val userImageUrl by viewModel.userImageUrl.collectAsStateWithLifecycle()
 
@@ -189,9 +191,9 @@ fun AccountsScreen(
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                text = "Logged in",
+                                text = if (isPremium) "Logged in" else "Logged in (Free)",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
+                                color = if (isPremium) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                             )
                         }
 
@@ -201,6 +203,28 @@ fun AccountsScreen(
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp)
                         )
+                    }
+
+                    if (!isPremium) {
+                        Row(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Spotify Premium required for playback",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                 } else {
                     PreferenceEntry(
