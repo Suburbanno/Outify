@@ -472,10 +472,7 @@ fun PlaybackControls(
 
         FilledIconButton(
             onClick = {
-                if (!isBuffering) {
-//                    rotated = true
-                    onPlayPause()
-                }
+                onPlayPause()
             },
             shape = MaterialShapes.Cookie9Sided.toShape(),
             modifier = Modifier
