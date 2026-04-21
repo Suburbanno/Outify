@@ -227,7 +227,8 @@ class MainActivity : ComponentActivity() {
                                     OutifyBottomNav(
                                         items = routes,
                                         selectedId = selectedId,
-                                        onItemSelected = { item -> backStack.add(item.route) }
+                                        onItemSelected = { item -> backStack.add(item.route) },
+                                        showLabels = true,
                                     )
                                 }
                             }
