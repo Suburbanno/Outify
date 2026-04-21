@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -44,6 +45,16 @@ class SavedQueueRepository @Inject constructor(
             else list + queue
         }
         persist()
+    }
+
+    private var saveDebounceJob: kotlinx.coroutines.Job? = null
+
+    fun debouncedSaveQueue(queue: SavedQueue, debounceMs: Long = 500L) {
+        saveDebounceJob?.cancel()
+        saveDebounceJob = scope.launch {
+            delay(debounceMs)
+            saveQueue(queue)
+        }
     }
 
     fun deleteQueue(id: String) {

@@ -336,6 +336,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                                                     isDragging = false
 
                                                     viewModel.setQueueEntries(localTracks)
+                                                    viewModel.debouncedSaveToRepository(localTracks)
                                                 }
                                             ),
                                             onClick = {}

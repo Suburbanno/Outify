@@ -6,6 +6,8 @@ import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
+import cc.tomko.outify.data.queue.SavedQueue
+import cc.tomko.outify.data.repository.SavedQueueRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +38,7 @@ class QueueViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
     private val likedDao: LikedDao,
+    private val savedQueueRepository: SavedQueueRepository,
 ) : ViewModel() {
 
     val currentTrack: StateFlow<Track?> = playbackStateHolder.state
@@ -292,6 +295,18 @@ class QueueViewModel @Inject constructor(
             loadedRange = unloadedPreviousHead.size until (unloadedPreviousHead.size + entries.size)
         )
         viewModelScope.launch { syncQueueToSpirc() }
+    }
+
+    fun debouncedSaveToRepository(entries: List<QueueEntry>) {
+        viewModelScope.launch {
+            val queue = SavedQueue(
+                id = "current",
+                name = "Current Queue",
+                trackUris = entries.map { it.track.uri },
+                currentIndex = _queueState.value.currentIndex
+            )
+            savedQueueRepository.debouncedSaveQueue(queue)
+        }
     }
 
     private suspend fun loadPreviousUris(): List<String> = withContext(Dispatchers.IO) {
