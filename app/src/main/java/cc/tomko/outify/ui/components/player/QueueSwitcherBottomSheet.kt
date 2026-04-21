@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LibraryMusic
@@ -165,7 +166,7 @@ fun QueueSwitcherBottomSheet(
                 onClick = { showSaveDialog = true },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(Icons.Default.PlaylistAdd, contentDescription = null)
+                Icon(Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text("Save current queue")
             }

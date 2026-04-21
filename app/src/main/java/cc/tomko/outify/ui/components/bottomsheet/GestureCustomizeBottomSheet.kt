@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuBoxScope.menuAnchor
 import androidx.compose.material3.ExposedDropdownMenuDefaults.TrailingIcon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -27,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.data.setting.GestureAction
 import cc.tomko.outify.data.setting.GestureSetting
@@ -181,7 +184,7 @@ fun GestureCustomizeBottomSheet(
                         trailingIcon = {
                             TrailingIcon(actionExpanded)
                         },
-                        modifier = Modifier.menuAnchor()
+                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, true)
                     )
 
                     ExposedDropdownMenu(

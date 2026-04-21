@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Menu
@@ -208,7 +209,7 @@ fun SharedTransitionScope.QueueBottomSheet(
 
                 IconButton(onClick = { showSaveDialog = true }) {
                     Icon(
-                        Icons.Default.PlaylistAdd,
+                        Icons.AutoMirrored.Filled.PlaylistAdd,
                         contentDescription = "Save queue",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
