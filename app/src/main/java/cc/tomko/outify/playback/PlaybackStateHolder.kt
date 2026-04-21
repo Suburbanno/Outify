@@ -21,6 +21,9 @@ class PlaybackStateHolder @Inject constructor() {
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
 
+    private val _position = MutableStateFlow(Duration.ZERO)
+    val position: StateFlow<Duration> = _position.asStateFlow()
+
     private val mutex = Mutex()
 
     fun setQueue(queue: List<Track>, startIndex: Int = 0) {
@@ -118,5 +121,9 @@ class PlaybackStateHolder @Inject constructor() {
     // Non suspending getter for UI
     fun estimatePosition(): Duration {
         return computePositionLocked()
+    }
+
+    fun updatePosition(positionMs: Long) {
+        _position.value = positionMs.toDuration(DurationUnit.MILLISECONDS)
     }
 }

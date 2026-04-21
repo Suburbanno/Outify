@@ -66,6 +66,12 @@ class SettingsRepository @Inject constructor(
             val QUEUES = stringPreferencesKey("saved_queues_v1")
             val ACTIVE_ID = stringPreferencesKey("active_queue_id")
         }
+
+        object Playback {
+            val LAST_TRACK_URI = stringPreferencesKey("last_track_uri")
+            val LAST_CONTEXT_URI = stringPreferencesKey("last_context_uri")
+            val LAST_POSITION_MS = stringPreferencesKey("last_position_ms")
+        }
     }
 
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
@@ -163,6 +169,10 @@ class SettingsRepository @Inject constructor(
         it[Keys.Lyrics.SHOW_LYRICS_ALWAYS] ?: true
     }
 
+    val lastTrackUri = dataStore.data.map { it[Keys.Playback.LAST_TRACK_URI] }
+    val lastContextUri = dataStore.data.map { it[Keys.Playback.LAST_CONTEXT_URI] }
+    val lastPositionMs = dataStore.data.map { it[Keys.Playback.LAST_POSITION_MS]?.toLongOrNull() }
+
     val userId = dataStore.data.map { it[Keys.USER_ID] }
     val username = dataStore.data.map { it[Keys.USERNAME] }
     val userImageUrl = dataStore.data.map { it[Keys.USER_IMAGE_URL] }
@@ -189,6 +199,17 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setGesturesEnabled(enabled: Boolean) {
         dataStore.edit { it[Keys.Gesture.ENABLED] = enabled }
+    }
+
+    suspend fun saveLastPlayback(trackUri: String?, contextUri: String?, positionMs: Long?) {
+        dataStore.edit { prefs ->
+            if (trackUri != null) prefs[Keys.Playback.LAST_TRACK_URI] = trackUri
+            else prefs.remove(Keys.Playback.LAST_TRACK_URI)
+            if (contextUri != null) prefs[Keys.Playback.LAST_CONTEXT_URI] = contextUri
+            else prefs.remove(Keys.Playback.LAST_CONTEXT_URI)
+            if (positionMs != null) prefs[Keys.Playback.LAST_POSITION_MS] = positionMs.toString()
+            else prefs.remove(Keys.Playback.LAST_POSITION_MS)
+        }
     }
 
     suspend fun setDynamicTheme(enabled: Boolean) {

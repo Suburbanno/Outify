@@ -4,6 +4,7 @@ import android.util.Log
 import cc.tomko.outify.core.Session
 import cc.tomko.outify.core.SessionCallback
 import cc.tomko.outify.core.Spirc.SpircWrapper
+import cc.tomko.outify.core.model.OutifyUri
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.first
@@ -72,7 +73,10 @@ class SpircController @Inject constructor(
                     }
                 })
 
-                activateAndTransfer()
+                spirc.scope.launch {
+                    activateAndTransfer()
+                    restoreLastPlayback()
+                }
             }
 
             override fun failed() {
@@ -80,6 +84,27 @@ class SpircController @Inject constructor(
             }
 
         }, gapless, normalise)
+    }
+
+    private suspend fun restoreLastPlayback() {
+        val lastContextUri = settingsRepository.lastContextUri.first() ?: return
+        val lastTrackUri = settingsRepository.lastTrackUri.first()
+        val lastPositionMs = settingsRepository.lastPositionMs.first()
+
+        if (lastContextUri.isNullOrBlank()) return
+
+        Log.i("SpircController","Restoring last playback: $lastContextUri @ ${lastTrackUri ?: "first"}")
+
+        if (lastTrackUri != null) {
+            spirc.load(OutifyUri.fromUriString(lastContextUri), OutifyUri.fromUriString(lastTrackUri))
+        } else {
+            spirc.load(OutifyUri.fromUriString(lastContextUri), null)
+        }
+        spirc.playerPause()
+
+        if (lastPositionMs != null && lastPositionMs > 0) {
+            spirc.seekTo(lastPositionMs)
+        }
     }
 
     private fun activateAndTransfer(){

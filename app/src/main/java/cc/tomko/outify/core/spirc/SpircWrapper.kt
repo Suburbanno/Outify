@@ -89,6 +89,13 @@ class SpircWrapper @Inject constructor(
     override fun load(context: OutifyUri?, playingTrackUri: OutifyUri?): Boolean {
         scope.launch {
             savedQueueRepository.setActiveQueueId(null)
+
+            val currentPosition = playbackStateHolder.estimatePosition().inWholeMilliseconds
+            settingsRepository.saveLastPlayback(
+                trackUri = playingTrackUri?.toUriString(),
+                contextUri = context?.toUriString(),
+                positionMs = if (currentPosition > 0) currentPosition else null
+            )
         }
 
         ensureServiceRunning()
@@ -139,6 +146,11 @@ class SpircWrapper @Inject constructor(
     override fun shuffleLoad(uri: String?): Boolean {
         scope.launch {
             savedQueueRepository.setActiveQueueId(null)
+            settingsRepository.saveLastPlayback(
+                trackUri = null,
+                contextUri = uri,
+                positionMs = null
+            )
         }
 
         ensureServiceRunning()
@@ -182,6 +194,13 @@ class SpircWrapper @Inject constructor(
 
         // Assuming it went successfully - pre-updating the position
         playbackStateHolder.seekTo(positionMs.toDuration(DurationUnit.MILLISECONDS))
+        playbackStateHolder.updatePosition(positionMs)
+
+        settingsRepository.saveLastPlayback(
+            trackUri = null,
+            contextUri = null,
+            positionMs = positionMs
+        )
 
         return Spirc.seekTo(positionMs)
     }

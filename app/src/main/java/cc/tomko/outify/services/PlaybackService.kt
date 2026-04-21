@@ -151,7 +151,6 @@ class PlaybackService : MediaLibraryService(),
                 .map { it.currentTrack }
                 .distinctUntilChanged()
                 .collect { track ->
-                    println("new track: ${track?.uri}")
                     updateNotification()
                 }
 
