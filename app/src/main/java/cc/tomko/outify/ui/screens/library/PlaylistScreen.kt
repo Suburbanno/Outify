@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -16,16 +17,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Shuffle
 import cc.tomko.outify.ui.components.PlaylistDetailSkeleton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeExtendedFloatingActionButton
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.toShape
@@ -54,10 +59,11 @@ import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.components.user.UserChipAvatar
+import cc.tomko.outify.ui.screens.MaterialSearchBar
 import cc.tomko.outify.ui.viewmodel.detail.PlaylistDetailViewModel
 import cc.tomko.outify.ui.viewmodel.detail.PlaylistUiState
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SharedTransitionScope.PlaylistScreen(
     viewModel: PlaylistDetailViewModel,
@@ -97,6 +103,9 @@ fun SharedTransitionScope.PlaylistScreen(
             val isRefreshing by viewModel.isRefreshing.collectAsState()
             val isSaved by viewModel.isSaved.collectAsState()
 
+            var searchQuery by remember { mutableStateOf("") }
+            var showSearch by remember { mutableStateOf(false) }
+
             val lazyList = rememberLazyListState()
             val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
             val isPlaybackPlaying by viewModel.isPlaying.collectAsState(initial = false)
@@ -110,6 +119,15 @@ fun SharedTransitionScope.PlaylistScreen(
                 authors = viewModel.getAuthors(playlist)
             }
             val showAvatarCount = 4
+
+            val filteredTracks = remember(tracks, searchQuery, viewModel) {
+                if (searchQuery.isBlank()) tracks
+                else tracks.filter { item ->
+                    val state = viewModel.getTrackState(item.uri)
+                    state?.name?.contains(searchQuery, ignoreCase = true) == true ||
+                    state?.artists?.any { it.name.contains(searchQuery, ignoreCase = true) } == true
+                }
+            }
 
             val collapsingState = rememberCollapsingHeaderState()
 
@@ -146,7 +164,24 @@ fun SharedTransitionScope.PlaylistScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    itemsIndexed(tracks, key = { idx,track -> "${track.id}_${idx}" }) { idx,playlistItem ->
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            MaterialSearchBar(
+                                onQueryChange = { searchQuery = it },
+                                isLoading = false,
+                                autoFocus = false,
+                                placeholderText = "Search tracks..",
+                            )
+                        }
+                    }
+
+                    itemsIndexed(filteredTracks, key = { idx,track -> "${track.id}_${idx}" }) { idx,playlistItem ->
                         val track by remember(playlistItem.uri) {
                             viewModel.trackFlow(playlistItem.uri)
                         }.collectAsState(initial = null)

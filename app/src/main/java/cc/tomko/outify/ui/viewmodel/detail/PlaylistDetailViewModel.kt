@@ -160,6 +160,9 @@ class PlaylistDetailViewModel @Inject constructor(
             .map { it[uri] }
             .distinctUntilChanged()
 
+    fun getTrackState(uri: String): Track? =
+        trackMetadata.value[uri]
+
     suspend fun getOrLoadTrack(uri: String): Track? {
         trackMetadata.value[uri]?.let { return it }
 

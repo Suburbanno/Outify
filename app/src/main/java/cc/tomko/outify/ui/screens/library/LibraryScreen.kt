@@ -6,22 +6,30 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.core.model.Profile
+import cc.tomko.outify.core.model.Playlist
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.components.ArtworkBackground
@@ -42,9 +51,10 @@ import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.PlaylistRow
 import cc.tomko.outify.ui.components.user.UserChipAvatar
+import cc.tomko.outify.ui.screens.MaterialSearchBar
 import cc.tomko.outify.ui.viewmodel.library.LibraryViewModel
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SharedTransitionScope.LibraryScreen(
     viewModel: LibraryViewModel,
@@ -59,9 +69,20 @@ fun SharedTransitionScope.LibraryScreen(
     val density = LocalDensity.current
     val sharedTransitionScope = this
 
+    var searchQuery by remember { mutableStateOf("") }
+    var showSearch by remember { mutableStateOf(false) }
+
     val lazyListState = rememberLazyListState()
     val collapsingState = rememberCollapsingHeaderState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+
+    val filteredPlaylists = remember(playlists, searchQuery) {
+        if (searchQuery.isBlank()) playlists
+        else playlists.filter { playlist ->
+            playlist.attributes.name.contains(searchQuery, ignoreCase = true) ||
+            playlist.ownerUsername.contains(searchQuery, ignoreCase = true)
+        }
+    }
 
     LaunchedEffect(lazyListState.isScrollInProgress) {
         if (!lazyListState.isScrollInProgress) {
@@ -89,8 +110,25 @@ fun SharedTransitionScope.LibraryScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxSize()
         ) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    MaterialSearchBar(
+                        onQueryChange = { searchQuery = it },
+                        isLoading = false,
+                        autoFocus = false,
+                        placeholderText = "Search playlists..",
+                    )
+                }
+            }
+
             items(
-                items = playlists,
+                items = filteredPlaylists,
                 key = { it.uri },
                 contentType = { "playlist" }
             ) { playlist ->
