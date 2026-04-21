@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.core.model.Profile
+import cc.tomko.outify.ui.GlobalPopupController
+import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.navigation.Route
@@ -111,6 +113,9 @@ fun SharedTransitionScope.LibraryScreen(
                     artworkUrl = artworkUrl,
                     onRowClick = {
                         backStack.add(Route.PlaylistScreen(playlist.uri))
+                    },
+                    onRowLongClick = {
+                        GlobalPopupController.show(PopupSpec.PlaylistInfo(playlist, artworkUrl))
                     },
                     trailingContent = {
                         authors.forEach {

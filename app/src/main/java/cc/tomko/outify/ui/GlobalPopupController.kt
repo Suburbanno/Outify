@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui
 
+import cc.tomko.outify.core.model.Playlist
 import cc.tomko.outify.core.model.Track
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +35,13 @@ sealed class PopupSpec(
         val action: (() -> Unit)? = null,
         val likedTrackIndex: Int? = null,
         val isLiked: Boolean = false,
+        override val id: String = UUID.randomUUID().toString(),
+    ) : PopupSpec(id)
+
+    data class PlaylistInfo(
+        val playlist: Playlist,
+        val artworkUrl: String?,
+        val action: (() -> Unit)? = null,
         override val id: String = UUID.randomUUID().toString(),
     ) : PopupSpec(id)
 

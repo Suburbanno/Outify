@@ -66,6 +66,8 @@ import cc.tomko.outify.R
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.core.model.toSpotifyUri
+import cc.tomko.outify.ui.GlobalPopupController
+import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.navigation.Route.ArtistScreen
 import cc.tomko.outify.ui.components.navigation.Route.PlaylistScreen
@@ -286,6 +288,9 @@ fun SharedTransitionScope.SearchScreen(
                             artworkUrl = artworkUrl,
                             onRowClick = {
                                 backStack.add(PlaylistScreen(playlist.uri))
+                            },
+                            onRowLongClick = {
+                                GlobalPopupController.show(PopupSpec.PlaylistInfo(playlist, artworkUrl))
                             },
                             onArtistClick = {
                                 // TODO: Add author page
