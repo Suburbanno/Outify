@@ -3,11 +3,18 @@ package cc.tomko.outify.ui.components.player
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -30,25 +37,29 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Speaker
-import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -60,9 +71,11 @@ import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.core.spirc.Spirc
 import cc.tomko.outify.data.setting.LocalUiSettings
+import cc.tomko.outify.ui.components.AudioBarsIndicator
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.viewmodel.player.MiniPlayerViewModel
 import cc.tomko.outify.utils.SharedElementKey
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -199,7 +212,8 @@ fun SharedTransitionScope.MiniPlayer(
                 Box(
                     modifier = Modifier
                         .size(64.dp)
-                        .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
+                        .padding(start = 16.dp, top = 12.dp, bottom = 12.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Surface(
                         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -221,11 +235,11 @@ fun SharedTransitionScope.MiniPlayer(
                     }
 
                     if (isBuffering) {
-                        LoadingIndicator(
+                        ContainedLoadingIndicator(
                             modifier = Modifier
-                                .size(36.dp)
+                                .size(imageSize)
+                                .alpha(0.5f)
                                 .align(Alignment.Center),
-                            color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
