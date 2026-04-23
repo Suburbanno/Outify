@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.data.repository.PlaybackSettings
 import cc.tomko.outify.data.repository.SettingsRepository
+import cc.tomko.outify.playback.model.Bitrate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +33,12 @@ class PlaybackSettingViewModel @Inject constructor(
     fun setKeepAlive(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setKeepalive(enabled)
+        }
+    }
+
+    fun setBitrate(bitrate: Bitrate) {
+        viewModelScope.launch {
+            settingsRepository.setBitrate(bitrate)
         }
     }
 }

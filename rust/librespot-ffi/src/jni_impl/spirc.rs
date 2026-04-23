@@ -1,10 +1,11 @@
 use std::{sync::Mutex, time::Duration};
 
 use jni::{
-    objects::{GlobalRef, JClass, JObject, JObjectArray, JString}, sys::{jboolean, jlong, jobjectArray, jstring}, JNIEnv
+    objects::{GlobalRef, JClass, JObject, JObjectArray, JString}, sys::{jboolean, jint, jlong, jobjectArray, jstring}, JNIEnv
 };
 use librespot_connect::{LoadContextOptions, LoadRequestOptions, PlayingTrack};
 use librespot_core::SpotifyUri;
+use librespot_playback::config::Bitrate;
 
 use crate::{
     outifyuri::OutifyUri,
@@ -21,6 +22,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
     callback: JObject,
     gapless: jboolean,
     normalisation: jboolean,
+    bitrate: jint,
 ) -> jboolean {
     info!("Initializing spirc!");
 
@@ -43,8 +45,15 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
     };
     let jvm = crate::JVM.get().unwrap();
 
+    let bitrate = match bitrate {
+        320 => Bitrate::Bitrate320,
+        160 => Bitrate::Bitrate160,
+        96 => Bitrate::Bitrate96,
+        _ => Bitrate::Bitrate320
+    };
+
     handle.spawn(async move {
-        let result = crate::spirc::initialize_spirc(gapless != 0, normalisation != 0).await;
+        let result = crate::spirc::initialize_spirc(gapless != 0, normalisation != 0, bitrate).await;
 
         let mut env = match jvm.attach_current_thread() {
             Ok(env) => env,

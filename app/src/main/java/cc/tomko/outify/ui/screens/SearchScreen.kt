@@ -1,6 +1,11 @@
 package cc.tomko.outify.ui.screens
 
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -25,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.NoAccounts
 import androidx.compose.material.icons.filled.Search
@@ -34,6 +40,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,11 +50,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -93,6 +103,15 @@ fun SharedTransitionScope.SearchScreen(
     val listState = rememberLazyListState()
     val currentTrack by viewModel.currentTrack.collectAsState(initial = null)
     val isPlaybackPlaying by viewModel.isPlaying.collectAsState(initial = false)
+    val scope = rememberCoroutineScope()
+
+    val isScrolled by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 2 ||
+            listState.firstVisibleItemScrollOffset > 100
+        }
+    }
+    val showScrollToTop = isScrolled
 
     var showTracks by rememberSaveable { mutableStateOf(true) }
     var showArtists by rememberSaveable { mutableStateOf(true) }
@@ -113,7 +132,7 @@ fun SharedTransitionScope.SearchScreen(
         )
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Box(modifier = modifier.fillMaxSize()) {
         MaterialSearchBar(
             onQueryChange = viewModel::onQueryChange,
             isLoading = isLoading,
@@ -300,6 +319,35 @@ fun SharedTransitionScope.SearchScreen(
                             modifier = Modifier.animateItem()
                         )
                     }
+                }
+            }
+        }
+
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomEnd
+        ) {
+            AnimatedVisibility(
+                visible = showScrollToTop,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut() + slideOutVertically(targetOffsetY = { it })
+            ) {
+                FloatingActionButton(
+                    onClick = {
+                        scope.launch {
+                            listState.scrollToItem(0)
+                        }
+                    },
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .size(40.dp)
+                ) {
+                    Icon(
+                        Icons.Default.KeyboardArrowUp,
+                        contentDescription = "Scroll to top"
+                    )
                 }
             }
         }

@@ -1,5 +1,8 @@
 package cc.tomko.outify.core.spirc
 
+import cc.tomko.outify.playback.model.Bitrate
+import cc.tomko.outify.playback.model.getSpeed
+
 interface SpircInitializationCallback {
     /**
      * Called when Spirc initializes
@@ -41,7 +44,7 @@ object Spirc {
      * Initializes the SpircRuntime
      */
     @JvmStatic
-    external fun initializeSpirc(callback: SpircInitializationCallback, gapless: Boolean, normalisation: Boolean): Boolean
+    external fun initializeSpirc(callback: SpircInitializationCallback, gapless: Boolean, normalisation: Boolean, bitrateSpeed: Int = Bitrate.KBPS320.getSpeed()): Boolean
 
     /**
      * Sets the buffer callback for spirc

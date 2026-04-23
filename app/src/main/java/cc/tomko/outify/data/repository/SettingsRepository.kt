@@ -9,6 +9,7 @@ import cc.tomko.outify.data.setting.GestureAction
 import cc.tomko.outify.data.setting.GestureSetting
 import cc.tomko.outify.data.setting.GestureTrigger
 import cc.tomko.outify.data.setting.Side
+import cc.tomko.outify.playback.model.Bitrate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -32,6 +33,8 @@ class SettingsRepository @Inject constructor(
          * aka session resurrection
          */
         val KEEPALIVE = booleanPreferencesKey("keepalive")
+        val BITRATE = stringPreferencesKey("bitrate")
+
         val USER_ID = stringPreferencesKey("user_id")
         val USERNAME = stringPreferencesKey("username")
         val USER_IMAGE_URL = stringPreferencesKey("user_image_url")
@@ -104,10 +107,13 @@ class SettingsRepository @Inject constructor(
     }
 
     val playbackSettings: Flow<PlaybackSettings> =  dataStore.data.map { prefs ->
+        val bitrate = prefs[Keys.BITRATE] ?: Bitrate.KBPS320.name
+
         PlaybackSettings(
             gapless = prefs[Keys.GAPLESS] ?: false,
             normalizeAudio = prefs[Keys.NORMALIZE_AUDIO] ?: false,
             keepalive = prefs[Keys.KEEPALIVE] ?: true,
+            bitrate = Bitrate.valueOf(bitrate),
         )
     }
 
@@ -165,6 +171,11 @@ class SettingsRepository @Inject constructor(
         it[Keys.KEEPALIVE] ?: false
     }
 
+    val bitrate = dataStore.data.map {
+        val bitrate = it[Keys.BITRATE] ?: Bitrate.KBPS320.name
+        Bitrate.valueOf(bitrate)
+    }
+
     val showLyricsByDefault = dataStore.data.map {
         it[Keys.Lyrics.SHOW_LYRICS_ALWAYS] ?: true
     }
@@ -195,6 +206,10 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setKeepalive(enabled: Boolean) {
         dataStore.edit { it[Keys.KEEPALIVE] = enabled }
+    }
+
+    suspend fun setBitrate(bitrate: Bitrate) {
+        dataStore.edit { it[Keys.BITRATE] = bitrate.name }
     }
 
     suspend fun setGesturesEnabled(enabled: Boolean) {
@@ -328,4 +343,5 @@ data class PlaybackSettings(
     val gapless: Boolean = false,
     val normalizeAudio: Boolean = false,
     val keepalive: Boolean = true,
+    val bitrate: Bitrate = Bitrate.KBPS320
 )

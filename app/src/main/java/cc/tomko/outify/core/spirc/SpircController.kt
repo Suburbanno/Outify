@@ -7,6 +7,7 @@ import cc.tomko.outify.core.Spirc.SpircWrapper
 import cc.tomko.outify.core.model.OutifyUri
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.data.repository.SettingsRepository
+import cc.tomko.outify.playback.model.getSpeed
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -47,6 +48,7 @@ class SpircController @Inject constructor(
     private suspend fun initializeSpirc(){
         val gapless = settingsRepository.gaplessPlayback.first()
         val normalise = settingsRepository.normalizePlayback.first()
+        val bitrate = settingsRepository.bitrate.first()
 
         Spirc.initializeSpirc(object : SpircInitializationCallback {
             override fun initialized() {
@@ -83,7 +85,7 @@ class SpircController @Inject constructor(
                 handleSpircFailure()
             }
 
-        }, gapless, normalise)
+        }, gapless, normalise, bitrate.getSpeed())
     }
 
     private suspend fun restoreLastPlayback() {

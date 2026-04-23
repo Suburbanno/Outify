@@ -39,14 +39,14 @@ pub async fn initialize_session() {
         None => {
             error!("Cache Dir not initialized - make sure to call libInit first");
             return;
-        },
+        }
     };
     let os_files_dir = match FILES_DIR.get() {
         Some(dir) => dir.to_path_buf(),
         None => {
             error!("Files Dir not initialized - make sure to call libInit first");
             return;
-        },
+        }
     };
     let cache: Cache = Cache::new(Some(&os_files_dir), None, Some(&os_cache_dir), None).unwrap();
     trace!("Initialized new cache!");
@@ -113,9 +113,11 @@ fn start_shutdown_listener(session: Session) {
 
         let gapless = crate::spirc::GAPLESS.load(std::sync::atomic::Ordering::Relaxed);
         let normalise = crate::spirc::NORMALISE_AUDIO.load(std::sync::atomic::Ordering::Relaxed);
+        let bitrate_mutex = crate::spirc::BITRATE.get().expect("BITRATE not initialized");
+        let bitrate = *bitrate_mutex.lock().unwrap();
 
         initialize_session().await;
-        if let Err(e) = crate::spirc::initialize_spirc(gapless, normalise).await {
+        if let Err(e) = crate::spirc::initialize_spirc(gapless, normalise, bitrate).await {
             error!("Failed to initialize spirc: {}", e);
             return;
         }
@@ -175,9 +177,7 @@ async fn cleanup() {
 }
 
 pub fn get_username() -> String {
-    with_session(|session| {
-        session.username()
-    }).expect("failed to get username")
+    with_session(|session| session.username()).expect("failed to get username")
 }
 
 // Helper function to retrieve &Session

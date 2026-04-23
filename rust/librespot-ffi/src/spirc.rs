@@ -3,21 +3,19 @@ use std::sync::{
     atomic::{AtomicBool, AtomicU32},
 };
 
-use thiserror::Error;
 use librespot_connect::{
-    ConnectConfig, LoadContextOptions, LoadRequest, LoadRequestOptions, Options, PlayingTrack, Spirc
+    ConnectConfig, LoadContextOptions, LoadRequest, LoadRequestOptions, Options, PlayingTrack,
+    Spirc,
 };
 use librespot_core::{Session, SpotifyUri, authentication::Credentials, spclient::TransferRequest};
 use librespot_playback::{
-    config::{AudioFormat, PlayerConfig},
+    config::{AudioFormat, Bitrate, PlayerConfig},
     mixer::{self, MixerConfig},
     player::{Player, PlayerEvent},
 };
 use once_cell::sync::OnceCell;
-use tokio::{
-    sync::mpsc,
-    task::JoinHandle,
-};
+use thiserror::Error;
+use tokio::{sync::mpsc, task::JoinHandle};
 
 use crate::session::with_session;
 
@@ -38,6 +36,7 @@ pub enum SpircError {
 
 static SPIRC_RUNTIME: OnceCell<RwLock<Option<SpircRuntime>>> = OnceCell::new();
 static CURRENT_TRACK: OnceCell<Mutex<Option<String>>> = OnceCell::new();
+pub static BITRATE: OnceCell<Mutex<Bitrate>> = OnceCell::new();
 
 pub static NORMALISE_AUDIO: AtomicBool = AtomicBool::new(false);
 pub static GAPLESS: AtomicBool = AtomicBool::new(false);
@@ -58,6 +57,7 @@ pub fn init_spirc_container() {
     SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
     CURRENT_TRACK.get_or_init(|| Mutex::new(None));
     CURRENT_CONTEXT.get_or_init(|| Mutex::new(None));
+    BITRATE.get_or_init(|| Mutex::new(Bitrate::Bitrate320));
 }
 
 pub struct SpircRuntime {
@@ -71,11 +71,12 @@ impl SpircRuntime {
         credentials: Credentials,
         gapless: bool,
         normalisation: bool,
+        bitrate: Bitrate,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let player_config = PlayerConfig {
             // TODO: Make configurable from app
             position_update_interval: Some(std::time::Duration::from_millis(5_000)),
-            bitrate: librespot_playback::config::Bitrate::Bitrate320,
+            bitrate,
             gapless,
             normalisation,
             ..Default::default()
@@ -129,6 +130,11 @@ impl SpircRuntime {
 
         GAPLESS.store(gapless, std::sync::atomic::Ordering::Relaxed);
         NORMALISE_AUDIO.store(normalisation, std::sync::atomic::Ordering::Relaxed);
+
+        let bitrate_mutex = BITRATE.get().expect("BITRATE not initialized");
+        *bitrate_mutex.lock().unwrap() = bitrate;
+
+        info!("SpircRuntime initialized with bitrate {}, gapless audio {} and audio normalisation {}", bitrate as u32, gapless, normalisation);
 
         Ok(Self {
             spirc: Arc::new(spirc),
@@ -196,7 +202,11 @@ impl SpircRuntime {
         self.spirc.add_to_queue(uri)
     }
 
-    pub fn set_queue(&self, tracks: Vec<SpotifyUri>, playing_track: Option<PlayingTrack>) -> Result<(), librespot_core::Error> {
+    pub fn set_queue(
+        &self,
+        tracks: Vec<SpotifyUri>,
+        playing_track: Option<PlayingTrack>,
+    ) -> Result<(), librespot_core::Error> {
         self.spirc.set_queue(tracks, playing_track)
     }
 
@@ -407,8 +417,11 @@ fn handle_event(event: PlayerEvent) {
             client_brand_name,
             client_model_name,
         } => {
-            info!("Session client changed: {} ({}) from {} {}", client_id, client_name, client_brand_name, client_model_name);
-            
+            info!(
+                "Session client changed: {} ({}) from {} {}",
+                client_id, client_name, client_brand_name, client_model_name
+            );
+
             let session = match with_session(|s| s.clone()) {
                 Ok(s) => s,
                 Err(_) => {
@@ -416,7 +429,7 @@ fn handle_event(event: PlayerEvent) {
                     return;
                 }
             };
-            
+
             let our_device_id = session.device_id();
             let is_now_active = client_id == our_device_id;
 
@@ -444,13 +457,16 @@ fn update_current_track(uri: SpotifyUri) {
 pub async fn auto_initialize_spirc() -> Result<(), SpircError> {
     let gapless = GAPLESS.load(std::sync::atomic::Ordering::Relaxed);
     let normalisation = NORMALISE_AUDIO.load(std::sync::atomic::Ordering::Relaxed);
+    let bitrate_mutex = BITRATE.get().expect("BITRATE not initialized");
+    let bitrate = *bitrate_mutex.lock().unwrap();
 
-    initialize_spirc(gapless, normalisation).await
+    initialize_spirc(gapless, normalisation, bitrate).await
 }
 
 pub async fn initialize_spirc(
     gapless: bool,
     normalisation: bool,
+    bitrate: Bitrate,
 ) -> Result<(), SpircError> {
     debug!("Initializing SpircRuntime");
 
@@ -483,7 +499,7 @@ pub async fn initialize_spirc(
         )
     })?;
 
-    let runtime = SpircRuntime::new(&session, credentials, gapless, normalisation)
+    let runtime = SpircRuntime::new(&session, credentials, gapless, normalisation, bitrate)
         .await
         .map_err(|e| SpircError::Other(e.to_string()))?;
 
@@ -542,8 +558,12 @@ pub fn notify_device_state(is_active: bool) {
     };
 
     if let Some(callback) = callback_opt {
-        let method = if is_active { "becameActive" } else { "becameInactive" };
-        
+        let method = if is_active {
+            "becameActive"
+        } else {
+            "becameInactive"
+        };
+
         std::thread::spawn(move || {
             let mut env = match jvm.attach_current_thread() {
                 Ok(env) => env,
@@ -571,14 +591,10 @@ pub fn with_spirc<F, R>(f: F) -> Result<R, SpircError>
 where
     F: FnOnce(&SpircRuntime) -> R,
 {
-    let container = SPIRC_RUNTIME
-        .get()
-        .ok_or(SpircError::NotInitialized)?;
+    let container = SPIRC_RUNTIME.get().ok_or(SpircError::NotInitialized)?;
 
     let guard = container.read().unwrap();
-    let runtime = guard
-        .as_ref()
-        .ok_or(SpircError::NotCreated)?;
+    let runtime = guard.as_ref().ok_or(SpircError::NotCreated)?;
 
     Ok(f(runtime))
 }
