@@ -53,6 +53,11 @@ class SpircWrapper @Inject constructor(
 
     var isUsable = false
 
+    override fun shutdown() {
+        isUsable = false
+        Spirc.shutdown()
+    }
+
     override fun startRadio(trackUri: OutifyUri, shuffle: Boolean): Boolean {
         val jsonResult = spClient.getRadioForTrack(trackUri.toUriString()) ?: return false
         val result: RadioResult = json.decodeFromString(jsonResult)

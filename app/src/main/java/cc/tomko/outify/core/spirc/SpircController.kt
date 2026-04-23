@@ -42,6 +42,7 @@ class SpircController @Inject constructor(
     fun restart() {
         Log.w("SpircController", "Restarting session...")
         session.shutdown()
+        spirc.shutdown()
         start()
     }
 

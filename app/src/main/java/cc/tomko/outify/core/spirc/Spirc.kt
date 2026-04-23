@@ -47,6 +47,12 @@ object Spirc {
     external fun initializeSpirc(callback: SpircInitializationCallback, gapless: Boolean, normalisation: Boolean, bitrateSpeed: Int = Bitrate.KBPS320.getSpeed()): Boolean
 
     /**
+     * Shuts down the SpircRuntime
+     */
+    @JvmStatic
+    external fun shutdown()
+
+    /**
      * Sets the buffer callback for spirc
      */
     @JvmStatic

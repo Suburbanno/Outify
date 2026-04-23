@@ -1,7 +1,9 @@
 use std::{sync::Mutex, time::Duration};
 
 use jni::{
-    objects::{GlobalRef, JClass, JObject, JObjectArray, JString}, sys::{jboolean, jint, jlong, jobjectArray, jstring}, JNIEnv
+    JNIEnv,
+    objects::{GlobalRef, JClass, JObject, JObjectArray, JString},
+    sys::{jboolean, jint, jlong, jobjectArray, jstring},
 };
 use librespot_connect::{LoadContextOptions, LoadRequestOptions, PlayingTrack};
 use librespot_core::SpotifyUri;
@@ -9,7 +11,7 @@ use librespot_playback::config::Bitrate;
 
 use crate::{
     outifyuri::OutifyUri,
-    spirc::{with_spirc, SpircError},
+    spirc::{SpircError, with_spirc},
 };
 
 pub static BUFFER_CALLBACK: Mutex<Option<GlobalRef>> = Mutex::new(None);
@@ -49,11 +51,12 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
         320 => Bitrate::Bitrate320,
         160 => Bitrate::Bitrate160,
         96 => Bitrate::Bitrate96,
-        _ => Bitrate::Bitrate320
+        _ => Bitrate::Bitrate320,
     };
 
     handle.spawn(async move {
-        let result = crate::spirc::initialize_spirc(gapless != 0, normalisation != 0, bitrate).await;
+        let result =
+            crate::spirc::initialize_spirc(gapless != 0, normalisation != 0, bitrate).await;
 
         let mut env = match jvm.attach_current_thread() {
             Ok(env) => env,
@@ -76,6 +79,11 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_initializeSpirc(
     });
 
     1
+}
+
+#[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_shutdown")]
+pub extern "system" fn shutdown(env: JNIEnv, _this: JClass) {
+    crate::spirc::shutdown()
 }
 
 // Sets the buffer callback, so we can notify UI of spirc buferring
@@ -243,7 +251,12 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_addToQueue(
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_setQueue")]
-pub extern "system" fn set_queue(mut env: JNIEnv, _this: JClass, tracks: jobjectArray, playing_track: JString) -> jboolean {
+pub extern "system" fn set_queue(
+    mut env: JNIEnv,
+    _this: JClass,
+    tracks: jobjectArray,
+    playing_track: JString,
+) -> jboolean {
     let tracks_array = unsafe { JObjectArray::from_raw(tracks) };
 
     let len = match env.get_array_length(&tracks_array) {
@@ -282,11 +295,11 @@ pub extern "system" fn set_queue(mut env: JNIEnv, _this: JClass, tracks: jobject
                 let uri: String = j.into();
                 let outify_uri = OutifyUri::from_uri(&uri);
                 Some(PlayingTrack::Uri(outify_uri.to_uri()))
-            },
+            }
             Err(e) => {
                 error!("failed to get string: {e}");
                 None
-            },
+            }
         }
     };
 
@@ -361,11 +374,7 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_seekTo(
 }
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_shuffle")]
-pub extern "system" fn shuffle_spirc(
-    env: JNIEnv,
-    _this: JClass,
-    enabled: jboolean,
-) -> jboolean {
+pub extern "system" fn shuffle_spirc(env: JNIEnv, _this: JClass, enabled: jboolean) -> jboolean {
     let enabled = enabled != 0;
     match with_spirc(|runtime| runtime.shuffle(enabled)) {
         Ok(Ok(_)) => 1,
@@ -622,29 +631,27 @@ fn call_spirc_load(uri: String, options: LoadRequestOptions) -> jboolean {
             error!("Failed to load Spirc: {}", e);
             0 as jboolean
         }
-        Err(e) => {
-            match e {
-                SpircError::NotInitialized | SpircError::NotCreated => {
-                    debug!("Trying to auto initialize Spirc..");
-                    let rt = match crate::TOKIO_RUNTIME.get() {
-                        Some(rt) => rt,
-                        None => {
-                            error!("Spirc not available: {}", e);
-                            return 0;
-                        }
-                    };
-                    rt.spawn(async move {
-                        if let Err(e) = crate::spirc::auto_initialize_spirc().await {
-                            error!("Failed to auto initialize Spirc: {}", e);
-                        }
-                    });
-                    0
-                }
-                _ => {
-                    error!("Spirc not available: {}", e);
-                    0
-                }
+        Err(e) => match e {
+            SpircError::NotInitialized | SpircError::NotCreated => {
+                debug!("Trying to auto initialize Spirc..");
+                let rt = match crate::TOKIO_RUNTIME.get() {
+                    Some(rt) => rt,
+                    None => {
+                        error!("Spirc not available: {}", e);
+                        return 0;
+                    }
+                };
+                rt.spawn(async move {
+                    if let Err(e) = crate::spirc::auto_initialize_spirc().await {
+                        error!("Failed to auto initialize Spirc: {}", e);
+                    }
+                });
+                0
             }
-        }
+            _ => {
+                error!("Spirc not available: {}", e);
+                0
+            }
+        },
     }
 }

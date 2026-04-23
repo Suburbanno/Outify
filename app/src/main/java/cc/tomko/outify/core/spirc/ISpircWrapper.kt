@@ -3,6 +3,7 @@ package cc.tomko.outify.core.spirc
 import cc.tomko.outify.core.model.OutifyUri
 
 interface ISpircWrapper {
+    fun shutdown()
     fun startRadio(track: OutifyUri, shuffle: Boolean = true): Boolean
     fun load(context: OutifyUri? = null, playingTrackUri: OutifyUri? = null): Boolean
     fun localLoad(uri: String): Boolean

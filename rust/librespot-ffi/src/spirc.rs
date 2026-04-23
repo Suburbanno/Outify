@@ -134,7 +134,10 @@ impl SpircRuntime {
         let bitrate_mutex = BITRATE.get().expect("BITRATE not initialized");
         *bitrate_mutex.lock().unwrap() = bitrate;
 
-        info!("SpircRuntime initialized with bitrate {}, gapless audio {} and audio normalisation {}", bitrate as u32, gapless, normalisation);
+        info!(
+            "SpircRuntime initialized with bitrate {}, gapless audio {} and audio normalisation {}",
+            bitrate as u32, gapless, normalisation
+        );
 
         Ok(Self {
             spirc: Arc::new(spirc),
@@ -585,6 +588,18 @@ pub fn current_track() -> Option<String> {
         return uri.lock().unwrap().clone();
     }
     None
+}
+
+pub fn shutdown() {
+    with_spirc(|spirc| {
+        spirc.shutdown();
+    });
+
+    let lock = SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
+    let mut guard = lock.write().unwrap();
+    *guard = None;
+
+    info!("SpircRuntime shutdown!");
 }
 
 pub fn with_spirc<F, R>(f: F) -> Result<R, SpircError>

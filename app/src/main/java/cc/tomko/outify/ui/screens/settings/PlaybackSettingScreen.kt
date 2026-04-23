@@ -1,5 +1,16 @@
 package cc.tomko.outify.ui.screens.settings
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -7,15 +18,22 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
 import androidx.compose.material.icons.filled.Healing
 import androidx.compose.material.icons.filled.HighQuality
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Badge
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -38,6 +56,18 @@ fun PlaybackSettingScreen(
     modifier: Modifier = Modifier
 ) {
     val settings by viewModel.settings.collectAsState(initial = PlaybackSettings())
+    val restartNeeded by viewModel.needsRestart.collectAsState()
+
+    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 0.4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
 
     LazyColumn(
         modifier = Modifier.fillMaxSize()
@@ -98,6 +128,43 @@ fun PlaybackSettingScreen(
                         ),
                         selectedValue = settings.bitrate,
                         onValueChange = { viewModel.setBitrate(it) }
+                    )
+                }
+            }
+        }
+
+        item {
+            ElevatedCard(
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = if (restartNeeded)
+                        MaterialTheme.colorScheme.tertiaryContainer
+                    else
+                        MaterialTheme.colorScheme.surface
+                ),
+                modifier =  Modifier
+                    .fillMaxWidth()
+            ) {
+                Column {
+                    PreferenceEntry(
+                        title = { Text("Restart Spirc") },
+                        description = "Required to apply playback related settings",
+                        icon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
+                        onClick = {
+                            viewModel.restartSpirc()
+                        },
+                        trailingContent = {
+                            AnimatedVisibility(
+                                visible = restartNeeded,
+                                enter = expandVertically() + fadeIn(),
+                                exit = shrinkVertically() + fadeOut()
+                            ) {
+                                Badge(
+                                    containerColor = MaterialTheme.colorScheme.tertiary
+                                ) {
+                                    Text("!")
+                                }
+                            }
+                        },
                     )
                 }
             }
