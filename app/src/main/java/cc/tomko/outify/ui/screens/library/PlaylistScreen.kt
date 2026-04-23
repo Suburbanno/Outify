@@ -318,7 +318,7 @@ fun SharedTransitionScope.PlaylistScreen(
                         FloatingActionButton(
                             onClick = {
                                 scope.launch {
-                                    lazyList.scrollToItem(0)
+                                    lazyList.animateScrollToItem(0)
                                 }
                             },
                             shape = CircleShape,

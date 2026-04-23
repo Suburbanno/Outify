@@ -239,7 +239,7 @@ fun SharedTransitionScope.LibraryScreen(
                 FloatingActionButton(
                     onClick = {
                         scope.launch {
-                            lazyListState.scrollToItem(0)
+                            lazyListState.animateScrollToItem(0)
                         }
                     },
                     shape = CircleShape,
