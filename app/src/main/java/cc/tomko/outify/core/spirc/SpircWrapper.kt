@@ -80,6 +80,8 @@ class SpircWrapper @Inject constructor(
 
     @OptIn(UnstableApi::class)
     private fun ensureServiceRunning() {
+        ensureUsable()
+
         val intent = Intent(context, PlaybackService::class.java)
         ContextCompat.startForegroundService(context, intent)
     }

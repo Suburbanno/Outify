@@ -20,6 +20,7 @@ import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
+import cc.tomko.outify.core.spirc.SpircController
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -33,6 +34,7 @@ import kotlinx.coroutines.plus
 class MediaLibrarySessionCallback @Inject constructor(
     @ApplicationContext private val context: Context,
     private val spClient: SpClient,
+    private val spircController: SpircController,
 ) : MediaLibraryService.MediaLibrarySession.Callback {
 
     private val scope = CoroutineScope(Dispatchers.Main) + Job()
@@ -55,6 +57,15 @@ class MediaLibrarySessionCallback @Inject constructor(
                 .build(),
             connectionResult.availablePlayerCommands
         )
+    }
+
+    override fun onPlaybackResumption(
+        mediaSession: MediaSession,
+        controller: MediaSession.ControllerInfo,
+        isForPlayback: Boolean
+    ): ListenableFuture<MediaSession.MediaItemsWithStartPosition> {
+        spircController.restart()
+        return super.onPlaybackResumption(mediaSession, controller, isForPlayback)
     }
 
     override fun onCustomCommand(
